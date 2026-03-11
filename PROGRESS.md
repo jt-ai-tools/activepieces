@@ -234,11 +234,11 @@ Total files:      873
 | ./packages/pieces/core/tables/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/tables/README_zh_TW.md) |
 | ./packages/pieces/core/crypto/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/crypto/README_zh_TW.md) |
 | ./packages/pieces/core/schedule/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/schedule/README_zh_TW.md) |
-| ./packages/pieces/core/image-helper/README.md | Pending | |
-| ./packages/pieces/core/forms/README.md | Pending | |
-| ./packages/pieces/core/date-helper/README.md | Pending | |
-| ./packages/pieces/core/math-helper/README.md | Pending | |
-| ./packages/pieces/core/sftp/README.md | Pending | |
+| ./packages/pieces/core/image-helper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/image-helper/README_zh_TW.md) |
+| ./packages/pieces/core/forms/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/forms/README_zh_TW.md) |
+| ./packages/pieces/core/date-helper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/date-helper/README_zh_TW.md) |
+| ./packages/pieces/core/math-helper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/math-helper/README_zh_TW.md) |
+| ./packages/pieces/core/sftp/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/sftp/README_zh_TW.md) |
 | ./packages/pieces/core/pdf/README.md | Pending | |
 | ./packages/pieces/core/text-helper/README.md | Pending | |
 | ./packages/pieces/core/subflows/README.md | Pending | |
