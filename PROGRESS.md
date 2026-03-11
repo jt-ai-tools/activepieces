@@ -141,26 +141,26 @@ Total files:      873
 | ./docs/endpoints/flows/get.mdx | Completed | [get_zh_TW.mdx](./docs/endpoints/flows/get_zh_TW.mdx) |
 | ./docs/endpoints/flows/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/flows/update_zh_TW.mdx) |
 | ./docs/endpoints/flows/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/flows/schema_zh_TW.mdx) |
-| ./docs/endpoints/flows/delete.mdx | Pending | |
-| ./docs/endpoints/sample-data/get.mdx | Pending | |
-| ./docs/admin-guide/overview.mdx | Pending | |
-| ./docs/admin-guide/security/practices.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/user-signed-in.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/connection-deleted.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/flow-run-started.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/user-email-verified.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/flow-updated.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/overview.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/folder-deleted.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/flow-created.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/flow-run-finished.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/user-signed-up.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/folder-updated.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/folder-created.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/connection-upserted.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/signing-key-created.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/flow-deleted.mdx | Pending | |
-| ./docs/admin-guide/security/audit-logs/user-password-reset.mdx | Pending | |
+| ./docs/endpoints/flows/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/flows/delete_zh_TW.mdx) |
+| ./docs/endpoints/sample-data/get.mdx | Completed | [get_zh_TW.mdx](./docs/endpoints/sample-data/get_zh_TW.mdx) |
+| ./docs/admin-guide/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/admin-guide/overview_zh_TW.mdx) |
+| ./docs/admin-guide/security/practices.mdx | Completed | [practices_zh_TW.mdx](./docs/admin-guide/security/practices_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/user-signed-in.mdx | Completed | [user-signed-in_zh_TW.mdx](./docs/admin-guide/security/audit-logs/user-signed-in_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/connection-deleted.mdx | Completed | [connection-deleted_zh_TW.mdx](./docs/admin-guide/security/audit-logs/connection-deleted_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/flow-run-started.mdx | Completed | [flow-run-started_zh_TW.mdx](./docs/admin-guide/security/audit-logs/flow-run-started_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/user-email-verified.mdx | Completed | [user-email-verified_zh_TW.mdx](./docs/admin-guide/security/audit-logs/user-email-verified_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/flow-updated.mdx | Completed | [flow-updated_zh_TW.mdx](./docs/admin-guide/security/audit-logs/flow-updated_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/admin-guide/security/audit-logs/overview_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/folder-deleted.mdx | Completed | [folder-deleted_zh_TW.mdx](./docs/admin-guide/security/audit-logs/folder-deleted_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/flow-created.mdx | Completed | [flow-created_zh_TW.mdx](./docs/admin-guide/security/audit-logs/flow-created_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/flow-run-finished.mdx | Completed | [flow-run-finished_zh_TW.mdx](./docs/admin-guide/security/audit-logs/flow-run-finished_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/user-signed-up.mdx | Completed | [user-signed-up_zh_TW.mdx](./docs/admin-guide/security/audit-logs/user-signed-up_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/folder-updated.mdx | Completed | [folder-updated_zh_TW.mdx](./docs/admin-guide/security/audit-logs/folder-updated_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/folder-created.mdx | Completed | [folder-created_zh_TW.mdx](./docs/admin-guide/security/audit-logs/folder-created_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/connection-upserted.mdx | Completed | [connection-upserted_zh_TW.mdx](./docs/admin-guide/security/audit-logs/connection-upserted_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/signing-key-created.mdx | Completed | [signing-key-created_zh_TW.mdx](./docs/admin-guide/security/audit-logs/signing-key-created_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/flow-deleted.mdx | Completed | [flow-deleted_zh_TW.mdx](./docs/admin-guide/security/audit-logs/flow-deleted_zh_TW.mdx) |
+| ./docs/admin-guide/security/audit-logs/user-password-reset.mdx | Completed | [user-password-reset_zh_TW.mdx](./docs/admin-guide/security/audit-logs/user-password-reset_zh_TW.mdx) |
 | ./docs/admin-guide/guides/scim/overview.mdx | Pending | |
 | ./docs/admin-guide/guides/scim/providers/okta.mdx | Pending | |
 | ./docs/admin-guide/guides/project-releases.mdx | Pending | |

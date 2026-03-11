@@ -298,3 +298,53 @@ Found 856 files to translate.
 [✓] Completed: ./docs/endpoints/flows/create_zh_TW.mdx
 [✓] Completed: ./docs/endpoints/flows/get_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 25 (5 files) ---
+[+] Translating: ./docs/endpoints/flows/delete.mdx
+[+] Translating: ./docs/endpoints/sample-data/get.mdx
+[+] Translating: ./docs/admin-guide/overview.mdx
+[+] Translating: ./docs/admin-guide/security/practices.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/user-signed-in.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/user-signed-in_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/overview_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/sample-data/get_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/practices_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/flows/delete_zh_TW.mdx
+
+--- Processing chunk 26 (5 files) ---
+[+] Translating: ./docs/admin-guide/security/audit-logs/connection-deleted.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/flow-run-started.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/user-email-verified.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/flow-updated.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/overview.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/overview_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/connection-deleted_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/flow-updated_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/flow-run-started_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/user-email-verified_zh_TW.mdx
+
+--- Processing chunk 27 (5 files) ---
+[+] Translating: ./docs/admin-guide/security/audit-logs/folder-deleted.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/flow-created.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/flow-run-finished.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/user-signed-up.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/folder-updated.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/user-signed-up_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/folder-deleted_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/folder-updated_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/flow-run-finished_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/flow-created_zh_TW.mdx
+
+--- Processing chunk 28 (5 files) ---
+[+] Translating: ./docs/admin-guide/security/audit-logs/folder-created.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/connection-upserted.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/signing-key-created.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/flow-deleted.mdx
+[+] Translating: ./docs/admin-guide/security/audit-logs/user-password-reset.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/connection-upserted_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/flow-deleted_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/user-password-reset_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/folder-created_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/security/audit-logs/signing-key-created_zh_TW.mdx
+[*] Committing progress...
