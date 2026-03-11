@@ -688,3 +688,233 @@ Rules:
 /bin/sh: -c: line 7: syntax error: unexpected end of file
 
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 13 (5 files) ---
+[+] Translating: ./docs/install/architecture/overview.mdx
+[+] Translating: ./docs/install/architecture/engine.mdx
+[+] Translating: ./docs/install/architecture/performance.mdx
+[+] Translating: ./docs/install/guides/setup-app-webhooks.mdx
+[+] Translating: ./docs/install/guides/setup-ssl.mdx
+[X] Error translating ./docs/install/architecture/overview.mdx: Command failed: cat "./docs/install/architecture/overview.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/install/architecture/engine.mdx: Command failed: cat "./docs/install/architecture/engine.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/install/architecture/performance.mdx: Command failed: cat "./docs/install/architecture/performance.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/install/guides/setup-ssl.mdx: Command failed: cat "./docs/install/guides/setup-ssl.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/install/guides/setup-app-webhooks.mdx: Command failed: cat "./docs/install/guides/setup-app-webhooks.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+
+--- Processing chunk 14 (5 files) ---
+[+] Translating: ./docs/install/guides/separate-workers.mdx
+[+] Translating: ./docs/install/guides/setup-s3.mdx
+[+] Translating: ./docs/install/guides/setup-opentelemetry.mdx
+[+] Translating: ./docs/endpoints/project-members/list.mdx
+[+] Translating: ./docs/endpoints/project-members/schema.mdx
+[X] Error translating ./docs/install/guides/separate-workers.mdx: Command failed: cat "./docs/install/guides/separate-workers.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/install/guides/setup-s3.mdx: Command failed: cat "./docs/install/guides/setup-s3.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/install/guides/setup-opentelemetry.mdx: Command failed: cat "./docs/install/guides/setup-opentelemetry.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/project-members/list.mdx: Command failed: cat "./docs/endpoints/project-members/list.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/project-members/schema.mdx: Command failed: cat "./docs/endpoints/project-members/schema.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+
+--- Processing chunk 15 (5 files) ---
+[+] Translating: ./docs/endpoints/project-members/delete.mdx
+[+] Translating: ./docs/endpoints/overview.mdx
+[+] Translating: ./docs/endpoints/queue-metrics/metrics.mdx
+[+] Translating: ./docs/endpoints/project-releases/create.mdx
+[+] Translating: ./docs/endpoints/project-releases/schema.mdx
+[X] Error translating ./docs/endpoints/project-members/delete.mdx: Command failed: cat "./docs/endpoints/project-members/delete.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/overview.mdx: Command failed: cat "./docs/endpoints/overview.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/queue-metrics/metrics.mdx: Command failed: cat "./docs/endpoints/queue-metrics/metrics.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/project-releases/schema.mdx: Command failed: cat "./docs/endpoints/project-releases/schema.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/project-releases/create.mdx: Command failed: cat "./docs/endpoints/project-releases/create.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+
+--- Processing chunk 16 (5 files) ---
+[+] Translating: ./docs/endpoints/projects/list.mdx
+[+] Translating: ./docs/endpoints/projects/create.mdx
+[+] Translating: ./docs/endpoints/projects/update.mdx
+[+] Translating: ./docs/endpoints/projects/schema.mdx
+[+] Translating: ./docs/endpoints/projects/delete.mdx
+[X] Error translating ./docs/endpoints/projects/create.mdx: Command failed: cat "./docs/endpoints/projects/create.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/projects/list.mdx: Command failed: cat "./docs/endpoints/projects/list.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/projects/schema.mdx: Command failed: cat "./docs/endpoints/projects/schema.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/projects/update.mdx: Command failed: cat "./docs/endpoints/projects/update.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[X] Error translating ./docs/endpoints/projects/delete.mdx: Command failed: cat "./docs/endpoints/projects/delete.mdx.temp_in.txt" | gemini -p "You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
+Rules:
+1. Maintain the exact original markdown structure, formatting, and code blocks.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a ```markdown block.
+3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
+4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
+" --output-format text 2>/dev/null
+/bin/sh: -c: line 3: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 7: syntax error: unexpected end of file
+
+[*] Committing progress...
