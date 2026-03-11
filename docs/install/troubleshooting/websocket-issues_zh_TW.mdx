@@ -1,0 +1,17 @@
+---
+title: "WebSocket 問題"
+description: "針對 WebSocket 連線問題進行疑難排解"
+icon: "plug"
+---
+
+如果您遇到 WebSocket 連線問題，很可能是因為代理伺服器（proxy）設定不正確。常見的症狀包括：
+
+- 「測試流程」（Test Flow）按鈕無法運作
+- 流程中的測試步驟（Test step）無法運作
+- 無法顯示即時更新
+
+要解決這些問題：
+
+1. 確保您的反向代理伺服器（reverse proxy）已針對 WebSocket 連線進行正確配置
+2. 參考我們的 [設定 HTTPS](/install/guides/setup-ssl_zh_TW) 指南，查看正確的配置範例
+3. 部分瀏覽器會阻擋 HTTP WebSocket 連線，請設定 SSL 以解決此問題。

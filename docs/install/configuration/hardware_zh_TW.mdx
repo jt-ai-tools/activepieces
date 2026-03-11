@@ -1,0 +1,52 @@
+---
+title: "硬體需求"
+icon: "server"
+description: "託管 Activepieces 的規格"
+---
+
+有關架構的更多資訊，請造訪我們的 [架構](../architecture/overview_zh_TW) 頁面。
+
+### 技術規格
+
+Activepieces 的設計偏向記憶體密集型而非 CPU 密集型。對於大多數場景，適度的實例即可滿足需求，但具體需求會根據特定使用案例而有所不同。
+
+| 組件          | 記憶體 (RAM) | CPU 核心 | 磁碟空間 | 備註 |
+| ------------- | ------------ | --------- | ---------- | ----- |
+| PostgreSQL    | 1 GB         | 1         | -          |       |
+| Redis         | 1 GB         | 1         | -          |       |
+| Activepieces  | 4 GB         | 1         | 30 GB      |       |
+
+<Tip>
+上述建議旨在滿足大多數使用案例的需求。
+</Tip>
+
+## 擴展因素
+
+### Redis
+
+Redis 只需要極少的擴展，因為它主要在處理過程中存儲作業 (jobs)。Activepieces 利用 BullMQ，能夠每秒處理大量的作業。
+
+### PostgreSQL
+
+<Tip>
+**擴展提示：** 由於文件存儲在資料庫中，您可以透過配置 S3 存儲來進行文件管理，從而減輕負載。
+</Tip>
+
+PostgreSQL 通常不是系統的瓶頸。
+
+### Activepieces 容器
+
+<Tip>
+**擴展提示：** Activepieces 容器是無狀態的，允許無縫的橫向擴展。
+</Tip>
+
+- `FLOW_WORKER_CONCURRENCY` 和 `SCHEDULED_WORKER_CONCURRENCY` 決定了流程和排程流程處理的併發作業數量。預設情況下，這些值分別設定為 20 和 10。
+
+## 預期效能
+
+Activepieces 確保不會遺失任何請求；所有請求都會排隊。在發生突發流量時，請求將稍後處理，這是可以接受的，因為大多數流程都是非同步的，且同步流程會被優先處理。
+
+很難預測確切的效能，因為流程可能大不相同。但執行流程不會拖慢速度，因為它的執行速度與一般的 JavaScript 一樣快。
+（注意：這適用於 `SANDBOX_CODE_ONLY` 和 `UNSANDBOXED` 執行模式，這是自託管設置中推薦並使用的模式。）
+
+使用此設置，您可以預期每月處理超過 **2000 萬次執行**。

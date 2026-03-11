@@ -61,26 +61,26 @@ Total files:      873
 | ./docs/build-pieces/building-pieces/create-trigger.mdx | Completed | [create-trigger_zh_TW.mdx](./docs/build-pieces/building-pieces/create-trigger_zh_TW.mdx) |
 | ./docs/build-pieces/building-pieces/piece-authentication.mdx | Completed | [piece-authentication_zh_TW.mdx](./docs/build-pieces/building-pieces/piece-authentication_zh_TW.mdx) |
 | ./docs/build-pieces/building-pieces/piece-definition.mdx | Completed | [piece-definition_zh_TW.mdx](./docs/build-pieces/building-pieces/piece-definition_zh_TW.mdx) |
-| ./docs/build-pieces/building-pieces/development-setup.mdx | Pending | |
-| ./docs/install/options/gcp.mdx | Pending | |
-| ./docs/install/options/aws.mdx | Pending | |
-| ./docs/install/options/helm.mdx | Pending | |
-| ./docs/install/options/easypanel.mdx | Pending | |
-| ./docs/install/options/docker.mdx | Pending | |
-| ./docs/install/options/railway.mdx | Pending | |
-| ./docs/install/options/docker-compose.mdx | Pending | |
-| ./docs/install/options/elestio.mdx | Pending | |
-| ./docs/install/configuration/overview.mdx | Pending | |
-| ./docs/install/configuration/breaking-changes.mdx | Pending | |
-| ./docs/install/configuration/telemetry.mdx | Pending | |
-| ./docs/install/configuration/environment-variables.mdx | Pending | |
-| ./docs/install/configuration/hardware.mdx | Pending | |
-| ./docs/install/overview.mdx | Pending | |
-| ./docs/install/troubleshooting/websocket-issues.mdx | Pending | |
-| ./docs/install/troubleshooting/reset-password.mdx | Pending | |
-| ./docs/install/troubleshooting/truncated-logs.mdx | Pending | |
-| ./docs/install/troubleshooting/bullboard.mdx | Pending | |
-| ./docs/install/architecture/workers.mdx | Pending | |
+| ./docs/build-pieces/building-pieces/development-setup.mdx | Completed | [development-setup_zh_TW.mdx](./docs/build-pieces/building-pieces/development-setup_zh_TW.mdx) |
+| ./docs/install/options/gcp.mdx | Completed | [gcp_zh_TW.mdx](./docs/install/options/gcp_zh_TW.mdx) |
+| ./docs/install/options/aws.mdx | Completed | [aws_zh_TW.mdx](./docs/install/options/aws_zh_TW.mdx) |
+| ./docs/install/options/helm.mdx | Completed | [helm_zh_TW.mdx](./docs/install/options/helm_zh_TW.mdx) |
+| ./docs/install/options/easypanel.mdx | Completed | [easypanel_zh_TW.mdx](./docs/install/options/easypanel_zh_TW.mdx) |
+| ./docs/install/options/docker.mdx | Completed | [docker_zh_TW.mdx](./docs/install/options/docker_zh_TW.mdx) |
+| ./docs/install/options/railway.mdx | Completed | [railway_zh_TW.mdx](./docs/install/options/railway_zh_TW.mdx) |
+| ./docs/install/options/docker-compose.mdx | Completed | [docker-compose_zh_TW.mdx](./docs/install/options/docker-compose_zh_TW.mdx) |
+| ./docs/install/options/elestio.mdx | Completed | [elestio_zh_TW.mdx](./docs/install/options/elestio_zh_TW.mdx) |
+| ./docs/install/configuration/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/install/configuration/overview_zh_TW.mdx) |
+| ./docs/install/configuration/breaking-changes.mdx | Completed | [breaking-changes_zh_TW.mdx](./docs/install/configuration/breaking-changes_zh_TW.mdx) |
+| ./docs/install/configuration/telemetry.mdx | Completed | [telemetry_zh_TW.mdx](./docs/install/configuration/telemetry_zh_TW.mdx) |
+| ./docs/install/configuration/environment-variables.mdx | Completed | [environment-variables_zh_TW.mdx](./docs/install/configuration/environment-variables_zh_TW.mdx) |
+| ./docs/install/configuration/hardware.mdx | Completed | [hardware_zh_TW.mdx](./docs/install/configuration/hardware_zh_TW.mdx) |
+| ./docs/install/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/install/overview_zh_TW.mdx) |
+| ./docs/install/troubleshooting/websocket-issues.mdx | Completed | [websocket-issues_zh_TW.mdx](./docs/install/troubleshooting/websocket-issues_zh_TW.mdx) |
+| ./docs/install/troubleshooting/reset-password.mdx | Completed | [reset-password_zh_TW.mdx](./docs/install/troubleshooting/reset-password_zh_TW.mdx) |
+| ./docs/install/troubleshooting/truncated-logs.mdx | Completed | [truncated-logs_zh_TW.mdx](./docs/install/troubleshooting/truncated-logs_zh_TW.mdx) |
+| ./docs/install/troubleshooting/bullboard.mdx | Completed | [bullboard_zh_TW.mdx](./docs/install/troubleshooting/bullboard_zh_TW.mdx) |
+| ./docs/install/architecture/workers.mdx | Completed | [workers_zh_TW.mdx](./docs/install/architecture/workers_zh_TW.mdx) |
 | ./docs/install/architecture/overview.mdx | Pending | |
 | ./docs/install/architecture/engine.mdx | Pending | |
 | ./docs/install/architecture/performance.mdx | Pending | |

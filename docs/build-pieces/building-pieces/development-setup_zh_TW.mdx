@@ -1,0 +1,48 @@
+---
+title: '開發設定'
+icon: 'circle-2'
+---
+
+## 前置需求
+
+- Node.js v18+
+- npm v9+
+
+## 指引
+
+1. 設定環境
+
+```bash
+node tools/setup-dev.js
+```
+
+2. 啟動環境
+
+此指令將會以 sqlite3 和記憶體內佇列 (in memory queue) 啟動 activepieces。
+
+```bash
+npm start
+```
+
+<Note>
+  預設情況下，開發設定僅會建構特定的組件 (pieces)。開啟 `packages/server/api/.env` 檔案並新增以逗號分隔的組件列表以供使用。
+
+更多細節，請參閱 [組件開發](/build-pieces/building-pieces/development-setup_zh_TW#pieces-development) 章節。
+
+</Note>
+
+3. 在網頁瀏覽器前往 **_localhost:4200_** 並使用以下資訊登入：
+
+電子郵件：`dev@ap.com`
+密碼：`12345678`
+
+
+## 組件開發
+
+當 [`AP_SYNC_MODE`](https://github.com/activepieces/activepieces/blob/main/packages/server/api/.env#L17) 設置為 `OFFICIAL_AUTO` 時，所有組件都會從雲端 API 自動載入，並在首次啟動時同步到資料庫。此過程可能需要幾秒鐘到幾分鐘，具體取決於您的網路連線狀況。
+
+對於本地開發，組件是從本地的 `dist` 資料夾載入，而非從資料庫載入。若要啟用此功能，請設置 [`AP_DEV_PIECES`](https://github.com/activepieces/activepieces/blob/main/packages/server/api/.env#L4) 環境變數，並提供以逗號分隔的組件列表。例如，若要開發 `google-sheets` 和 `cal-com`：
+
+```sh
+AP_DEV_PIECES=google-sheets,cal-com npm start
+```

@@ -1,0 +1,223 @@
+---
+title: "重大變更"
+description: "此列表顯示所有包含重大變更的版本以及如何升級。"
+icon: "hammer"
+---
+
+## 0.80.0
+### 發生了哪些變化？
+
+- 引入了新的 `UPDATE_SAMPLE_DATA_INFO` 流程操作，用於獨立處理樣本數據更新。
+- `UPDATE_ACTION` 和 `UPDATE_TRIGGER` 不再接受或應用對步驟設置中 `sampleData` 的更改。這些請求中發送的任何 `sampleData` 欄位都將被忽略，並保留現有的樣本數據。
+- 所有動作和觸發器都新增了一個必填的 `lastUpdatedDate` 欄位，由伺服器自動追蹤。在 `UPDATE_ACTION` 或 `UPDATE_TRIGGER` 請求中不接受此欄位。
+- 流程架構版本從 `17` 提升至 `18`。現有的流程將自動遷移。
+
+### 您需要採取行動嗎？
+
+- 如果您正在使用 API 透過 `UPDATE_ACTION` 或 `UPDATE_TRIGGER` 更新步驟上的樣本數據，請改用新的 `UPDATE_SAMPLE_DATA_INFO` 操作。
+
+## 0.78.1
+
+### 發生了哪些變化？
+- 平台 `Operator` 角色現在可以編輯所有專案。
+
+### 您需要採取行動嗎？
+- 僅當您想要限制 Operator 擁有每個專案的編輯權限時才需要。請根據需要審查您的 Operator 權限。
+
+## 0.78.0
+### 發生了哪些變化？
+
+- `usageCount` 欄位已從範本 API 回應和資料庫中移除 —— 它不再可用。
+- Todos 功能現在已被棄用，未來將不再支援。
+
+### 您需要採取行動嗎？
+
+- 如果您正在使用 Todos 功能，請更新您的流程，改用組件選擇器中審核 (approvals) 標籤下可用的新審核通道 (approvals channels)。
+
+
+## 0.77.0
+### 發生了哪些變化？
+
+- 對於嵌入方案 (Embed Plan) 用戶：點擊「新流程」按鈕時不再出現「使用範本」對話框。
+- `/flow-templates` API 端點已被移除，並由 `/templates` 取代。
+- 日誌大小配置已更改：`AP_MAX_FILE_SIZE_MB` 不再控制流程執行日誌。請改用 `AP_MAX_FLOW_RUN_LOG_SIZE_MB`。
+
+### 您需要採取行動嗎？
+
+- 如果您使用的是嵌入方案，請更新您的實作，將用戶導向至 `/templates` 頁面。
+- 查看新端點文件：[Templates API Schema](https://www.activepieces.com/docs/endpoints/templates/schema)。
+- 如果您為 `AP_MAX_FILE_SIZE_MB` 使用了自定義值，請確保也相應地設置 `AP_MAX_FLOW_RUN_LOG_SIZE_MB`。
+
+## 0.75.0
+
+### 發生了哪些變化？
+- 當您在構建器 (builder) 中導航到某次流程執行 (flow run) 時，URL 將更改為 `/runs`，嵌入客戶可能需要考慮這一點，以防他們設有僅允許用戶導航到 `/flows` 的路由守衛 (route guard)。
+- 在**開發模式**下，現在預設關閉載入組件翻譯。設置 `AP_LOAD_TRANSLATIONS_FOR_DEV_PIECES=true` 即可啟用。
+
+### 您需要採取行動嗎？
+- 檢查您的嵌入導航處理程序 (embedding navigation handler)，查看它是否會阻止用戶在構建器中查看執行記錄。
+- 如果您想在開發模式下載入組件翻譯，請在環境變數中設置 `AP_LOAD_TRANSLATIONS_FOR_DEV_PIECES=true`。
+
+## 0.74.0
+
+### 發生了哪些變化？
+- 用於開發和輕量級部署的預設嵌入式資料庫已從 **SQLite3** 更改為 [**PGLite**](https://pglite.dev/)（嵌入式 PostgreSQL）。
+- 環境變數 `AP_DB_TYPE=SQLITE3` 現已棄用，並由 `AP_DB_TYPE=PGLITE` 取代。
+- 現有的 SQLite 資料庫將在首次啟動時自動遷移到 PGLite。
+- 此版本的範本功能已損壞。遷移問題更改了範本 ID，導致 API 端點失效。這將在下一個補丁版本中修復。
+- 每個專案的 `aiCredits` 功能已被移除。在下一個版本中，它將被與 AI Gateway 的整合所取代。
+
+### 您需要採取行動嗎？
+- **如果您正在使用 `AP_DB_TYPE=SQLITE3`：** 請更新您的配置以改用 `AP_DB_TYPE=PGLITE`。
+- **如果您正在使用範本：** 請等待下一個修復範本 ID 的補丁版本。
+
+
+## 0.73.0
+
+### 發生了哪些變化？
+- MCP 的重大變更：[閱讀公告。](https://community.activepieces.com/t/mcp-update-easier-faster-and-more-secure/11177)
+- 如果您在平台管理中配置了 SMTP，現在已不再支援 —— 您需要使用 `AP_SMTP_` [環境變數。](https://www.activepieces.com/docs/install/configuration/environment-variables#environment-variables)
+
+### 您需要採取行動嗎？
+- 如果您目前正在使用 MCP，請查看連結的公告以獲取重要的遷移細節和升級指引。
+
+
+## 0.71.0
+
+### 發生了哪些變化？
+
+- 在獨立工作執行器 (workers) 設置中，現在它們可以訪問 Redis。
+- `AP_EXECUTION_MODE` 的 `SANDBOXED` 模式現已棄用，並由 `SANDBOX_PROCESS` 取代。
+- Code Copilot 已被棄用。它將在未來以更強大的形式重新推出。
+
+### 何時需要採取行動？
+
+- 如果您設有獨立的工作執行器，應確保工作執行器可以訪問 Redis。
+- 如果您正在使用 `AP_EXECUTION_MODE` 的 `SANDBOXED` 模式，應將其更換為 `SANDBOX_PROCESS`。
+
+## 0.70.0
+
+### 發生了哪些變化？
+- `AP_QUEUE_MODE` 現已棄用，並由 `AP_REDIS_TYPE` 取代。
+- 如果您正在使用 Sentinel Redis，應將 `AP_REDIS_TYPE` 添加為 `SENTINEL`。
+
+### 何時需要採取行動？
+
+- 如果您正在使用 `AP_QUEUE_MODE`，應將其更換為 `AP_REDIS_TYPE`。
+- 如果您正在使用 Sentinel Redis，應將 `AP_REDIS_TYPE` 添加為 `SENTINEL`。
+
+## 0.69.0
+
+### 發生了哪些變化？
+- `AP_FLOW_WORKER_CONCURRENCY` 和 `AP_SCHEDULED_WORKER_CONCURRENCY` 現已棄用，所有作業現在使用單一隊列，並由 `AP_WORKER_CONCURRENCY` 取代。
+
+### 何時需要採取行動？
+
+- 如果您正在使用 `AP_FLOW_WORKER_CONCURRENCY` 或 `AP_SCHEDULED_WORKER_CONCURRENCY`，應將其更換為 `AP_WORKER_CONCURRENCY`。
+
+## 0.66.0
+
+### 發生了哪些變化？
+
+- 如果您使用嵌入式 SDK，請升級至 0.6.0 版本。以前用於隱藏儀表板流程表上方導航欄的 `embedding.dashboard.hideSidebar` 現在依賴於 `embedding.dashboard.hideFlowsPageNavbar`。
+
+
+## 0.64.0
+
+### 發生了哪些變化？
+
+- MCP 管理已從嵌入式 SDK 中移除。
+
+
+## 0.63.0
+
+### 發生了哪些變化？
+
+- Replicate 提供商的文本模型已被移除。
+
+### 何時需要採取行動？
+
+- 如果您正在使用 Replicate 的其中一個文本模型，應將其更換為其他提供商的模型。
+
+## 0.46.0
+
+### 發生了哪些變化？
+
+- 組件中「屬性陣列」(Array of Properties) 輸入的 UI 已更新，特別影響了「動態值」(Dynamic Value) 切換開關功能。
+
+### 何時需要採取行動？
+
+- 此項更改無需採取任何行動。
+- 您已發布的流程將繼續運作，不受干擾。
+- 當編輯在「屬性陣列」輸入上使用「動態值」切換開關的現有流程時（例如「實用 AI」(Utility AI) 組件之「提取結構化數據」(Extract Structured Data) 動作中的 `files` 參數），最終用戶將需要重新映射數值。
+- 有關新 UI 實作的詳細資訊，請參閱此 [公告](https://community.activepieces.com/t/inline-items/8964)。
+
+## 0.38.6
+
+### 發生了哪些變化？
+
+- 工作執行器 (Workers) 不再依賴 `AP_FLOW_WORKER_CONCURRENCY` 和 `AP_SCHEDULED_WORKER_CONCURRENCY` 環境變數。這些值現在從應用伺服器獲取。
+
+### 何時需要採取行動？
+
+- 如果在工作執行器機器上設置了 `AP_CONTAINER_TYPE` 為 `WORKER`，且應用伺服器上的 `AP_SCHEDULED_WORKER_CONCURRENCY` 或 `AP_FLOW_WORKER_CONCURRENCY` 設置為零，工作執行器將停止處理隊列。要修復此問題，請查看 [Separate Worker from App](https://www.activepieces.com/docs/install/configuration/separate-workers) 文件，並設置 `AP_CONTAINER_TYPE` 以從應用伺服器獲取必要的值。如果工作執行器機器上未設置容器類型，則這不是一項重大變更。
+
+## 0.35.1
+
+### 發生了哪些變化？
+
+- 在 `AppConnection` 實體中，`name` 屬性已重命名為 `externalId`。
+- `AppConnection` 實體新增了 `displayName` 屬性。
+
+### 何時需要採取行動？
+- 如果您正在使用 connections API，應將 `name` 屬性更新為 `externalId` 並添加 `displayName` 屬性。
+
+## 0.35.0
+
+### 發生了哪些變化？
+
+- 所有分支 (branches) 現在都轉換為路由器 (routers)，且不支持降級。
+
+## 0.33.0
+
+### 發生了哪些變化？
+
+- 來自動作或觸發器的文件現在存儲在資料庫 / S3 中，以支援某些步驟的重試 (retries)，且動作產生的文件大小現在受 `AP_MAX_FILE_SIZE_MB` 限制。
+- 觸發器中的文件以前作為 Base64 編碼字串傳遞；現在作為資料庫 / S3 中的文件路徑傳遞。包含 0.29.0 或更早版本觸發器的已暫停流程 (paused flows) 將不再運作。
+
+### 何時需要採取行動？
+- 如果您在動作中處理大型文件，請考慮將 `AP_MAX_FILE_SIZE_MB` 增加到更高的值，並確保存儲系統（資料庫/S3）有足夠的容量來容納文件。
+
+
+## 0.30.0
+
+### 發生了哪些變化？
+
+- `AP_SANDBOX_RUN_TIME_SECONDS` 現已棄用，並由 `AP_FLOW_TIMEOUT_SECONDS` 取代。
+- `AP_CODE_SANDBOX_TYPE` 現已棄用，並由 `AP_EXECUTION_MODE` 中的新模式取代。
+
+### 何時需要採取行動？
+
+- 如果您將 `AP_CODE_SANDBOX_TYPE` 設置為 `V8_ISOLATE`，應切換 `AP_EXECUTION_MODE` 為 `SANDBOX_CODE_ONLY`。
+- 如果您使用 `AP_SANDBOX_RUN_TIME_SECONDS` 設置沙箱運行時間限制，應切換為 `AP_FLOW_TIMEOUT_SECONDS`。
+
+## 0.28.0
+
+### 發生了哪些變化？
+
+- **專案成員 (Project Members)：**
+    - `EXTERNAL_CUSTOMER` 角色已被棄用，並由 `OPERATOR` 角色取代。請查看權限頁面了解更多詳情。
+    - 所有待處理的邀請將被移除。
+    - 引入了用戶邀請實體 (User Invitation entity) 來發送邀請。您仍然可以使用專案成員 API 為用戶添加角色，但前提是用戶必須存在。如果您想發送電子郵件，請使用用戶邀請，之後在用戶接受並註冊帳戶後，將在專案成員中創建一條記錄。
+- **身分驗證 (Authentication)：**
+    - `SIGN_UP_ENABLED` 環境變數（允許用戶在不同平台/專案中註冊）已被移除。取而代之的是邀請用戶加入同一個平台/專案。所有舊用戶應能繼續正常使用。
+
+### 何時需要採取行動？
+
+- **專案成員 (Project Members)：**
+
+如果您在嵌入式 SDK 或使用 `EXTERNAL_CUSTOMER` 角色的創建專案成員 API，應開始改用 `OPERATOR` 角色。
+
+- **身分驗證 (Authentication)：**
+
+社群版 (community edition) 不再支援多平台/專案。技術上一切仍然存在，但由於身分驗證系統已更改，您必須使用 API 進行調整。如果您已經創建了用戶/平台，它們應繼續運作，無需採取行動。

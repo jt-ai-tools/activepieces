@@ -1,0 +1,71 @@
+---
+title: "佇列儀表板"
+icon: "gauge-high"
+---
+
+Bull Board 是一個允許您檢查排程問題和內部流程執行問題的工具。
+
+![BullBoard 概覽](https://raw.githubusercontent.com/felixmosh/bull-board/master/screenshots/overview.png)
+
+## 設定 BullBoard
+
+要在您的自行代管安裝中啟用 Bull Board UI：
+
+1. 定義以下環境變數：
+   - `AP_QUEUE_UI_ENABLED`：設定為 `true`
+   - `AP_QUEUE_UI_USERNAME`：設定您想要的使用者名稱
+   - `AP_QUEUE_UI_PASSWORD`：設定您想要的密碼
+
+2. 在 `/api/ui` 存取 UI
+
+
+<Tip>
+對於雲端安裝，請諮詢您的團隊以獲取說明如何存取 BullBoard 的內部文件。
+</Tip>
+
+## 佇列概覽
+
+我們有一個名為 `workerJobs` 的主要佇列，用於處理所有作業類型。每個作業都有一個 `jobType` 欄位來告訴我們它的用途：
+
+### 低優先級作業 (Low Priority Jobs)
+
+#### RENEW_WEBHOOK
+為具有過期機制的組件（例如 Google Sheets）更新 webhooks 頻道。
+
+#### EXECUTE_POLLING
+定期檢查外部服務是否有新數據。
+
+### 中優先級作業 (Medium Priority Jobs)
+
+#### EXECUTE_FLOW
+在流程被觸發時執行流程。
+
+#### EXECUTE_WEBHOOK
+處理啟動流程執行的傳入 webhook 請求。
+
+#### DELAYED_FLOW
+執行排定在稍後運行的流程，例如暫停的流程或延遲執行。
+
+### 高優先級作業 (High Priority Jobs)
+
+#### EXECUTE_PROPERTY
+為運行時需要動態屬性的組件載入屬性。
+
+#### EXECUTE_EXTRACT_PIECE_INFORMATION
+在組件安裝或設定時獲取組件資訊。
+
+#### EXECUTE_VALIDATION
+在運行前檢查流程設定、輸入或數據是否正確。
+
+#### EXECUTE_TRIGGER_HOOK
+在觸發器觸發之前或之後執行特殊邏輯。
+
+
+<Info>
+失敗的作業是不正常的，需要立即檢查以找出並修復原因。
+它們需要立即調查，因為它們代表因未知原因失敗的執行，這可能指示系統問題。
+</Info>
+
+<Tip>
+延遲的作業代表排定在未來執行的暫停流程、即將進行的輪詢作業迭代，或者是因為暫時失敗而重新嘗試的作業。它們表示發生了內部系統錯誤，且作業將根據退避策略 (backoff policy) 自動重試。
+</Tip>

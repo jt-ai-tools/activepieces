@@ -1,0 +1,29 @@
+---
+title: "GCP"
+description: ""
+---
+
+本文件介紹如何在 VM 執行個體 (VM Instance) 或 VM 執行個體群組 (VM Instance Group) 上部署 Activepieces，首先我們應該建立 VM 範本。
+
+## 建立 VM 範本
+
+首先選擇機器類型（例如 e2-medium）。
+
+配置完 VM 範本後，您可以點擊「部署容器 (Deploy Container)」並指定以下容器特定設定：
+
+- 映像檔 (Image)：activepieces/activepieces
+- 以特權容器執行 (Run as a privileged container)：true
+- 環境變數 (Environment Variables)：
+  - `AP_REDIS_TYPE`: MEMORY
+  - `AP_DB_TYPE`: SQLITE3
+  - `AP_FRONTEND_URL`: http://localhost:80
+  - `AP_EXECUTION_MODE`: SANDBOX_PROCESS
+- 防火牆 (Firewall)：允許 HTTP 流量（僅供測試之用）
+
+輸入這些詳細資訊後，點擊「部署 (Deploy)」按鈕，並耐心等待容器部署程序完成。\
+
+部署成功後，您可以透過存取 GCP 上 VM 的外部 IP 地址來進入 ActivePieces 應用程式。
+
+## 生產環境部署
+
+請造訪 [ActivePieces](/install/configuration/environment-variables_zh_TW) 以了解更多關於如何自定義應用程式的詳細資訊。

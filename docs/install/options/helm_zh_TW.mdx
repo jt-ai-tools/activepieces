@@ -1,0 +1,210 @@
+---
+title: 'Helm'
+description: '使用 Helm 在 Kubernetes 上部署 Activepieces'
+---
+
+這篇指南將引導您使用官方 Helm chart 在 Kubernetes 上部署 Activepieces。
+
+## 先決條件
+
+- Kubernetes 叢集 (v1.19+)
+- 已安裝 Helm 3.x
+- 已設定可存取叢集的 kubectl
+
+## 使用外部 PostgreSQL 與 Redis
+
+此 Helm chart 支援使用外部 PostgreSQL 與 Redis 服務，而非部署 Bitnami 的子 chart (subcharts)。
+
+### 使用外部 PostgreSQL
+
+要使用外部 PostgreSQL 實例：
+
+```yaml
+postgresql:
+  enabled: false  # 停用 Bitnami PostgreSQL 子 chart
+  host: "your-postgres-host.example.com"
+  port: 5432
+  useSSL: true  # 如果需要請啟用 SSL
+  auth:
+    database: "activepieces"
+    username: "postgres"
+    password: "your-password"
+    # 或者使用外部 secret 參照：
+    # externalSecret:
+    #   name: "postgresql-credentials"
+    #   key: "password"
+```
+
+或者，您可以使用連線 URL：
+
+```yaml
+postgresql:
+  enabled: false
+  url: "postgresql://user:password@host:5432/database?sslmode=require"
+```
+
+### 使用外部 Redis
+
+要使用外部 Redis 實例：
+
+```yaml
+redis:
+  enabled: false  # 停用 Bitnami Redis 子 chart
+  host: "your-redis-host.example.com"
+  port: 6379
+  useSSL: false  # 如果需要請啟用 SSL
+  auth:
+    enabled: true
+    password: "your-password"
+    # 或者使用外部 secret 參照：
+    # externalSecret:
+    #   name: "redis-credentials"
+    #   key: "password"
+```
+
+或者，您可以使用連線 URL：
+
+```yaml
+redis:
+  enabled: false
+  url: "redis://:password@host:6379/0"
+```
+
+### 外部 Secret 參照
+
+為了更好的安全性，您可以從現有的 Kubernetes secret 中參照密碼（在使用 External Secrets Operator 或 Sealed Secrets 時非常有用）：
+
+```yaml
+postgresql:
+  enabled: false
+  host: "your-postgres-host.example.com"
+  auth:
+    externalSecret:
+      name: "postgresql-credentials"
+      key: "password"
+
+redis:
+  enabled: false
+  host: "your-redis-host.example.com"
+  auth:
+    enabled: true
+    externalSecret:
+      name: "redis-credentials"
+      key: "password"
+```
+
+## 快速入門
+
+### 1. 複製儲存庫
+
+```bash
+git clone https://github.com/activepieces/activepieces.git
+cd activepieces
+```
+
+### 2. 安裝依賴項目
+
+```bash
+helm dependency update
+```
+
+### 3. 建立 Values 檔案
+
+建立一個包含您配置的 `my-values.yaml` 檔案。您可以參考 [範例 values 檔案](https://github.com/activepieces/activepieces/blob/main/deploy/activepieces-helm/values.yaml)。
+Helm chart 對於必要值都有合理的預設值，同時將選填值留空，但您應該針對正式環境自定義這些核心值。
+
+
+### 4. 安裝 Activepieces
+
+```bash
+helm install activepieces deploy/activepieces-helm -f my-values.yaml
+```
+
+### 5. 驗證安裝
+
+```bash
+# 檢查部署狀態
+kubectl get pods
+kubectl get services
+
+```
+
+## 正式環境檢查清單
+
+- [ ] 將 `frontendUrl` 設定為您的實際網域
+- [ ] 為 PostgreSQL 和 Redis 設定強密碼（或保留自動產生的密碼）
+- [ ] 設定正確的 Ingress 與 TLS
+- [ ] 設定適當的資源限制 (resource limits)
+- [ ] 設定持久化儲存 (persistent storage)
+- [ ] 根據您的安全性需求選擇適當的 [執行模式](/install/architecture/workers_zh_TW)
+- [ ] 檢視 [環境變數](/install/configuration/environment-variables_zh_TW) 以進行進階配置
+- [ ] 考慮使用 [獨立 workers](/install/guides/separate-workers_zh_TW) 設定以獲得更好的可用性與安全性
+
+## 升級
+
+```bash
+# 更新依賴項目
+helm dependency update
+
+# 升級版本
+helm upgrade activepieces deploy/activepieces-helm -f my-values.yaml
+
+# 檢查升級狀態
+kubectl rollout status deployment/activepieces
+```
+
+## 故障排除
+
+### 常見問題
+
+1. **Pod 無法啟動**：使用 `kubectl logs deployment/activepieces` 檢查日誌
+2. **資料庫連線**：驗證 PostgreSQL 憑證與連線能力
+3. **前端 URL**：確保 `frontendUrl` 可以從外部存取
+4. **Webhook 無法運作**：檢查 Ingress 配置與 DNS 解析
+
+### 常用指令
+
+```bash
+# 查看日誌
+kubectl logs deployment/activepieces -f
+
+# 測試用的連接埠轉發 (Port forward)
+kubectl port-forward svc/activepieces 4200:80 --namespace default
+
+# 獲取所有資源
+kubectl get all --namespace default
+```
+
+## 版本 (Editions)
+
+Activepieces 支援三種版本：
+
+- **`ce` (社群版)**：具有所有核心功能的開源版本（預設）
+- **`ee` (企業版)**：具有 SSO、RBAC 和稽核日誌等進階功能的自託管版本
+- **`cloud`**：用於 Activepieces Cloud 部署
+
+在您的 values 檔案中設定版本：
+
+```yaml
+activepieces:
+  edition: "ce"  # 企業版請設定為 "ee"
+```
+
+關於企業版功能與授權，請造訪 [activepieces.com](https://www.activepieces.com/docs/admin-console/overview)。
+
+## 環境變數
+
+如需完整的配置選項清單，請參閱 [環境變數](/install/configuration/environment-variables_zh_TW) 文件。大多數環境變數都可以透過 Helm values 檔案中的 `activepieces` 區段進行配置。
+
+## 執行模式
+
+了解執行模式對於安全性與效能至關重要。請參閱 [Workers 與沙盒](/install/architecture/workers_zh_TW) 指南，為您的部署選擇正確的模式。
+
+## 卸載
+
+```bash
+helm uninstall activepieces
+
+# 清理持久化磁碟卷 (PVC) (選填)
+kubectl delete pvc -l app.kubernetes.io/instance=activepieces
+```

@@ -1,0 +1,65 @@
+---
+title: "部署檢查清單"
+description: "部署 Activepieces 後應遵循的檢查清單"
+icon: "list"
+---
+
+<Info>
+本教學假設您已按照 [安裝總覽](../overview_zh_TW) 中列出的其中一種安裝方法完成了快速入門指南。 
+</Info>
+
+在此章節中，我們將逐步執行使用其中一種安裝方法後的檢查清單，並確保您的部署已準備好投入生產環境。
+
+<AccordionGroup>
+<Accordion title="決定沙箱模式" icon="code">
+
+您應該根據您的使用案例以及是否為多租戶 (multi-tenant) 來決定部署的沙箱模式。以下是簡化的決定方式：
+
+<Tip>
+**小提示 #1**：對於多租戶設置，請使用 V8/Code 沙箱 (Sandboxing)。
+
+它是安全的，且在 Kubernetes 中不需要具備權限的 (privileged) Docker 訪問。
+通常不允許使用具備權限的 Docker 以防止 root 權限提升威脅。
+</Tip>
+
+<Tip>
+**小提示 #2**：對於單租戶設置，請不使用沙箱 (No Sandboxing)。它速度更快，且不需要具備權限的 Docker 訪問。
+</Tip>
+
+<Snippet file="execution-mode_zh_TW.mdx" />
+
+更多資訊請參考 [沙箱與 Worker](../architecture/workers_zh_TW#sandboxing)
+</Accordion>
+<Accordion title="企業版 (選填)" icon="building">
+<Tip>
+關於自託管企業版的授權諮詢，請聯繫 `sales@activepieces.com`，因為其程式碼和 Docker 映像檔不包含在 MIT 授權範圍內。
+</Tip>
+
+<Note>您可以從應用程式內部或雲端填寫表單來申請試用金鑰。或者，您可以透過 [https://www.activepieces.com/sales](https://www.activepieces.com/sales) 聯繫銷售部門。<br></br>請注意，當您的試用到期時，所有企業版[功能](https://www.activepieces.com/pricing)將會關閉，這意味著除平台管理員外的任何使用者都將被停用，且您的私有 Piece 將被刪除，這可能導致使用這些 Piece 的流程 (flows) 執行失敗。</Note>
+
+<Warning>
+在 0.73.0 版本之前，您無法直接從 CE 切換到 EE。我們建議先升級到相同版本的 0.73.0，然後再切換 `AP_EDITION`。
+</Warning>
+
+<Warning>
+企業版必須使用 `PostgreSQL` 作為資料庫後端，並使用 `Redis` 作為佇列系統 (Queue System)。
+</Warning>
+
+## 安裝
+
+1. 將 `AP_EDITION` 環境變數設置為 `ee`。
+2. 將 `AP_EXECUTION_MODE` 設置為 `UNSANDBOXED` 以外的任何值，請查看上述章節。
+3. 執行實例後，前往 **Platform Admin -> Setup -> License Keys** 啟用授權金鑰。
+
+![啟用授權金鑰設定](/resources/screenshots/activation-license-key-settings.png)
+
+</Accordion>
+<Accordion title="設置 HTTPS" icon="lock">
+強烈建議設置 HTTPS，因為許多服務要求 Webhook URL 必須是安全的 (HTTPS)。這有助於防止潛在的錯誤。
+
+要設置 SSL，您可以使用任何反向代理。如需逐步指南，請查看我們使用 [Nginx](../guides/setup-ssl_zh_TW) 的範例。
+</Accordion>
+<Accordion title="故障排除 (選填)" icon="wrench">
+    如果您遇到任何問題，請查看我們的 [故障排除](../troubleshooting/websocket-issues_zh_TW) 指南。
+</Accordion>
+</AccordionGroup>

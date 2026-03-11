@@ -98,3 +98,53 @@ Found 856 files to translate.
 [✓] Completed: ./docs/build-pieces/building-pieces/create-action_zh_TW.mdx
 [✓] Completed: ./docs/build-pieces/building-pieces/create-trigger_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 9 (5 files) ---
+[+] Translating: ./docs/build-pieces/building-pieces/development-setup.mdx
+[+] Translating: ./docs/install/options/gcp.mdx
+[+] Translating: ./docs/install/options/aws.mdx
+[+] Translating: ./docs/install/options/helm.mdx
+[+] Translating: ./docs/install/options/easypanel.mdx
+[✓] Completed: ./docs/install/options/easypanel_zh_TW.mdx
+[✓] Completed: ./docs/install/options/gcp_zh_TW.mdx
+[✓] Completed: ./docs/build-pieces/building-pieces/development-setup_zh_TW.mdx
+[✓] Completed: ./docs/install/options/aws_zh_TW.mdx
+[✓] Completed: ./docs/install/options/helm_zh_TW.mdx
+
+--- Processing chunk 10 (5 files) ---
+[+] Translating: ./docs/install/options/docker.mdx
+[+] Translating: ./docs/install/options/railway.mdx
+[+] Translating: ./docs/install/options/docker-compose.mdx
+[+] Translating: ./docs/install/options/elestio.mdx
+[+] Translating: ./docs/install/configuration/overview.mdx
+[✓] Completed: ./docs/install/options/elestio_zh_TW.mdx
+[✓] Completed: ./docs/install/options/docker-compose_zh_TW.mdx
+[✓] Completed: ./docs/install/configuration/overview_zh_TW.mdx
+[✓] Completed: ./docs/install/options/railway_zh_TW.mdx
+[✓] Completed: ./docs/install/options/docker_zh_TW.mdx
+
+--- Processing chunk 11 (5 files) ---
+[+] Translating: ./docs/install/configuration/breaking-changes.mdx
+[+] Translating: ./docs/install/configuration/telemetry.mdx
+[+] Translating: ./docs/install/configuration/environment-variables.mdx
+[+] Translating: ./docs/install/configuration/hardware.mdx
+[+] Translating: ./docs/install/overview.mdx
+[✓] Completed: ./docs/install/configuration/hardware_zh_TW.mdx
+[✓] Completed: ./docs/install/configuration/telemetry_zh_TW.mdx
+[✓] Completed: ./docs/install/configuration/breaking-changes_zh_TW.mdx
+[✓] Completed: ./docs/install/overview_zh_TW.mdx
+[✓] Completed: ./docs/install/configuration/environment-variables_zh_TW.mdx
+
+--- Processing chunk 12 (5 files) ---
+[+] Translating: ./docs/install/troubleshooting/websocket-issues.mdx
+[+] Translating: ./docs/install/troubleshooting/reset-password.mdx
+[+] Translating: ./docs/install/troubleshooting/truncated-logs.mdx
+[+] Translating: ./docs/install/troubleshooting/bullboard.mdx
+[+] Translating: ./docs/install/architecture/workers.mdx
+[✓] Completed: ./docs/install/troubleshooting/truncated-logs_zh_TW.mdx
+[✓] Completed: ./docs/install/troubleshooting/websocket-issues_zh_TW.mdx
+[✓] Completed: ./docs/install/troubleshooting/bullboard_zh_TW.mdx
+[✓] Completed: ./docs/install/troubleshooting/reset-password_zh_TW.mdx
+[✓] Completed: ./docs/install/architecture/workers_zh_TW.mdx
+[*] Committing progress...

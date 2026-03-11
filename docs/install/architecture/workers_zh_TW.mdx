@@ -1,0 +1,127 @@
+---
+title: "Workers 與沙箱機制"
+icon: "gears"
+---
+
+此組件負責從應用程式中輪詢（polling）任務、準備沙箱，並透過引擎執行這些任務。
+
+## 任務 (Jobs)
+
+共有三種類型的任務：
+
+- **定期任務 (Recurring Jobs)**：針對啟動中的流程進行輪詢/排程觸發的任務。
+- **流程任務 (Flow Jobs)**：目前正在執行的流程。
+- **Webhook 任務 (Webhook Jobs)**：仍需攝取（ingested）的 Webhook，因為第三方 Webhook 可能對應到多個流程或需要進行映射。
+
+<Tip>
+本文件不會討論引擎的運作方式，僅說明其接收任務並產生輸出。請參閱 [engine](./engine_zh_TW) 以獲取更多資訊。
+</Tip>
+
+## 沙箱架構 (Sandbox Architecture)
+
+沙箱是一個獨立的套件 (`@activepieces/sandbox`)，用於管理引擎的隔離執行環境。它由以下組件組成：
+
+- **沙箱池 (Sandbox Pool)**：根據 `AP_WORKER_CONCURRENCY` 管理沙箱實例池。沙箱可以在執行之間重複使用（在受信任模式下），或在每次使用後關閉（以實現完全隔離）。
+- **沙箱行程 (Sandbox Process)**：每個沙箱都會啟動一個子行程。行程類型取決於執行模式 —— 可以是簡單的 `fork()`，或是用於內核級隔離的 `isolate` 執行檔。
+- **WebSocket 伺服器**：一個 Socket.IO 伺服器（運行於埠號 12345），處理 Worker 與在每個沙箱內運行的引擎之間的雙向通訊。引擎使用其 `sandboxId` 連線，並透過 WebSocket 事件交換操作和結果。
+
+### 執行流程
+
+<Steps>
+  <Step title="分配沙箱">
+    Worker 從池中分配一個沙箱。如果沙箱是可重複使用的且已在運行中，則直接重用。如果沙箱版本已過時（例如：開發中的組件已更改），則會重新啟動。
+  </Step>
+  <Step title="啟動沙箱行程">
+    沙箱啟動一個子行程（視執行模式而定，透過 `fork()` 或 `isolate` 執行檔）。子行程啟動引擎並透過 WebSocket 連回 Worker。
+  </Step>
+  <Step title="執行操作">
+    Worker 透過 WebSocket 發送引擎操作（例如：執行流程、執行觸發器）。引擎處理該操作並傳回結果，以及 stdout/stderr 輸出。
+  </Step>
+  <Step title="釋放沙箱">
+    執行完成（或逾時）後，沙箱將釋放回池中。在不可重複使用的模式下，沙箱行程在釋放前會先關閉。
+  </Step>
+</Steps>
+
+## 執行模式 (Execution Modes)
+
+Activepieces 中的沙箱是指引擎執行流程的環境。共有四種類型的沙箱，各有不同的權衡：
+
+<Snippet file="execution-mode_zh_TW.mdx" />
+
+### 無沙箱 (No Sandboxing) 與 V8 沙箱 (V8 Sandboxing)
+
+這兩種模式的區別在於程式碼組件（code pieces）的執行。對於 V8 沙箱，我們使用 [isolated-vm](https://www.npmjs.com/package/isolated-vm)，它依賴 V8 隔離來隔離程式碼組件。
+
+在兩種模式下，沙箱都使用帶有記憶體限制的簡單 Node.js `fork()` 來啟動引擎。引擎行程保持熱啟動（warm）並透過 WebSocket 連接，隨時執行送達的操作。
+
+<Steps>
+  <Step title="準備程式碼組件">
+    如果程式碼不存在，將使用 bun 進行建置，並在可能的情況下準備必要的 npm 套件。
+  </Step>
+  <Step title="安裝組件 (Pieces)">
+    組件是 npm 套件，我們使用 `bun` 來安裝這些組件。
+  </Step>
+  <Step title="執行">
+    沙箱從池中分配一個行程。引擎保持運行並透過 WebSocket 連接。每個沙箱一次執行一個引擎操作，並在完成後傳回結果。
+  </Step>
+</Steps>
+
+
+#### 安全性
+在自託管（self-hosted）環境中，所有組件安裝都由**平台管理員**完成。假設組件是安全的，因為它們對機器具有完整存取權限。
+
+終端用戶提供的程式碼組件使用 V8 進行隔離，這將用戶限制在瀏覽器 JavaScript 環境中，而非帶有 npm 的 Node.js。
+
+#### 效能
+流程執行的速度與 JavaScript 一樣快，儘管在從隊列輪詢以及第一次執行流程時準備檔案會產生一些開銷。
+
+#### 基準測試 (Benchmark)
+
+待定
+
+### 核心命名空間（Kernel Namespaces）沙箱模式
+
+在此模式下，沙箱使用 `isolate` 執行檔，在具有完整檔案系統、記憶體和 CPU 隔離的核心命名空間內運行引擎。
+
+#### 準備資料夾
+
+每個流程都會有一個包含執行流程所需一切內容的資料夾，這意味著包含 **引擎 (engine)**、**程式碼組件 (code pieces)** 和 **npm 套件**。
+
+<Steps>
+  <Step title="準備程式碼組件">
+    如果程式碼不存在，將進行編譯，並在可能的情況下準備必要的 npm 套件。
+  </Step>
+  <Step title="安裝組件">
+    組件是 npm 套件。如果它們不存在，我們使用 `bun` 來安裝。
+  </Step>
+</Steps>
+
+#### 使用沙箱執行流程
+
+沙箱使用 `isolate` 執行檔來建立一個具有自己命名空間的隔離環境。準備好的資料夾會作為唯讀目錄掛載到沙箱內部：
+
+- `/root` — 引擎和通用快取
+- `/codes` — 流程程式碼產物
+- `/etc` — 系統配置
+- `/node_modules`, `/pieces` — 自定義組件（用於專用 Worker）
+
+調用 `isolate` 執行檔時會帶上命名空間隔離、網路共享和資源限制的標記（flags）：
+```bash
+isolate --dir=/root=<cache> --dir=/codes=<code-cache> --share-net --box-id=<id> --processes --run /usr/bin/node /root/main.js
+```
+
+沙箱內的引擎會透過 WebSocket 連回 Worker 以接收操作並傳送結果。
+
+#### 安全性
+
+流程執行被隔離在自己的命名空間中，這意味著組件在具有檔案系統限制的獨立行程中運行。用戶可以安全地執行 bash 腳本並使用檔案系統，因為它是受限的且在執行後會被移除。在此模式下，用戶可以在其程式碼組件中使用任何 **NPM 套件**。
+
+#### 效能
+
+此模式較**慢**且 **CPU 密集**。其原因在於 Node.js 的**冷啟動（cold boot）**，因為每次流程執行都需要一個新的 **Node.js** 行程。Node.js 行程消耗大量資源，且需要一些時間來編譯程式碼並開始執行。
+
+
+#### 基準測試
+
+
+待定

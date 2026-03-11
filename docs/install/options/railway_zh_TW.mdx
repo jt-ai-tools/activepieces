@@ -1,0 +1,107 @@
+---
+title: "Railway"
+description: "使用 Railway 的一鍵部署範本，在幾分鐘內將 Activepieces 部署到雲端"
+---
+
+Railway 透過單一、可擴充且易於使用的平台，簡化了從伺服器到可觀測性（observability）的基礎設施堆疊。透過 Railway 的一鍵部署，您可以在幾分鐘內啟動並執行 Activepieces，無需管理伺服器、資料庫或基礎設施。
+
+<a href="https://railway.com/deploy/kGEO1J" target="_blank">
+  <img alt="Deploy on Railway" src="https://railway.app/button.svg" />
+</a>
+
+## 部署內容
+
+Railway 範本部署的 Activepieces 包含以下組件：
+
+- **Activepieces 應用程式**：執行來自 [Docker Hub](https://hub.docker.com/r/activepieces/activepieces) 最新版本的主要 Activepieces 容器
+- **PostgreSQL 資料庫**：用於儲存流程、執行記錄和應用程式資料的託管式 PostgreSQL 資料庫
+- **Redis 快取**：用於任務隊列和快取的 Redis 實例（選填，可使用記憶體內快取）
+- **自動 SSL**：Railway 提供帶有 SSL 憑證的自動 HTTPS
+- **自定義網域支援**：透過 Railway 的控制台配置您自己的網域
+
+## 先決條件
+
+在部署之前，請確保您擁有：
+
+- 一個 [Railway 帳戶](https://railway.app/)（提供免費方案）
+- 對環境變數的基本瞭解（選填，用於進階配置）
+
+## 快速開始
+
+1. **點擊上方的部署按鈕**以開啟 Railway 的部署介面
+2. **為進階用途配置環境變數**（請參閱下方的 [配置](#配置)）
+3. **部署** - Railway 將自動配置資源並啟動您的實例
+
+部署完成後，Railway 將為您提供一個可以存取 Activepieces 實例的公開網址。
+
+## 配置
+
+### 環境變數
+
+Railway 允許您透過環境變數配置 Activepieces。您可以在 Railway 控制台的專案 **Variables** 標籤中設定這些變數。
+
+#### 執行模式
+
+配置執行模式以平衡安全性和效能：
+有關每種模式的詳細資訊，請參閱 [Workers & Sandboxing](/install/architecture/workers_zh_TW) 文件。
+
+#### 其他重要變數
+
+- `AP_TELEMETRY_ENABLED`：啟用/停用遙測（預設值：`false`）
+
+有關所有可用環境變數的完整列表，請參閱 [環境變數](/install/configuration/environment-variables_zh_TW) 文件。
+
+## 自定義網域設定
+
+Railway 支援具有自動 SSL 的自定義網域：
+
+1. 前往您的 Railway 專案控制台
+2. 導覽至 **Settings** → **Networking**
+3. 新增您的自定義網域
+4. 更新 `AP_FRONTEND_URL` 環境變數以匹配您的自定義網域
+5. Railway 將自動核發 SSL 憑證
+
+有關 SSL 配置的更多詳細資訊，請參閱 [設定 SSL](/install/guides/setup-ssl_zh_TW) 指南。
+
+## 生產環境考量因素
+
+在部署到生產環境之前，請查看以下重要事項：
+
+- [ ] 查看 [安全實踐](/admin-guide/security/practices_zh_TW) 文件
+- [ ] 根據您的工作負載和硬體資源配置 `AP_WORKER_CONCURRENCY`
+- [ ] 確保在 Railway 中配置了 PostgreSQL 備份
+- [ ] 考慮 Railway 中的資料庫擴充選項
+
+## 可觀測性
+
+Railway 為 Activepieces 提供內建的可觀測性功能。您可以在 Railway 控制台中查看日誌和指標。
+
+## 升級
+
+若要在 Railway 上升級到新版本的 Activepieces：
+
+1. 前往您的 Railway 專案控制台
+2. 導覽至 **Deployments**
+3. 點擊最新部署上的 **Redeploy**
+4. Railway 將拉取最新的 Activepieces 映像檔並重新部署
+
+<Warning>
+在升級之前，請查看 [重大變更](/install/configuration/breaking-changes_zh_TW) 文件，以確保與您的流程和配置相容。
+</Warning>
+
+## 後續步驟
+
+在 Railway 上部署 Activepieces 之後：
+
+1. **存取您的實例** 使用 Railway 提供的網址
+2. **建立您的第一個流程** - 請參閱 [建立流程](/flows/building-flows_zh_TW)
+3. **配置 Webhook** - 請參閱 [設定應用程式 Webhook](/install/guides/setup-app-webhooks_zh_TW)
+4. **探索 Piece** - 在 Piece 庫中瀏覽可用的整合
+
+## 其他資源
+
+- [疑難排解](/install/troubleshooting/websocket-issues_zh_TW)：疑難排解指南
+- [配置指南](/install/configuration/overview_zh_TW)：完整的配置文件
+- [環境變數](/install/configuration/environment-variables_zh_TW)：配置選項的完整列表
+- [架構概述](/install/architecture/overview_zh_TW)：瞭解 Activepieces 架構
+- [Railway 文件](https://docs.railway.app/)：官方 Railway 平台文件

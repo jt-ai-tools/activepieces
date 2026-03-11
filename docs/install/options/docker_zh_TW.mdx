@@ -1,0 +1,86 @@
+---
+title: "Docker"
+description: "使用 PGLite 和 Memory Queue 的單一 Docker 映像檔部署"
+icon: "docker"
+---
+
+<Warning>
+此設定僅供個人使用或測試。它運行在 [PGLite](https://pglite.dev/) (嵌入式 PostgreSQL) 和記憶體內 (in-memory) Redis 隊列上，僅支援單機上的單個實例。對於正式環境或多實例設定，您必須使用包含 PostgreSQL 和 Redis 的 Docker Compose。您將無法直接從社群版 (Community Edition) 升級到企業版 (Enterprise)，因為企業版不支援 PGLite。
+</Warning>
+
+為了快速啟動並執行 Activepieces，我們將使用 Activepieces Docker 映像檔。請按照以下步驟操作：
+
+## 先決條件
+
+您需要在機器上安裝 [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) 和 [Docker](https://docs.docker.com/get-docker/)，以便透過 Docker Compose 設定 Activepieces。
+
+## 安裝
+
+### 拉取映像檔並執行 Docker 容器
+
+使用以下命令拉取 Activepieces Docker 映像檔並執行容器：
+
+```bash
+docker run -d -p 8080:80 -v ~/.activepieces:/root/.activepieces -e AP_REDIS_TYPE=MEMORY -e AP_DB_TYPE=PGLITE -e AP_FRONTEND_URL="http://localhost:8080" activepieces/activepieces:latest
+```
+
+### 設定 Webhook URL（對觸發器很重要，如果您有公共 IP 則為選填）
+
+**注意：** 預設情況下，Activepieces 會嘗試將您的公共 IP 用於 Webhook。如果您是在個人機器上自行託管 (self-hosting)，則必須設定前端 URL，以便可以從網際網路存取 Webhook。
+
+**選填：** 在 localhost 上公開 Webhook URL 最簡單的方法是使用像 ngrok 這樣的服務。但是，它不適合正式環境使用。
+
+1. 安裝 ngrok
+2. 執行以下命令：
+```bash
+ngrok http 8080
+```
+3. 替換上述命令列中的 `AP_FRONTEND_URL` 環境變數。
+
+![Ngrok](../../resources/screenshots/docker-ngrok.png)
+
+
+
+## 升級 
+
+請按照以下步驟操作：
+
+### 步驟 1：備份您的資料（建議）
+
+在繼續升級之前，備份您的 Activepieces 資料始終是一個好習慣，以避免在更新過程中發生任何潛在的資料遺失。
+
+1. **停止目前的 Activepieces 容器：** 如果您的 Activepieces 容器正在運行，請使用以下命令停止它：
+   ```bash
+   docker stop activepieces_container_name
+   ```
+
+2. **備份 Activepieces 資料目錄：** 預設情況下，Activepieces 資料儲存在主機上的 `~/.activepieces` 目錄中。使用以下命令將此目錄備份到安全位置：
+   ```bash
+   cp -r ~/.activepieces ~/.activepieces_backup
+   ```
+
+### 步驟 2：更新 Docker 映像檔
+
+1. **拉取最新的 Activepieces Docker 映像檔：** 執行以下命令從 Docker Hub 拉取最新的 Activepieces Docker 映像檔：
+   ```bash
+   docker pull activepieces/activepieces:latest
+   ```
+
+### 步驟 3：移除現有的 Activepieces 容器
+
+1. **停止並移除目前的 Activepieces 容器：** 如果您的 Activepieces 容器正在運行，請使用以下命令停止並移除它：
+   ```bash
+   docker stop activepieces_container_name
+   docker rm activepieces_container_name
+   ```
+
+### 步驟 4：執行更新後的 Activepieces 容器
+
+現在，使用與初始設定時相同的命令，搭配最新的映像檔來執行更新後的 Activepieces 容器。請務必將 `activepieces_container_name` 替換為新容器所需的名稱。
+
+```bash
+docker run -d -p 8080:80 -v ~/.activepieces:/root/.activepieces -e AP_REDIS_TYPE=MEMORY -e AP_DB_TYPE=PGLITE -e AP_FRONTEND_URL="http://localhost:8080" --name activepieces_container_name activepieces/activepieces:latest
+```
+
+
+恭喜！您已成功升級 Activepieces Docker 部署

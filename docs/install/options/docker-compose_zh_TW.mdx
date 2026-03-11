@@ -1,0 +1,119 @@
+---
+title: "Docker Compose"
+description: ""
+icon: "book"
+---
+
+若要快速啟動並執行 Activepieces，我們將使用 Activepieces 的 Docker 映像檔。請按照以下步驟操作：
+
+## 先決條件
+
+您需要在電腦上安裝 [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) 和 [Docker](https://docs.docker.com/get-docker/)，才能透過 Docker Compose 設定 Activepieces。
+
+## 安裝
+
+**1. 複製 Activepieces 儲存庫。**
+
+使用命令列複製 Activepieces 儲存庫：
+
+```bash
+git clone https://github.com/activepieces/activepieces.git
+```
+
+**2. 進入儲存庫資料夾。**
+
+```bash
+cd activepieces
+```
+
+**3. 產生環境變數**
+
+從命令提示字元 / 終端機執行以下命令：
+
+```bash
+sh tools/deploy.sh
+```
+
+<Tip>
+如果上述方法都不起作用，您可以將根目錄中的 .env.example 檔案重新命名為 .env，並在檔案中填寫必要資訊。
+</Tip>
+
+**4. 執行 Activepieces。**
+
+<Warning>
+請注意，「docker-compose」（帶連字號）是 Docker Compose 的舊版本，將無法正常運作。我們強烈建議從 [此處](https://docs.docker.com/compose/install/) 下載並安裝第 2 版以使用 Docker Compose。
+</Warning>
+
+```bash
+docker compose -p activepieces up
+```
+
+## 4. 設定 Webhook URL (對於觸發器很重要，如果您有公用 IP 則為選用)
+
+**注意：** 預設情況下，Activepieces 會嘗試將您的公用 IP 用於 Webhook。如果您是在個人機器上自行代管，則必須設定前端 URL，以便可以從網際網路存取 Webhook。
+
+**選用：** 在 localhost 上公開 Webhook URL 最簡單的方法是使用像 ngrok 這樣的服務。但是，它不適合在生產環境中使用。
+
+1. 安裝 ngrok
+2. 執行以下命令：
+```bash
+ngrok http 8080
+```
+3. 將 `.env` 中的 `AP_FRONTEND_URL` 環境變數替換為 ngrok 的網址。
+
+![Ngrok](../../resources/screenshots/docker-ngrok.png)
+
+<Warning>
+在部署到正式環境時，請確保更新資料庫憑據並正確設定環境變數。
+
+查看 [設定指南](/install/configuration/environment-variables_zh_TW) 以進行任何必要的調整。
+</Warning>
+
+## 升級
+
+若要升級到使用 Docker Compose 安裝的新版本，請執行以下步驟。首先，在 activepieces 儲存庫目錄中打開終端機並執行以下命令。
+
+### 自動拉取 (Automatic Pull)
+
+**1. 執行更新腳本**
+
+```bash
+sh tools/update.sh
+```
+
+### 手動拉取 (Manually Pull)
+
+**1. 拉取新的 Docker Compose 檔案**
+```bash
+git pull
+```
+
+**2. 拉取新的映像檔**
+```bash
+docker compose pull
+```
+
+**3. 查看更新日誌以了解破壞性變更**
+
+<Warning>
+請查看 [更新日誌](../configuration/breaking-changes_zh_TW) 中的破壞性變更。
+</Warning>
+
+**4. 執行更新後的 Docker 映像檔**
+```
+docker compose up -d --remove-orphans
+```
+
+恭喜！您現在已成功更新版本。
+
+## 刪除
+
+以下命令能夠刪除所有 Docker 容器和相關數據，因此應謹慎使用：
+
+```
+sh tools/reset.sh
+```
+
+<Warning>
+執行此命令將導致刪除所有 Docker 容器及其存儲的數據。在繼續操作之前，請務必意識到此命令具有潛在的危險性。
+</Warning>
