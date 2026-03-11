@@ -101,26 +101,26 @@ Total files:      873
 | ./docs/endpoints/projects/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/projects/update_zh_TW.mdx) |
 | ./docs/endpoints/projects/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/projects/schema_zh_TW.mdx) |
 | ./docs/endpoints/projects/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/projects/delete_zh_TW.mdx) |
-| ./docs/endpoints/pieces/install.mdx | Pending | |
-| ./docs/endpoints/pieces/schema.mdx | Pending | |
-| ./docs/endpoints/connections/list.mdx | Pending | |
-| ./docs/endpoints/connections/upsert.mdx | Pending | |
-| ./docs/endpoints/connections/schema.mdx | Pending | |
-| ./docs/endpoints/connections/delete.mdx | Pending | |
-| ./docs/endpoints/git-repos/schema.mdx | Pending | |
-| ./docs/endpoints/git-repos/configure.mdx | Pending | |
-| ./docs/endpoints/user-invitations/list.mdx | Pending | |
-| ./docs/endpoints/user-invitations/upsert.mdx | Pending | |
-| ./docs/endpoints/user-invitations/schema.mdx | Pending | |
-| ./docs/endpoints/user-invitations/delete.mdx | Pending | |
-| ./docs/endpoints/users/list.mdx | Pending | |
-| ./docs/endpoints/users/update.mdx | Pending | |
-| ./docs/endpoints/users/schema.mdx | Pending | |
-| ./docs/endpoints/users/delete.mdx | Pending | |
-| ./docs/endpoints/global-connections/list.mdx | Pending | |
-| ./docs/endpoints/global-connections/update.mdx | Pending | |
-| ./docs/endpoints/global-connections/upsert.mdx | Pending | |
-| ./docs/endpoints/global-connections/schema.mdx | Pending | |
+| ./docs/endpoints/pieces/install.mdx | Completed | [install_zh_TW.mdx](./docs/endpoints/pieces/install_zh_TW.mdx) |
+| ./docs/endpoints/pieces/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/pieces/schema_zh_TW.mdx) |
+| ./docs/endpoints/connections/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/connections/list_zh_TW.mdx) |
+| ./docs/endpoints/connections/upsert.mdx | Completed | [upsert_zh_TW.mdx](./docs/endpoints/connections/upsert_zh_TW.mdx) |
+| ./docs/endpoints/connections/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/connections/schema_zh_TW.mdx) |
+| ./docs/endpoints/connections/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/connections/delete_zh_TW.mdx) |
+| ./docs/endpoints/git-repos/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/git-repos/schema_zh_TW.mdx) |
+| ./docs/endpoints/git-repos/configure.mdx | Completed | [configure_zh_TW.mdx](./docs/endpoints/git-repos/configure_zh_TW.mdx) |
+| ./docs/endpoints/user-invitations/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/user-invitations/list_zh_TW.mdx) |
+| ./docs/endpoints/user-invitations/upsert.mdx | Completed | [upsert_zh_TW.mdx](./docs/endpoints/user-invitations/upsert_zh_TW.mdx) |
+| ./docs/endpoints/user-invitations/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/user-invitations/schema_zh_TW.mdx) |
+| ./docs/endpoints/user-invitations/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/user-invitations/delete_zh_TW.mdx) |
+| ./docs/endpoints/users/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/users/list_zh_TW.mdx) |
+| ./docs/endpoints/users/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/users/update_zh_TW.mdx) |
+| ./docs/endpoints/users/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/users/schema_zh_TW.mdx) |
+| ./docs/endpoints/users/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/users/delete_zh_TW.mdx) |
+| ./docs/endpoints/global-connections/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/global-connections/list_zh_TW.mdx) |
+| ./docs/endpoints/global-connections/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/global-connections/update_zh_TW.mdx) |
+| ./docs/endpoints/global-connections/upsert.mdx | Completed | [upsert_zh_TW.mdx](./docs/endpoints/global-connections/upsert_zh_TW.mdx) |
+| ./docs/endpoints/global-connections/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/global-connections/schema_zh_TW.mdx) |
 | ./docs/endpoints/global-connections/delete.mdx | Pending | |
 | ./docs/endpoints/templates/list.mdx | Pending | |
 | ./docs/endpoints/templates/create.mdx | Pending | |

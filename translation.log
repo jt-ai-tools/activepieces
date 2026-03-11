@@ -198,3 +198,53 @@ Found 856 files to translate.
 [✓] Completed: ./docs/endpoints/projects/create_zh_TW.mdx
 [✓] Completed: ./docs/endpoints/projects/schema_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 17 (5 files) ---
+[+] Translating: ./docs/endpoints/pieces/install.mdx
+[+] Translating: ./docs/endpoints/pieces/schema.mdx
+[+] Translating: ./docs/endpoints/connections/list.mdx
+[+] Translating: ./docs/endpoints/connections/upsert.mdx
+[+] Translating: ./docs/endpoints/connections/schema.mdx
+[✓] Completed: ./docs/endpoints/pieces/install_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/pieces/schema_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/connections/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/connections/upsert_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/connections/schema_zh_TW.mdx
+
+--- Processing chunk 18 (5 files) ---
+[+] Translating: ./docs/endpoints/connections/delete.mdx
+[+] Translating: ./docs/endpoints/git-repos/schema.mdx
+[+] Translating: ./docs/endpoints/git-repos/configure.mdx
+[+] Translating: ./docs/endpoints/user-invitations/list.mdx
+[+] Translating: ./docs/endpoints/user-invitations/upsert.mdx
+[✓] Completed: ./docs/endpoints/connections/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/user-invitations/upsert_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/git-repos/configure_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/user-invitations/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/git-repos/schema_zh_TW.mdx
+
+--- Processing chunk 19 (5 files) ---
+[+] Translating: ./docs/endpoints/user-invitations/schema.mdx
+[+] Translating: ./docs/endpoints/user-invitations/delete.mdx
+[+] Translating: ./docs/endpoints/users/list.mdx
+[+] Translating: ./docs/endpoints/users/update.mdx
+[+] Translating: ./docs/endpoints/users/schema.mdx
+[✓] Completed: ./docs/endpoints/users/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/user-invitations/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/user-invitations/schema_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/users/update_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/users/schema_zh_TW.mdx
+
+--- Processing chunk 20 (5 files) ---
+[+] Translating: ./docs/endpoints/users/delete.mdx
+[+] Translating: ./docs/endpoints/global-connections/list.mdx
+[+] Translating: ./docs/endpoints/global-connections/update.mdx
+[+] Translating: ./docs/endpoints/global-connections/upsert.mdx
+[+] Translating: ./docs/endpoints/global-connections/schema.mdx
+[✓] Completed: ./docs/endpoints/users/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/global-connections/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/global-connections/update_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/global-connections/upsert_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/global-connections/schema_zh_TW.mdx
+[*] Committing progress...
