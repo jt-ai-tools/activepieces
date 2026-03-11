@@ -1,0 +1,38 @@
+---
+title: '建構自定義 Piece'
+icon: 'box'
+---
+
+你可以使用 CLI 為平台建構自定義 Piece。此過程會編譯 Piece 並將其匯出為 `.tgz` 壓縮檔。
+
+### 運作原理
+
+CLI 會在 `packages/pieces/` 目錄中掃描指定的 Piece。它會檢查 `package.json` 檔案中的 **name**。如果找到該 Piece，它會建構並將其打包成 `.tgz` 壓縮檔。
+
+### 用法
+
+要建構 Piece，請按照以下步驟操作：
+
+1. 透過複製 (clone) 儲存庫來確保你已安裝 CLI。
+2. 執行以下命令：
+
+```bash
+npm run build-piece
+```
+
+系統會提示你輸入要建構的 Piece 名稱。例如：
+
+```bash
+? Enter the piece folder name : google-drive
+```
+
+CLI 將建構 Piece，你將獲得壓縮檔的路徑。例如：
+
+```bash
+Piece 'google-drive' built and packed successfully at packages/pieces/community/google-drive/dist
+```
+
+你也可以透過將 Piece 名稱作為參數傳遞來以非互動方式建構 Piece。例如：
+```bash
+npm run build-piece google-drive
+```

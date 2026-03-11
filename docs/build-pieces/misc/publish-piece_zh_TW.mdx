@@ -1,0 +1,57 @@
+---
+title: '發佈自定義組件 (Publish Custom Pieces)'
+icon: 'upload'
+---
+
+您可以使用 CLI 將自定義組件發佈到平台。此過程會封裝組件並將其上傳到指定的 API 端點。
+
+### 運作原理
+
+CLI 會掃描 `packages/pieces/` 目錄中指定的組件。它會檢查 `package.json` 檔案中的 **name** 和 **version**。如果該組件尚未發佈，CLI 會進行構建、封裝，並透過 API 將其上傳到平台。
+
+### 使用方法
+
+要發佈組件，請按照以下步驟操作：
+
+1. 確保您擁有 API Key。您可以從管理介面 (Admin Interface) 導航至 Settings 來產生金鑰。
+2. 透過複製 (cloning) 儲存庫來安裝 CLI。
+3. 執行以下指令：
+
+```bash
+npm run publish-piece-to-api
+```
+
+4. 系統會詢問您三個問題來發佈您的組件：
+
+  - `Piece Folder Name`：這是組件所在的資料夾名稱。它有助於組織和分類組件內的操作。
+
+  - `API URL`：這是組件將發佈到的 API 端點網址（例如：https://cloud.activepieces.com/api）。
+
+  - `API Key Source`：這是 API 金鑰的來源。可以是 `Env Variable (AP_API_KEY)` 或 `Manually`。
+
+
+如果您選擇 `Env Variable (AP_API_KEY)`，CLI 將使用 `packages/server/api` 目錄下 `.env` 檔案中的 API 金鑰。
+
+如果您選擇 `Manually`，系統會要求您手動輸入 API 金鑰。
+
+
+範例：
+
+```bash
+npm run publish-piece-to-api
+
+? Enter the piece folder name : google-drive
+? Enter the API URL : https://cloud.activepieces.com/api
+? Enter the API Key Source : Env Variable (AP_API_KEY)
+
+```
+
+```bash
+npm run publish-piece-to-api
+
+? Enter the piece folder name : google-drive
+? Enter the API URL : https://cloud.activepieces.com/api
+? Enter the API Key Source : Manually
+? Enter the API Key : ap_1234567890abcdef1234567890abcdef
+
+```

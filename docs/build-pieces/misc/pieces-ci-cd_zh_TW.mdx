@@ -1,0 +1,81 @@
+---
+title: '自訂組件 CI/CD'
+icon: 'hammer'
+---
+
+您可以使用 CLI 來同步自訂組件。不需要重新建構 Docker 映像檔，因為它們會直接從 npm 載入。
+
+### 運作原理
+
+使用 CLI 將 `packages/pieces/custom/` 中的項目同步到執行個體（instances）。在正式環境中，Activepieces 充當 npm 註冊表（registry），儲存所有組件版本。
+
+CLI 會掃描目錄中的 `package.json` 檔案，檢查每個組件的 **名稱 (name)** 和 **版本 (version)**。如果組件尚未上傳，它會進行封裝並透過 API 上傳。
+
+### 用法
+
+若要使用 CLI，請按照以下步驟操作：
+
+1. 從管理介面（Admin Interface）產生 API Key。前往 Settings 並產生 API Key。
+2. 透過複製（cloning）儲存庫來安裝 CLI。
+3. 執行以下命令，將 `your_api_key_here` 替換為您產生的 API Key，將 `INSTANCE_URL` 替換為您的執行個體網址：
+
+
+```bash
+AP_API_KEY=your_api_key_here bun run sync-pieces -- --apiUrl https://INSTANCE_URL/api
+```
+
+### 開發者工作流程
+
+1. 開發者在離線狀態下建立和修改組件。
+2. 在對應的 `package.json` 中增加組件版本。如需更多資訊，請參閱 [組件版本控制](../piece-reference/piece-versioning_zh_TW) 文件。
+3. 向 main 分支提交 pull request。
+4. 一旦 pull request 合併到 main 分支，手動執行 CLI 或使用 GitHub/GitLab Action 來觸發同步程序。
+
+### GitHub Action
+
+```yaml
+name: Sync Custom Pieces
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync-pieces:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 步驟 1：檢出具有完整歷史記錄的儲存庫程式碼
+      - name: Check out repository code
+        uses: actions/checkout @packages/server/api/src/app/flows/flow-version/migrations/migrate-v3-agent-piece.ts
+        with:
+          fetch-depth: 0
+
+      # 步驟 2：設定 Bun
+      - name: Set up Bun
+        uses: oven-sh/setup-bun @packages/server/api/src/app/flows/flow-version/migrations/migrate-v17-add-last-updated-date.ts
+        with:
+          bun-version: latest
+
+      # 步驟 3：快取 Bun 依賴項
+      - name: Cache Bun dependencies
+        uses: actions/cache @packages/server/api/src/app/flows/flow-version/migrations/migrate-v3-agent-piece.ts
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ hashFiles('bun.lockb') }}
+          restore-keys: |
+            bun-
+
+      # 步驟 4：使用 Bun 安裝依賴項
+      - name: Install dependencies
+        run: bun install --no-save
+
+      # 步驟 5：同步自訂組件
+      - name: Sync Custom Pieces
+        env:
+          AP_API_KEY: ${{ secrets.AP_API_KEY }}
+        run: bun run sync-pieces -- --apiUrl ${{ secrets.INSTANCE_URL }}/api
+
+```

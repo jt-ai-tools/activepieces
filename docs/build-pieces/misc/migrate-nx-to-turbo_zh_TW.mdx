@@ -1,0 +1,71 @@
+---
+title: '從 Nx 遷移至 Turbo'
+icon: 'rotate'
+---
+
+<Note>
+Activepieces 單體儲存庫 (monorepo) 已全面遷移至 Turbo。本指南僅供**歷史參考**，以及針對仍在使用 Nx 建置系統的舊版本分支 (fork) 使用者。
+</Note>
+
+如果您現有的分支中包含使用**舊版 Nx 建置系統**開發的自定義組件 (custom pieces)，則需要將其遷移至新的 **Turbo 建置系統**。本指南將說明變更內容並提供遷移指令碼。
+
+## 變更內容
+
+Activepieces 單體儲存庫已將 [Nx](https://nx.dev) 替換為 [Turbo](https://turbo.build) 作為其建置編排器 (build orchestrator)。對於組件而言，這意味著：
+
+| | **舊版 (Nx)** | **新版 (Turbo)** |
+|---|---|---|
+| 建置設定 | 每個組件的 `project.json` | `package.json` 指令碼 |
+| 建置指令 | `nx build pieces-{name}` | `turbo run build --filter=@activepieces/piece-{name}` |
+| 輸出目錄 | `dist/out-tsc` (共享) | `./dist` (組件本地) |
+| 任務執行器 | Nx 執行器 (`@nx/js:tsc`) | 直接執行 `tsc -p tsconfig.lib.json && cp package.json dist/` |
+| 依賴項目 | 由 Nx 圖形推斷 | `package.json` 中的工作區協定 (`workspace:*`) |
+
+### 每個組件受影響的檔案
+
+- **`project.json`** — 已刪除 (不再需要)
+- **`package.json`** — 新增了 `build` 和 `lint` 指令碼、`main` 和 `types` 欄位，以及工作區依賴項目
+- **`tsconfig.lib.json`** — 更新了 `outDir`，新增了 `rootDir`、`baseUrl`、`paths`
+
+## 自動遷移
+
+執行遷移指令碼以一次更新所有自定義組件：
+
+```bash
+npx ts-node tools/scripts/migrate-custom-piece-to-turbo.ts
+```
+
+這會掃描 `packages/pieces/custom/` 並套用所有必要的變更。
+
+### 遷移特定組件
+
+您也可以傳入路徑來遷移單個組件：
+
+```bash
+npx ts-node tools/scripts/migrate-custom-piece-to-turbo.ts packages/pieces/custom/my-piece
+```
+
+### 指令碼的作用
+
+對於每個組件，該指令碼會：
+
+1. **更新 `package.json`** — 新增 `build` 和 `lint` 指令碼，設定 `main` 和 `types` 入口點，確保 `@activepieces/pieces-framework`、`@activepieces/shared` 和 `tslib` 被列為依賴項目。
+2. **更新 `tsconfig.lib.json`** — 將 `outDir` 設定為 `./dist`，新增 `rootDir`、`baseUrl`、`paths` 和 `declaration` 設定。
+3. **建立 `tsconfig.json`** (如果缺失) — 繼承根目錄的 `tsconfig.base.json`。
+4. **刪除 `project.json`** — 移除 Nx 設定。
+
+## 驗證遷移
+
+遷移完成後，建置您的組件以驗證一切運作正常：
+
+```bash
+npx turbo run build --filter=@activepieces/piece-your-piece --force
+```
+
+或使用 CLI：
+
+```bash
+npm run build-piece your-piece
+```
+
+建置輸出應出現在 `packages/pieces/custom/your-piece/dist/` 中。

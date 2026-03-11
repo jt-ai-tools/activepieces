@@ -1,0 +1,84 @@
+---
+title: '設定私有 Fork'
+icon: "code-branch"
+---
+
+<Tip>
+**友善提示 #1：** 如果您想進行實驗，可以 fork 或 clone 公開儲存庫。
+</Tip>
+
+<Tip>
+安裝私有 Piece 需要付費版本。但是，您仍然可以開發 Piece 並貢獻回去，**或者**將它們發布到公開的 npm registry，並在您自己的實例或專案中使用。
+</Tip>
+
+## 建立私有 Fork (私有 Pieces)
+
+透過以下步驟，您可以在 GitHub、GitLab 或其他平台建立私有 fork，並將 "activepieces" 儲存庫設定為上游 (upstream) 來源，以便您能整合來自 "activepieces" 儲存庫的變更。
+
+1. **複製儲存庫：**
+
+首先建立儲存庫的裸複製 (bare clone)。請記住，這是一個暫時的步驟，稍後將會刪除。
+
+```bash
+git clone --bare git@github.com:activepieces/activepieces.git
+ ```
+
+2. **建立私有 Git 儲存庫**
+
+在 GitHub 或您選擇的平台上產生一個新的私有儲存庫。初始化新儲存庫時，請勿包含 README、license 或 gitignore 檔案。這對於避免在與原始儲存庫同步時發生合併衝突至關重要。
+   
+3. **鏡像推送 (Mirror-Push) 到私有儲存庫：**
+
+將您之前建立的裸複製鏡像推送到新建立的 "activepieces" 儲存庫。請確保將下方 URL 中的 `<your_username>` 替換為您實際的 GitHub 使用者名稱。
+
+```bash
+cd activepieces.git
+git push --mirror git@github.com:<your_username>/activepieces.git
+```
+
+4. **移除暫存的本地儲存庫：**
+  
+```bash
+cd ..
+rm -rf activepieces.git
+```
+
+5. **複製您的私有儲存庫：**
+
+現在，您可以將 "activepieces" 儲存庫複製到本地機器上您想要的目錄中。
+
+```bash
+cd ~/path/to/directory
+git clone git@github.com:<your_username>/activepieces.git
+```
+
+6. **將原始儲存庫新增為遠端 (Remote)：**
+
+如果需要，您可以將原始儲存庫新增為遠端，以獲取未來可能的變更。但是，請記住停用此遠端的推送操作，因為您不被允許向其推送變更。
+
+```bash
+git remote add upstream git@github.com:activepieces/activepieces.git
+git remote set-url --push upstream DISABLE
+```
+
+您可以使用 `git remote -v` 查看所有遠端列表。它應該類似於以下內容：
+
+```
+origin	git@github.com:<your_username>/activepieces.git (fetch)
+origin	git@github.com:<your_username>/activepieces.git (push)
+upstream	git@github.com:activepieces/activepieces.git (fetch)
+upstream	DISABLE (push)
+```
+
+> 推送變更時，請務必使用 `git push origin`。
+
+### 同步您的 Fork
+
+若要從 "upstream" 儲存庫獲取變更，請擷取 (fetch) 遠端並將您的工作重定基底 (rebase) 到其之上。
+
+```bash
+git fetch upstream
+git merge upstream/main
+```
+
+由於您只在儲存庫中新增了 Piece，因此應該不需要解決衝突。

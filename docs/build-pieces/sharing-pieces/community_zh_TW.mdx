@@ -1,0 +1,32 @@
+---
+title: "社群 (公開 NPM)"
+description: "了解如何將您的 Piece 發佈到社群。"
+---
+
+您可以將您的 Piece 發佈到 npm 註冊表 (npm registry)，並與社群分享。使用者可以透過 設定 -> 我的 Piece -> 安裝 Piece -> 輸入您的 Piece 套件名稱來進行安裝。
+
+<Steps>
+  <Step title="登入 npm">
+    確保您已登入 npm。如果尚未登入，請執行：
+    ```bash
+    npm login
+    ```
+  </Step>
+  <Step title="重命名 Piece">
+    將 `package.json` 中的 Piece 名稱重新命名為唯一的名稱，或與您組織範圍相關的名稱（例如：`@my-org/piece-PIECE_NAME`）。您可以在 `packages/pieces/PIECE_NAME/package.json` 找到它。
+    <Tip>
+    每次發佈新版本時，請務必增加 `package.json` 中的版本號。
+    </Tip>
+  </Step>
+  <Step title="發佈">
+    <Tip>
+    將 `PIECE_FOLDER_NAME` 替換為資料夾名稱。
+    </Tip>
+    執行以下指令：
+    ```bash
+    npm run publish-piece PIECE_FOLDER_NAME
+    ```
+  </Step>
+</Steps>
+
+**恭喜！您現在可以從設定頁面匯入該 Piece。**

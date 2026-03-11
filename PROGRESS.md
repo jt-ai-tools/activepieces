@@ -19,28 +19,28 @@ Total files:      873
 | ./.claude/skills/mintlify/SKILL.md | Completed | [SKILL_zh_TW.md](./.claude/skills/mintlify/SKILL_zh_TW.md) |
 | ./.claude/skills/piece-builder/action-patterns.md | Completed | [action-patterns_zh_TW.md](./.claude/skills/piece-builder/action-patterns_zh_TW.md) |
 | ./.claude/skills/piece-builder/piece-types.md | Completed | [piece-types_zh_TW.md](./.claude/skills/piece-builder/piece-types_zh_TW.md) |
-| ./.claude/skills/piece-builder/ux-guidelines.md | Pending | |
-| ./.claude/skills/piece-builder/auth-patterns.md | Pending | |
-| ./.claude/skills/piece-builder/output-quality.md | Pending | |
+| ./.claude/skills/piece-builder/ux-guidelines.md | Completed | [ux-guidelines_zh_TW.md](./.claude/skills/piece-builder/ux-guidelines_zh_TW.md) |
+| ./.claude/skills/piece-builder/auth-patterns.md | Completed | [auth-patterns_zh_TW.md](./.claude/skills/piece-builder/auth-patterns_zh_TW.md) |
+| ./.claude/skills/piece-builder/output-quality.md | Completed | [output-quality_zh_TW.md](./.claude/skills/piece-builder/output-quality_zh_TW.md) |
 | ./.claude/skills/piece-builder/SKILL.md | Completed | [SKILL_zh_TW.md](./.claude/skills/piece-builder/SKILL_zh_TW.md) |
-| ./.claude/skills/piece-builder/common-patterns.md | Pending | |
+| ./.claude/skills/piece-builder/common-patterns.md | Completed | [common-patterns_zh_TW.md](./.claude/skills/piece-builder/common-patterns_zh_TW.md) |
 | ./.claude/skills/piece-builder/trigger-patterns.md | Completed | [trigger-patterns_zh_TW.md](./.claude/skills/piece-builder/trigger-patterns_zh_TW.md) |
-| ./.claude/skills/piece-builder/props-patterns.md | Pending | |
-| ./.claude/skills/playwright-e2e-testing/SKILL.md | Pending | |
-| ./docs/build-pieces/misc/build-piece.mdx | Pending | |
-| ./docs/build-pieces/misc/testing-pieces.mdx | Pending | |
-| ./docs/build-pieces/misc/migrate-nx-to-turbo.mdx | Pending | |
-| ./docs/build-pieces/misc/dev-container.mdx | Pending | |
-| ./docs/build-pieces/misc/private-fork.mdx | Pending | |
-| ./docs/build-pieces/misc/create-new-ai-provider.mdx | Pending | |
-| ./docs/build-pieces/misc/codespaces.mdx | Pending | |
-| ./docs/build-pieces/misc/pieces-ci-cd.mdx | Pending | |
-| ./docs/build-pieces/misc/publish-piece.mdx | Pending | |
-| ./docs/build-pieces/sharing-pieces/overview.mdx | Pending | |
-| ./docs/build-pieces/sharing-pieces/community.mdx | Pending | |
-| ./docs/build-pieces/sharing-pieces/contribute.mdx | Pending | |
-| ./docs/build-pieces/sharing-pieces/private.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/examples.mdx | Pending | |
+| ./.claude/skills/piece-builder/props-patterns.md | Completed | [props-patterns_zh_TW.md](./.claude/skills/piece-builder/props-patterns_zh_TW.md) |
+| ./.claude/skills/playwright-e2e-testing/SKILL.md | Completed | [SKILL_zh_TW.md](./.claude/skills/playwright-e2e-testing/SKILL_zh_TW.md) |
+| ./docs/build-pieces/misc/build-piece.mdx | Completed | [build-piece_zh_TW.mdx](./docs/build-pieces/misc/build-piece_zh_TW.mdx) |
+| ./docs/build-pieces/misc/testing-pieces.mdx | Completed | [testing-pieces_zh_TW.mdx](./docs/build-pieces/misc/testing-pieces_zh_TW.mdx) |
+| ./docs/build-pieces/misc/migrate-nx-to-turbo.mdx | Completed | [migrate-nx-to-turbo_zh_TW.mdx](./docs/build-pieces/misc/migrate-nx-to-turbo_zh_TW.mdx) |
+| ./docs/build-pieces/misc/dev-container.mdx | Completed | [dev-container_zh_TW.mdx](./docs/build-pieces/misc/dev-container_zh_TW.mdx) |
+| ./docs/build-pieces/misc/private-fork.mdx | Completed | [private-fork_zh_TW.mdx](./docs/build-pieces/misc/private-fork_zh_TW.mdx) |
+| ./docs/build-pieces/misc/create-new-ai-provider.mdx | Completed | [create-new-ai-provider_zh_TW.mdx](./docs/build-pieces/misc/create-new-ai-provider_zh_TW.mdx) |
+| ./docs/build-pieces/misc/codespaces.mdx | Completed | [codespaces_zh_TW.mdx](./docs/build-pieces/misc/codespaces_zh_TW.mdx) |
+| ./docs/build-pieces/misc/pieces-ci-cd.mdx | Completed | [pieces-ci-cd_zh_TW.mdx](./docs/build-pieces/misc/pieces-ci-cd_zh_TW.mdx) |
+| ./docs/build-pieces/misc/publish-piece.mdx | Completed | [publish-piece_zh_TW.mdx](./docs/build-pieces/misc/publish-piece_zh_TW.mdx) |
+| ./docs/build-pieces/sharing-pieces/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/build-pieces/sharing-pieces/overview_zh_TW.mdx) |
+| ./docs/build-pieces/sharing-pieces/community.mdx | Completed | [community_zh_TW.mdx](./docs/build-pieces/sharing-pieces/community_zh_TW.mdx) |
+| ./docs/build-pieces/sharing-pieces/contribute.mdx | Completed | [contribute_zh_TW.mdx](./docs/build-pieces/sharing-pieces/contribute_zh_TW.mdx) |
+| ./docs/build-pieces/sharing-pieces/private.mdx | Completed | [private_zh_TW.mdx](./docs/build-pieces/sharing-pieces/private_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/examples.mdx | Completed | [examples_zh_TW.mdx](./docs/build-pieces/piece-reference/examples_zh_TW.mdx) |
 | ./docs/build-pieces/piece-reference/files.mdx | Pending | |
 | ./docs/build-pieces/piece-reference/properties.mdx | Pending | |
 | ./docs/build-pieces/piece-reference/triggers/polling-trigger.mdx | Pending | |

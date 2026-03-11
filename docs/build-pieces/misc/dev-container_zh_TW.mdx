@@ -1,0 +1,56 @@
+---
+title: '開發容器 (Dev Containers)'
+icon: 'docker'
+description: ''
+---
+
+## 在 Visual Studio Code 中使用開發容器
+
+此專案包含開發容器 (Dev Container) 配置，允許您使用 Visual Studio Code 的 [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) 擴充功能，在一致的環境中開發專案。如果您是專案新手，或者您的本機機器有不同的環境設定，這將特別有幫助。
+
+## 先決條件
+
+在使用開發容器之前，您需要安裝以下軟體：
+
+- [Visual Studio Code](https://code.visualstudio.com/)。
+- Visual Studio Code 的 [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) 擴充功能。
+- [Docker](https://www.docker.com/)。
+
+## 使用開發容器
+
+若要為 Activepieces 專案使用開發容器，請按照以下步驟操作：
+
+1. 將 Activepieces 儲存庫複製 (Clone) 到您的本機機器。
+2. 在 Visual Studio Code 中開啟專案。
+3. 按下 `Ctrl+Shift+P` 並輸入 `> Dev Containers: Reopen in Container`。
+4. 執行 `npm start`。
+5. 後端將運行於 `localhost:3000`，前端將運行於 `localhost:4200`。
+
+<Note>
+  預設情況下，開發設定僅建置特定的 pieces。開啟檔案 `packages/server/api/.env` 並新增以逗號分隔的 pieces 列表以使其可用。
+
+有關更多詳細資訊，請查看 [Piece 開發](/build-pieces/building-pieces/development-setup_zh_TW#pieces-development) 章節。
+
+</Note>
+
+登入認證為：  
+電子郵件：`dev@ap.com`  
+密碼：`12345678`
+
+## 退出開發容器
+
+要退出開發容器並返回到您的本機環境，請按照以下步驟操作：
+
+1. 在 Visual Studio Code 的左下角，點擊 `Remote-Containers: Reopen folder locally` 按鈕。
+2. Visual Studio Code 將關閉與開發容器的連接，並在您的本機環境中重新開啟專案。
+
+## 疑難排解
+
+發生錯誤時，最好的疑難排解方法之一是重置開發容器。
+
+1. 退出開發容器
+2. 執行以下指令
+   ```sh
+   sh tools/reset-dev.sh
+   ```
+3. 按照上述步驟重新建置開發容器

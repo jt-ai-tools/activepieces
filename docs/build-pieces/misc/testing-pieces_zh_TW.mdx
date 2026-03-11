@@ -1,0 +1,86 @@
+---
+title: '測試 Piece'
+icon: 'flask-vial'
+description: '如何為您的 Piece 增加單元測試'
+---
+
+測試 Piece 是**選用**的，但對於複雜邏輯建議進行測試。可以使用 [Vitest](https://vitest.dev/) 搭配框架提供的 `createMockActionContext` 輔助函式來測試 Piece。
+
+如需完整的運作範例，請參閱 [GitHub 上的 text-helper piece 測試](https://github.com/activepieces/activepieces/tree/main/packages/pieces/core/text-helper/test)。
+
+## 設定
+
+### 1. 將 vitest 加入您的 Piece
+
+在 Piece 的 `package.json` 中將 `vitest` 加入為開發依賴項 (dev dependency)，並新增一個 `test` 指令：
+
+```json
+{
+  "scripts": {
+    "build": "tsc -p tsconfig.lib.json && cp package.json dist/",
+    "lint": "eslint 'src/**/*.ts'",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "3.0.8"
+  }
+}
+```
+
+### 2. 建立 vitest 設定
+
+在 Piece 根目錄下建立 `vitest.config.ts`：
+
+```typescript
+import path from 'path'
+import { defineConfig } from 'vitest/config'
+
+const repoRoot = path.resolve(__dirname, '../../../..')
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+  },
+  resolve: {
+    alias: {
+      '@activepieces/shared': path.resolve(repoRoot, 'packages/shared/src/index.ts'),
+      '@activepieces/pieces-framework': path.resolve(repoRoot, 'packages/pieces/framework/src/index.ts'),
+      '@activepieces/pieces-common': path.resolve(repoRoot, 'packages/pieces/common/src/index.ts'),
+    },
+  },
+})
+```
+
+### 3. 編寫測試
+
+建立一個 `test/` 目錄並新增 `.test.ts` 檔案：
+
+```typescript
+import { createMockActionContext } from '@activepieces/pieces-framework';
+import { myAction } from '../src/lib/actions/my-action';
+
+describe('myAction', () => {
+  test('does something', async () => {
+    const ctx = createMockActionContext({
+      propsValue: {
+        inputField: 'test value',
+      },
+    });
+
+    const result = await myAction.run(ctx);
+    expect(result).toBe('expected output');
+  });
+});
+```
+
+### 4. 執行測試
+
+```bash
+# 執行特定 Piece 的測試
+npx turbo test --filter=@activepieces/piece-text-helper
+
+# 直接從 Piece 目錄執行測試
+cd packages/pieces/core/text-helper
+npx vitest run
+```

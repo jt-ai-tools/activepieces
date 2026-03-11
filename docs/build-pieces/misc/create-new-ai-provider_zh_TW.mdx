@@ -1,0 +1,101 @@
+---
+title: '建立新的 AI 提供者'
+icon: 'sparkles'
+---
+
+ActivePieces 目前支援以下 AI 提供者：
+
+- OpenAI
+- Anthropic
+
+要建立新的 AI 提供者，請按照以下步驟操作：
+
+## 實作 AI 介面
+
+在 `packages/pieces/common/src/lib/ai/providers/your-ai-provider.ts` 檔案中建立一個回傳 `AI` 介面實例的新工廠（factory）。
+
+```typescript
+export const yourAiProvider = ({
+  serverUrl,
+  engineToken,
+}: { serverUrl: string, engineToken: string }): AI<YourAiProviderSDK> => {
+  const impl = new YourAiProviderSDK(serverUrl, engineToken);
+  return {
+    provider: "YOUR_AI_PROVIDER" as const,
+    chat: {
+      text: async (params) => {
+        try {
+          const response = await impl.chat.text(params);
+          return response;
+        } catch (e: any) {
+          if (e?.error?.error) {
+            throw e.error.error;
+          }
+          throw e;
+        }
+      }
+    },
+  };
+};
+```
+
+## 註冊 AI 提供者
+
+在 `packages/pieces/common/src/lib/ai/providers/index.ts` 檔案中將新的 AI 提供者新增至 `AiProviders` 列舉（enum）。
+
+```diff
+export const AiProviders = [
++  {
++    logoUrl: 'https://cdn.activepieces.com/pieces/openai.png',
++    defaultBaseUrl: 'https://api.your-ai-provider.com',
++    label: 'Your AI Provider' as const,
++    value: 'your-ai-provider' as const,
++    models: [
++      { label: 'model-1', value: 'model-1' },
++      { label: 'model-2', value: 'model-2' },
++      { label: 'model-3', value: 'model-3' },
++    ],
++    factory: yourAiProvider,
++  },
+...
+]
+```
+
+## 定義身分驗證標頭
+
+現在我們需要告訴 ActivePieces 如何向您的 AI 提供者進行身分驗證。您可以透過在 `AiProvider` 物件中新增 `auth` 屬性來達成此目的。
+
+`auth` 屬性是一個定義 AI 提供者身分驗證機制的物件。它由兩個屬性組成：`name` 和 `mapper`。`name` 屬性指定將用於向您的 AI 提供者進行身分驗證的標頭（header）名稱，而 `mapper` 屬性定義了一個函數，將標頭的值對應到您的 AI 提供者所期望的格式。
+
+以下是如何為 Bearer Token 定義身分驗證標頭的範例：
+
+```diff
+export const AiProviders = [
+  {
+    logoUrl: 'https://cdn.activepieces.com/pieces/openai.png',
+    defaultBaseUrl: 'https://api.your-ai-provider.com',
+    label: 'Your AI Provider' as const,
+    value: 'your-ai-provider' as const,
+    models: [
+      { label: 'model-1', value: 'model-1' },
+      { label: 'model-2', value: 'model-2' },
+      { label: 'model-3', value: 'model-3' },
+    ],
++    auth: authHeader({ bearer: true }), // or authHeader({ name: 'x-api-key', bearer: false })
+    factory: yourAiProvider,
+  },
+...
+]
+```
+
+## 測試 AI 提供者
+
+要測試 AI 提供者，您可以在流程中使用 **通用 AI (Universal AI)** 組件。請按照以下步驟操作：
+
+- 從管理控制台為新建立的 AI 提供者新增必要的標頭。這些標頭將用於對 AI 提供者的請求進行身分驗證。
+
+![Configure AI Provider](/resources/screenshots/configure-ai-provider.png)
+
+- 建立一個使用我們 **通用 AI** 組件的流程。並在 **Ask AI** 動作設定中選擇 **"Your AI Provider"** 作為 AI 提供者。
+
+![Configure AI Provider](/resources/screenshots/use-ai-provider.png)

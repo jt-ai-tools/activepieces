@@ -10,7 +10,7 @@ const CONCURRENCY_LIMIT = 5;
 const PROMPT = `You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
 Rules:
 1. Maintain the exact original markdown structure, formatting, and code blocks.
-2. Only output the translated markdown content. Do NOT wrap your entire response in a \`\`\`markdown block.
+2. Only output the translated markdown content. Do NOT wrap your entire response in a markdown code block.
 3. Update any internal links that point to .md or .mdx files to point to their _zh_TW counterparts. For example, [Link](./path/to/file.md) becomes [Link](./path/to/file_zh_TW.md).
 4. Do NOT translate code, variable names, or technical terms that are better left in English (e.g. API keys, function names).
 `;

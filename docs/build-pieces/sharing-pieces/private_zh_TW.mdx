@@ -1,0 +1,34 @@
+---
+title: "私有"
+description: "了解如何私下分享您的 Piece。"
+---
+
+<Snippet file="enterprise-feature.mdx" />
+
+本指南假設您已經建立了一個 Piece 並建立了我們儲存庫的私有分支 (fork)，且您希望將其封裝為檔案並上傳。
+
+<Tip>
+貼心小提示：有一個 CLI 可以輕鬆地將其上傳到您的平台。請查看 [發佈自訂 Piece](../misc/publish-piece_zh_TW)。
+</Tip>
+
+
+
+<Steps>
+    <Step title="建置 Piece">
+        使用以下命令建置 Piece。請確保將 `${name}` 替換為您的 Piece 名稱。
+
+        ```bash
+        npm run pieces -- build --name=${name}
+        ```
+
+        <Info>
+        有關建置 Piece 的更多資訊可以在[這裡](../misc/build-piece_zh_TW)找到。
+        </Info>
+    </Step>
+    <Step title="上傳 Tarball">
+        從 Activepieces 平台管理員 -> Pieces 上傳位於 `dist/packages/pieces/${name}` 內產生的 tarball
+    
+        ![管理 Pieces](/resources/screenshots/install-piece.png)
+
+    </Step>
+</Steps>
