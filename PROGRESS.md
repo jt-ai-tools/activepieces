@@ -121,26 +121,26 @@ Total files:      873
 | ./docs/endpoints/global-connections/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/global-connections/update_zh_TW.mdx) |
 | ./docs/endpoints/global-connections/upsert.mdx | Completed | [upsert_zh_TW.mdx](./docs/endpoints/global-connections/upsert_zh_TW.mdx) |
 | ./docs/endpoints/global-connections/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/global-connections/schema_zh_TW.mdx) |
-| ./docs/endpoints/global-connections/delete.mdx | Pending | |
-| ./docs/endpoints/templates/list.mdx | Pending | |
-| ./docs/endpoints/templates/create.mdx | Pending | |
-| ./docs/endpoints/templates/get.mdx | Pending | |
-| ./docs/endpoints/templates/schema.mdx | Pending | |
-| ./docs/endpoints/templates/delete.mdx | Pending | |
-| ./docs/endpoints/folders/list.mdx | Pending | |
-| ./docs/endpoints/folders/create.mdx | Pending | |
-| ./docs/endpoints/folders/get.mdx | Pending | |
-| ./docs/endpoints/folders/update.mdx | Pending | |
-| ./docs/endpoints/folders/schema.mdx | Pending | |
-| ./docs/endpoints/folders/delete.mdx | Pending | |
-| ./docs/endpoints/flow-runs/list.mdx | Pending | |
-| ./docs/endpoints/flow-runs/get.mdx | Pending | |
-| ./docs/endpoints/flow-runs/schema.mdx | Pending | |
-| ./docs/endpoints/flows/list.mdx | Pending | |
-| ./docs/endpoints/flows/create.mdx | Pending | |
-| ./docs/endpoints/flows/get.mdx | Pending | |
-| ./docs/endpoints/flows/update.mdx | Pending | |
-| ./docs/endpoints/flows/schema.mdx | Pending | |
+| ./docs/endpoints/global-connections/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/global-connections/delete_zh_TW.mdx) |
+| ./docs/endpoints/templates/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/templates/list_zh_TW.mdx) |
+| ./docs/endpoints/templates/create.mdx | Completed | [create_zh_TW.mdx](./docs/endpoints/templates/create_zh_TW.mdx) |
+| ./docs/endpoints/templates/get.mdx | Completed | [get_zh_TW.mdx](./docs/endpoints/templates/get_zh_TW.mdx) |
+| ./docs/endpoints/templates/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/templates/schema_zh_TW.mdx) |
+| ./docs/endpoints/templates/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/templates/delete_zh_TW.mdx) |
+| ./docs/endpoints/folders/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/folders/list_zh_TW.mdx) |
+| ./docs/endpoints/folders/create.mdx | Completed | [create_zh_TW.mdx](./docs/endpoints/folders/create_zh_TW.mdx) |
+| ./docs/endpoints/folders/get.mdx | Completed | [get_zh_TW.mdx](./docs/endpoints/folders/get_zh_TW.mdx) |
+| ./docs/endpoints/folders/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/folders/update_zh_TW.mdx) |
+| ./docs/endpoints/folders/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/folders/schema_zh_TW.mdx) |
+| ./docs/endpoints/folders/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/folders/delete_zh_TW.mdx) |
+| ./docs/endpoints/flow-runs/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/flow-runs/list_zh_TW.mdx) |
+| ./docs/endpoints/flow-runs/get.mdx | Completed | [get_zh_TW.mdx](./docs/endpoints/flow-runs/get_zh_TW.mdx) |
+| ./docs/endpoints/flow-runs/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/flow-runs/schema_zh_TW.mdx) |
+| ./docs/endpoints/flows/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/flows/list_zh_TW.mdx) |
+| ./docs/endpoints/flows/create.mdx | Completed | [create_zh_TW.mdx](./docs/endpoints/flows/create_zh_TW.mdx) |
+| ./docs/endpoints/flows/get.mdx | Completed | [get_zh_TW.mdx](./docs/endpoints/flows/get_zh_TW.mdx) |
+| ./docs/endpoints/flows/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/flows/update_zh_TW.mdx) |
+| ./docs/endpoints/flows/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/flows/schema_zh_TW.mdx) |
 | ./docs/endpoints/flows/delete.mdx | Pending | |
 | ./docs/endpoints/sample-data/get.mdx | Pending | |
 | ./docs/admin-guide/overview.mdx | Pending | |

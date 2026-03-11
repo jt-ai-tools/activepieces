@@ -248,3 +248,53 @@ Found 856 files to translate.
 [✓] Completed: ./docs/endpoints/global-connections/upsert_zh_TW.mdx
 [✓] Completed: ./docs/endpoints/global-connections/schema_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 21 (5 files) ---
+[+] Translating: ./docs/endpoints/global-connections/delete.mdx
+[+] Translating: ./docs/endpoints/templates/list.mdx
+[+] Translating: ./docs/endpoints/templates/create.mdx
+[+] Translating: ./docs/endpoints/templates/get.mdx
+[+] Translating: ./docs/endpoints/templates/schema.mdx
+[✓] Completed: ./docs/endpoints/templates/get_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/templates/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/templates/create_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/global-connections/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/templates/schema_zh_TW.mdx
+
+--- Processing chunk 22 (5 files) ---
+[+] Translating: ./docs/endpoints/templates/delete.mdx
+[+] Translating: ./docs/endpoints/folders/list.mdx
+[+] Translating: ./docs/endpoints/folders/create.mdx
+[+] Translating: ./docs/endpoints/folders/get.mdx
+[+] Translating: ./docs/endpoints/folders/update.mdx
+[✓] Completed: ./docs/endpoints/folders/create_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/folders/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/templates/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/folders/get_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/folders/update_zh_TW.mdx
+
+--- Processing chunk 23 (5 files) ---
+[+] Translating: ./docs/endpoints/folders/schema.mdx
+[+] Translating: ./docs/endpoints/folders/delete.mdx
+[+] Translating: ./docs/endpoints/flow-runs/list.mdx
+[+] Translating: ./docs/endpoints/flow-runs/get.mdx
+[+] Translating: ./docs/endpoints/flow-runs/schema.mdx
+[✓] Completed: ./docs/endpoints/flow-runs/schema_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/folders/schema_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/folders/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/flow-runs/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/flow-runs/get_zh_TW.mdx
+
+--- Processing chunk 24 (5 files) ---
+[+] Translating: ./docs/endpoints/flows/list.mdx
+[+] Translating: ./docs/endpoints/flows/create.mdx
+[+] Translating: ./docs/endpoints/flows/get.mdx
+[+] Translating: ./docs/endpoints/flows/update.mdx
+[+] Translating: ./docs/endpoints/flows/schema.mdx
+[✓] Completed: ./docs/endpoints/flows/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/flows/schema_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/flows/update_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/flows/create_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/flows/get_zh_TW.mdx
+[*] Committing progress...
