@@ -1,0 +1,171 @@
+---
+title: "透過 Okta 進行 SCIM"
+description: "配置從 Okta 到 Activepieces 的 SCIM 佈建。"
+---
+
+<Snippet file="enterprise-feature.mdx" />
+
+## 先決條件
+
+在開始之前，請確保您擁有：
+
+- Activepieces 平台的 **管理員權限**
+- Okta 租戶的 **管理員權限**
+- 已設定 SSO（建議）：[SAML with Okta](/admin-guide/guides/sso_zh_TW#saml-with-okta)
+- 從 Activepieces 應用程式中的 `/platform/security/api-keys` 路徑產生的 API key
+
+## 在 Okta 中配置 SCIM 連線
+
+<Steps>
+  <Step title="開啟您的 Okta 應用程式">
+    在 Okta 管理主控台 (Admin Console) 中，開啟您的 Activepieces 應用程式（於 [SSO 步驟](/admin-guide/guides/sso_zh_TW#saml-with-okta) 中建立）。
+
+  </Step>
+  <Step title="啟用佈建 (Provisioning)">
+    在應用程式的 **General** 頁籤中，啟用 **SCIM Provisioning**。
+    ![Okta 使用者佈建預留位置](/resources/screenshots/scim/okta/enable-provisioning.png)
+  </Step>
+  <Step title="新增 SCIM 連線詳細資訊">
+    **Provisioning** 頁籤將會顯示，前往該頁籤並設定：
+    - **SCIM base URL** 為 `https://your-activepieces-domain/api/v1/scim/v2`
+    - **Unique identifier field** 為 `userName`
+    - **Authentication mode** 為 `HTTP Header`
+    - **Authorization** 為 `Bearer <generated-api-key>`
+    <Tip>
+      在支援的佈建操作 (Supported provisioning actions) 中，我們支援所有 **Push** 操作
+    </Tip>
+  </Step>
+  <Step title="測試連接器">
+    點擊 **Test Connector Configuration** 並確認測試通過。
+  </Step>
+</Steps>
+
+![Okta SCIM 連線圖片](/resources/screenshots/scim/okta/provisioning.png)
+
+
+## 配置屬性對應 (Attribute Mapping)
+
+在 **Provisioning -> To App -> Attribute Mappings** 中，對應以下欄位：
+
+| Activepieces (SCIM) | Okta 值 |
+| --- | --- |
+| `userName` | `user.email` |
+| `givenName` | `user.firstName` |
+| `familyName` | `user.lastName` |
+| `email` | `user.email` |
+| `displayName` | `user.displayName` |
+
+## 平台角色對應 (Platform role mapping)
+
+預設情況下，佈建的使用者在平台中將具有 `Member` 角色。若要在 Okta 中為使用者指定角色，請按照以下步驟操作：
+<Steps>
+  <Step>
+    在 Okta 管理主控台中，導覽至 **Directory -> Profile Editor -> Your-Application User**。
+  </Step>
+  <Step>
+    點擊 **Add Attribute** 並填寫表單：
+    | 欄位 | 值 |
+    | --- | --- |
+    | `Display name` | `platformRole` |
+    | `Variable name` | `platformRole` |
+    | `External name` | `platformRole` |
+    | `External namespace` | `urn:ietf:params:scim:schemas:activepieces:1.0:CustomUserAttributes` |
+    | `Enum` | `enabled` |
+
+    對於 **Attribute members**，新增：
+
+    | 顯示名稱 | 值 |
+    | --- | --- |
+    | `ADMIN` | `ADMIN` |
+    | `MEMBER` | `MEMBER` |
+    | `OPERATOR` | `OPERATOR` |
+
+    ![Okta 新增屬性圖片](/resources/screenshots/scim/okta/add-attribute.png)
+
+    最後點擊儲存 (Save)。
+
+  </Step>
+  <Step>
+
+    <Warning>
+      此步驟假設您的 Okta 使用者設定檔中已有一個欄位可以對應到 Activepieces 使用者設定檔中的 platformRole。如果您沒有該欄位，可以在 **Directory -> Profile Editor -> User (default)** 中建立一個新欄位。
+    </Warning>
+
+     - 回到您的 Activepieces 應用程式頁面中的 **Provisioning -> To App -> Attribute Mappings**
+     
+     - 向下捲動並點擊 **Show Unmapped Attributes**
+     
+     - 編輯 `platformRole` 欄位
+     
+     - 在此您需要從您的 Okta 使用者設定檔中對應屬性值。如果您在 Okta 使用者設定檔中已經有一個角色欄位，且該值與 platformRole 的值（`ADMIN`、`MEMBER`、`OPERATOR`）完全匹配，則可以使用 `Map from Okta Profile` 選項直接選擇它；否則，您可以使用 [運算式 (Expression)](https://developer.okta.com/docs/reference/okta-expression-language/) 根據 Okta 使用者設定檔中的其他欄位傳回這 3 個角色之一。
+
+     以下是一個運算式的範例：
+
+    
+    ![Okta 角色運算式範例](/resources/screenshots/scim/okta/role-expression.png)
+
+    <Warning>
+      請確保傳回值始終為 `ADMIN`、`MEMBER` 或 `OPERATOR` 之一
+    </Warning>
+    
+  </Step>
+</Steps>
+
+
+## 佈建與取消佈建使用者
+
+### 佈建 (Provision)
+
+在 Activepieces 應用程式頁面中，前往 **Provisioning -> To App** 並啟用您希望在 Okta 發生變更時套用到 Activepieces 的操作。
+
+![Okta 角色運算式範例](/resources/screenshots/scim/okta/provision-actions.png)
+
+現在在 **Assignments** 頁籤中，您可以：
+- 選擇佈建個別使用者或群組。請注意，Okta 中的群組將成為 Activepieces 中的專案 (Projects)。
+
+- 如果您沒有群組並希望一次性佈建所有 Okta 使用者，可以指派 `Everyone` 群組。
+
+- 當編輯/建立已指派群組（包括 `Everyone`）中的使用者時，他們應會在 Activepieces 中更新。
+
+- 若要將群組推送到 Activepieces，請前往 **Push groups** 頁籤並點擊推送按鈕，找到群組並儲存。
+
+<Info>
+  專案中使用者的預設角色將為 `Editor` 角色，目前尚無法將專案角色與 Okta 連結
+</Info>
+
+![Okta 角色運算式範例](/resources/screenshots/scim/okta/push-group.png)
+
+
+
+<Tip>
+  在 Activepieces 中建立的使用者將收到一封歡迎電子郵件。點擊後，他們將被導向使用 `SAML` 登入。
+</Tip>
+
+
+### 取消佈建 (Deprovision)
+
+僅當使用者在 Okta 中被停用 (Deactivated) 時，其在 Activepieces 中的狀態才會切換為 `INACTIVE`。由於 Okta 的設計，Okta 中的停用 (Suspension) 或刪除不會反映在 Activepieces 中。
+
+對於群組，您可以在 **Push groups** 頁籤中刪除它們 -> 點擊 **Push Status** 欄位中的按鈕 -> 解除推送群組連結 (Unlink pushed group) -> 在目標中刪除群組 (Delete the group in target)
+
+<Warning>
+  刪除群組將會刪除 Activepieces 中的整個專案及其流程 (Flows) 和連線 (Connections)。連結到該群組的使用者不會受到影響。
+</Warning>
+
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title="Okta 中的連接器測試失敗">
+    - 確認 SCIM 基礎 URL 是否正確。
+    - 確保 `Authorization` 標頭使用 `Bearer` 格式。
+  </Accordion>
+  <Accordion title="使用者未被佈建">
+    - 確保使用者已指派給 Okta 應用程式。
+    - 確認 Okta 中已啟用佈建操作。
+  </Accordion>
+  <Accordion title="屬性未更新">
+    - 重新檢查 **Provisioning -> To App** 中的對應關係。
+    - 確保 `userName` 使用穩定的唯一值（通常是電子郵件）。
+  </Accordion>
+</AccordionGroup>

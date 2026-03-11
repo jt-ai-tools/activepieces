@@ -1,0 +1,223 @@
+---
+title: "如何設定 SSO"
+description: "設定單一登入 (SSO) 以為您的 Activepieces 平台啟用安全的集中式身分驗證"
+icon: 'key'
+---
+
+<Snippet file="enterprise-feature_zh_TW.mdx" />
+
+## 概覽
+
+單一登入 (SSO) 允許您的團隊使用組織現有的身分識別提供者 (Identity Provider) 進行驗證，無需另外設定 Activepieces 的登入認證。這提升了安全性、簡化了使用者管理，並提供了無縫的登入體驗。
+
+## 前置作業
+
+在設定 SSO 之前，請確保您擁有：
+
+- Activepieces 平台的 **管理員權限**
+- 您的身分識別提供者（Google、GitHub、Okta 或 JumpCloud）的 **管理員權限**
+- 來自 Activepieces SSO 設定畫面中的 **重新導向 URL (Redirect URL)**
+
+## 存取 SSO 設定
+
+導覽至 Activepieces 管理控制台中的 **Platform Settings (平台設定)** → **SSO** 以存取 SSO 設定畫面。
+
+![SSO 設定](/resources/screenshots/sso.png)
+
+## 強制執行 SSO
+
+您可以透過指定組織的電子郵件網域來強制執行 SSO。啟用強制執行 SSO 後：
+
+- 具有符合電子郵件網域的使用者必須透過 SSO 提供者進行驗證
+- 可以禁用電子郵件/密碼登入以增強安全性
+- 所有身分驗證都會透過您指定的身分識別提供者進行
+
+<Tip>
+我們建議在全組織強制執行之前，先對一小組使用者進行 SSO 測試。
+</Tip>
+
+## 支援的 SSO 提供者
+
+Activepieces 支援多種 SSO 提供者，可與您現有的身分管理系統整合。
+
+### Google
+
+<Steps>
+    <Step title="存取 Google Cloud 控制台">
+        前往 [Google Cloud Console](https://console.cloud.google.com/) 並選擇您的專案（或建立新專案）。
+    </Step>
+    <Step title="建立 OAuth2 憑證">
+        導覽至 **APIs & Services (API 和服務)** → **Credentials (憑證)** → **Create Credentials (建立憑證)** → **OAuth client ID (OAuth 用戶端 ID)**。
+        
+        選擇 **Web application (網頁應用程式)** 作為應用程式類型。
+    </Step>
+    <Step title="設定重新導向 URI">
+        從 Activepieces SSO 設定畫面複製 **Redirect URL**，並將其新增到 Google Cloud 控制台中的 **Authorized redirect URIs (已授權的重新導向 URI)**。
+    </Step>
+    <Step title="將憑證複製到 Activepieces">
+        從 Google 複製 **Client ID (用戶端 ID)** 和 **Client Secret (用戶端密鑰)**，並將其貼到 Activepieces 對應的欄位中。
+    </Step>
+    <Step title="儲存設定">
+        點擊 **Finish (完成)** 以完成設定。
+    </Step>
+</Steps>
+
+### GitHub
+
+<Steps>
+    <Step title="存取 GitHub 開發者設定">
+        前往 [GitHub Developer Settings](https://github.com/settings/developers) → **OAuth Apps** → **New OAuth App**。
+    </Step>
+    <Step title="註冊新應用程式">
+        填寫應用程式詳細資訊：
+        - **Application name**: 選擇一個易於識別的名稱（例如「Activepieces SSO」）
+        - **Homepage URL**: 輸入您的 Activepieces 實例 URL
+    </Step>
+    <Step title="設定授權回呼 URL">
+        從 Activepieces SSO 設定畫面複製 **Redirect URL**，並將其貼到 **Authorization callback URL (授權回呼 URL)** 欄位中。
+    </Step>
+    <Step title="完成註冊">
+        點擊 **Register application (註冊應用程式)** 以建立 OAuth App。
+    </Step>
+    <Step title="產生用戶端密鑰">
+        註冊後，點擊 **Generate a new client secret (產生新的用戶端密鑰)** 並立即複製（它不會再次顯示）。
+    </Step>
+    <Step title="將憑證複製到 Activepieces">
+        複製 **Client ID** 和 **Client Secret** 並將其貼到 Activepieces 對應的欄位中。
+    </Step>
+    <Step title="儲存設定">
+        點擊 **Finish (完成)** 以完成設定。
+    </Step>
+</Steps>
+
+### 使用 Okta 進行 SAML 設定
+
+<Steps>
+    <Step title="在 Okta 中建立新應用程式">
+        前往 [Okta Admin Portal](https://login.okta.com/) → **Applications** → **Create App Integration**。
+    </Step>
+    <Step title="選擇 SAML 2.0">
+        選擇 **SAML 2.0** 作為登入方法，然後點擊 **Next**。
+    </Step>
+    <Step title="設定一般設定">
+        輸入 **App name**（例如「Activepieces」），並可選擇上傳標誌。點擊 **Next**。
+    </Step>
+    <Step title="設定 SAML 設定">
+        - **Single sign-on URL**: 從 Activepieces 設定畫面複製 SSO URL
+        - **Audience URI (SP Entity ID)**: 輸入 `Activepieces`
+        - **Name ID format**: 選擇 `EmailAddress`
+    </Step>
+    <Step title="新增屬性陳述 (Attribute Statements)">
+        新增以下屬性映射：
+        
+        | 名稱 (Name) | 值 (Value) |
+        |------|-------|
+        | `firstName` | `user.firstName` |
+        | `lastName` | `user.lastName` |
+        | `email` | `user.email` |
+    </Step>
+    <Step title="在 Okta 中完成設定">
+        點擊 **Next**，選擇適當的意見回饋選項，然後點擊 **Finish**。
+    </Step>
+    <Step title="匯出 IdP 中繼資料">
+        前往 **Sign On** 頁籤 → **View SAML setup instructions** 或 **View IdP metadata**。複製 Identity Provider 中繼資料 XML。
+    </Step>
+    <Step title="設定 Activepieces">
+        - 將 **IdP Metadata** XML 貼到對應欄位
+        - 從 Okta 複製 **X.509 Certificate** 並貼到 **Signing Key** 欄位
+    </Step>
+    <Step title="儲存設定">
+        點擊 **Save (儲存)** 以完成設定。
+    </Step>
+</Steps>
+
+### 使用 JumpCloud 進行 SAML 設定
+
+<Steps>
+    <Step title="在 JumpCloud 中建立新應用程式">
+        前往 [JumpCloud Admin Portal](https://console.jumpcloud.com/) → **SSO Applications** → **Add New Application** → **Custom SAML App**。
+    </Step>
+    <Step title="設定 ACS URL">
+        從 Activepieces 設定畫面複製 **ACS URL**，並將其貼到 JumpCloud 中的 **ACS URLs** 欄位。
+        
+        ![JumpCloud ACS URL](/resources/screenshots/jumpcloud/acl-url.png)
+    </Step>
+    <Step title="設定 SP Entity ID">
+        將 **SP Entity ID** (Audience URI) 設定為 `Activepieces`。
+    </Step>
+    <Step title="新增使用者屬性">
+        設定以下屬性映射：
+        
+        | 服務提供者屬性 (Service Provider Attribute) | JumpCloud 屬性 |
+        |---------------------------|---------------------|
+        | `firstName` | `firstname` |
+        | `lastName` | `lastname` |
+        | `email` | `email` |
+        
+        ![JumpCloud 使用者屬性](/resources/screenshots/jumpcloud/user-attribute.png)
+    </Step>
+    <Step title="啟用 HTTP-Redirect 繫結 (Binding)">
+        JumpCloud 預設不包含 `HTTP-Redirect` 繫結。您 **必須** 啟用此選項。
+        
+        ![JumpCloud 重新導向繫結](/resources/screenshots/jumpcloud/declare-login.png)
+        
+        <Warning>
+        如果沒有啟用 HTTP-Redirect 繫結，SSO 整合將無法正常運作。
+        </Warning>
+    </Step>
+    <Step title="匯出中繼資料">
+        點擊 **Save (儲存)**，然後重新整理頁面並點擊 **Export Metadata (匯出中繼資料)**。
+        
+        ![JumpCloud 匯出中繼資料](/resources/screenshots/jumpcloud/export-metadata.png)
+        
+        <Tip>
+        驗證匯出的 XML 是否包含 `Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"`，以確保繫結已正確啟用。
+        </Tip>
+    </Step>
+    <Step title="在 Activepieces 中設定 IdP 中繼資料">
+        將匯出的中繼資料 XML 貼到 Activepieces 的 **IdP Metadata** 欄位中。
+    </Step>
+    <Step title="設定簽署憑證">
+        在 IdP 中繼資料中找到 `<ds:X509Certificate>` 元素並提取其值。將其格式化為 PEM 憑證：
+        
+        ```
+        -----BEGIN CERTIFICATE-----
+        [在此貼上憑證值]
+        -----END CERTIFICATE-----
+        ```
+        
+        將此內容貼到 **Signing Key** 欄位。
+    </Step>
+    <Step title="指派使用者到應用程式">
+        在 JumpCloud 中，將應用程式指派給適當的使用者或使用者群組。
+        
+        ![JumpCloud 指派 App](/resources/screenshots/jumpcloud/user-groups.png)
+    </Step>
+    <Step title="儲存設定">
+        點擊 **Finish (完成)** 以完成設定。
+    </Step>
+</Steps>
+
+## 疑難排解
+
+<AccordionGroup>
+    <Accordion title="設定 SSO 後使用者無法登入">
+        - 驗證重新導向 URL 在您的身分識別提供者中是否配置正確
+        - 確保已在身分識別提供者中將使用者指派給該應用程式
+        - 檢查電子郵件網域是否與 SSO 強制執行設定相符
+    </Accordion>
+    <Accordion title="SAML 身分驗證失敗">
+        - 確認 IdP 中繼資料完整且格式正確
+        - 驗證簽署憑證是否已使用 BEGIN/END 標記正確格式化
+        - 確保所有必要的屬性 (firstName, lastName, email) 均已映射
+    </Accordion>
+    <Accordion title="HTTP-Redirect 繫結錯誤 (JumpCloud)">
+        - 在 JumpCloud 中啟用 HTTP-Redirect 繫結選項
+        - 啟用繫結後重新匯出中繼資料
+        - 驗證匯出的 XML 中是否出現該繫結
+    </Accordion>
+</AccordionGroup>
+
+## 需要協助？
+
+如果您在 SSO 設定期間遇到問題，請聯絡我們的企業支援或 [銷售團隊](https://www.activepieces.com/sales)。

@@ -1,0 +1,91 @@
+---
+title: "內嵌編輯器 (Embed Builder)"
+description: ""
+icon: "wrench"
+---
+
+<Snippet file="enterprise-feature.mdx" />
+
+本文件說明如何在您的應用程式中嵌入 Activepieces iframe 並進行自定義。
+
+## 設定 SDK
+
+加入嵌入 SDK 指令碼後，將在您的 window 中初始化一個名為 `activepieces` 的物件，該物件有一個 `configure` 方法，您應該在容器渲染後呼叫它。
+<Tip>
+以下指令碼不應包含 `async` 或 `defer` 屬性。
+</Tip>
+
+
+<Tip>
+這些步驟假設您已經從後端生成了 JWT 權杖 (JWT token)。如果尚未生成，請查看 [佈署使用者 (provision-users)](./provision-users_zh_TW) 頁面。
+</Tip>
+
+```html
+<script src="https://cdn.activepieces.com/sdk/embed/0.8.1.js">
+</script>
+<script>
+const instanceUrl = 'YOUR_INSTANCE_URL';
+const jwtToken = 'GENERATED_JWT_TOKEN';
+const containerId = 'YOUR_CONTAINER_ID';
+activepieces.configure({
+  instanceUrl,
+  jwtToken,
+  prefix: "/",
+  embedding: {
+    containerId,
+    builder: {
+      disableNavigation: false,
+      hideFlowName: false
+    },
+    dashboard: {
+      hideSidebar: false
+    },
+    hideFolders: false,
+    navigation: {
+      handler: ({ route }) => {
+          // iframe 路由已更改，請確保您查看了導航章節。
+        }
+    }
+  },
+});
+
+</script>
+```
+<Tip>
+`configure` 會返回一個 Promise，該 Promise 會在身份驗證完成後解析。
+ </Tip>
+
+<Tip>
+請查看 [導航 (navigation)](./navigation_zh_TW) 章節，這對於理解導航的工作原理以及如何提供自動同步體驗非常重要。
+</Tip>
+
+**設定參數 (Configure Parameters)：**
+
+| 參數名稱 | 必填 | 類型 | 說明 |
+| --- | --- | --- | --- |
+| instanceUrl| ✅ | string | 託管 Activepieces 的實例 URL，如果您是雲端用戶，可以是 https://cloud.activepieces.com。 |
+| jwtToken | ✅ | string | 您生成的用於對 Activepieces 使用者進行身份驗證的 JWT 權杖。 |
+| prefix | ❌ | string | 某些客戶有嵌入前綴，例如 `<embedding_url_prefix>/<Activepieces_url>`。例如，如果前綴是 `/automation` 且 Activepieces 的 URL 是 `/flows`，則完整 URL 將是 `/automation/flows`。 |
+| embedding.containerId | ❌ | string | 將包含 Activepieces iframe 的 HTML 元素的 ID。 |
+| embedding.builder.disableNavigation | ❌ | boolean \| `keep_home_button_only` | 隱藏編輯器中的資料夾名稱、首頁按鈕（如果未設置為 [`keep_home_button_only`](./sdk-changelog_zh_TW#20%2F05%2F2025-0-4-0)）和刪除選項，預設為 false。 |
+| embedding.builder.hideFlowName | ❌ | boolean | 隱藏編輯器標頭中的流程名稱和流程操作下拉選單，預設為 false。 |
+| embedding.builder.homeButtonClickedHandler | ❌ | `()=>void` | 回呼函數 (Callback)，用於停止首頁按鈕導航到儀表板，並改用此處理器覆蓋（於 [0.4.0](./sdk-changelog_zh_TW#20%2F05%2F2025-0-4-0) 加入）。 |
+| embedding.builder.homeButtonIcon | ❌ | `logo` \| `back` | 如果設置為 **`back`**，則移除懸停在首頁按鈕上時顯示的工具提示（於 [0.5.0](./sdk-changelog_zh_TW#03%2F07%2F2025-0-5-0) 加入）。 |
+| embedding.dashboard.hideSidebar | ❌ | boolean | 控制儀表板中側邊欄的顯示，預設為 false。 |
+| embedding.dashboard.hideFlowsPageNavbar | ❌ | boolean | 控制儀表板中流程表格上方顯示流程、問題和執行的導航欄顯示，預設為 false。（於 [0.6.0](./sdk-changelog_zh_TW#07%2F07%2F2025-0-6-0) 加入）。 |
+| embedding.dashboard.hidePageHeader | ❌ | boolean | 隱藏儀表板中的頁面頁首，預設為 false。（於 [0.8.0](./sdk-changelog_zh_TW#09%2F21%2F2025-0-8-0) 加入）。 |
+| embedding.hideFolders | ❌ | boolean | 在流程表格和編輯器中隱藏所有與資料夾相關的內容，預設為 false。 |
+| embedding.styling.fontUrl | ❌ | string | 嵌入中使用的字體 URL，預設為 `https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap`。 |
+| embedding.styling.fontFamily | ❌ | string | 嵌入中使用的字體系列，預設為 `Roboto`。 |
+| embedding.styling.mode | ❌ | `light` \| `dark` | 控制淺色/深色模式（於 [0.5.0](./sdk-changelog_zh_TW#03%2F07%2F2025-0-5-0) 加入）。 |
+| embedding.hideExportAndImportFlow | ❌ | boolean | 隱藏匯出或匯入流程的選項（於 [0.4.0](./sdk-changelog_zh_TW#20%2F05%2F2025-0-4-0) 加入）。 |
+| embedding.hideDuplicateFlow | ❌ | boolean | 隱藏複製流程的選項（於 [0.5.0](./sdk-changelog_zh_TW#03%2F07%2F2025-0-5-0) 加入）。 |
+| embedding.locale | ❌ | `en` \| `nl` \| `de` \| `fr` \| `es` \| `ja` \| `zh` \| `pt` \| `zh-TW` \| `ru` \| | 接受 [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) 語系代碼（於 [0.5.0](./sdk-changelog_zh_TW#03%2F07%2F2025-0-5-0) 加入）。 |
+| navigation.handler | ❌ | `({route:string}) => void` | 每當 Activepieces 中的路由發生變化時，都會觸發此回呼，您可以在[這裡](/embedding/navigation_zh_TW)閱讀更多相關資訊。 |
+
+<Tip>
+ 為了加載字體，您需要同時設置 `fontUrl` 和 `fontFamily` 屬性。
+ 如果您只設置其中之一，將使用預設字體。
+ 預設字體為 `Roboto`。
+ 我們使用的字體權重是來自 [tailwind](https://tailwindcss.com/docs/font-weight) 的預設字體權重。
+</Tip>

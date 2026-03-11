@@ -1,0 +1,32 @@
+---
+title: "顯示/隱藏元件 (Pieces)"
+description: ""
+icon: "puzzle"
+---
+<Snippet file="enterprise-feature.mdx" />
+<Snippet file="replace-oauth2-apps.mdx" />
+
+如果你只想向嵌入 (embedding) 使用者顯示特定元件 (pieces)，我們建議你執行以下操作：
+
+<Steps>
+    <Step title="標記元件 (Tag Pieces)">
+        前往 **Platform Admin -> Setup -> Pieces**，選擇你想標記的元件，然後點擊 **Apply Tags**。
+
+        ![Bulk Tag](../resources/screenshots/tag-pieces.png)
+    </Step>
+    <Step title="將標籤新增至預配權杖 (Provision Token)">
+       你需要在權杖中指定元件的標籤，請參閱 [預配使用者 (provisioning users)](./provision-users_zh_TW) 了解如何產生權杖。
+
+        你應該按照以下方式指定 `pieces` 宣告 (claim)：
+        ```json
+        {
+            /// Other claims
+            "piecesFilterType": "ALLOWED",
+            "piecesTags": [ "free" ]
+        }
+        ```
+
+        每當嵌入式 SDK (embedding SDK) 使用該權杖時，它會將所有帶有這些標籤的元件同步到該權杖所屬的專案中。
+        該專案將僅包含含有這些標籤的元件。
+    </Step>
+</Steps>

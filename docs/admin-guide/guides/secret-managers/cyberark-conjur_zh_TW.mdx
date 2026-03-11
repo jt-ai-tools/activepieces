@@ -1,0 +1,138 @@
+---
+title: "CyberArk Conjur"
+description: "將 CyberArk Conjur 連接至 Activepieces 以進行集中式秘密管理"
+---
+
+CyberArk Conjur 是一個秘密管理解決方案，提供認證資訊的安全性存儲與存取。與 Activepieces 的整合使用 **主機/API 金鑰認證 (host/API key authentication)**：Activepieces 以 Conjur 主機的身分進行驗證，接收一個短效權杖 (token)，並使用它來檢索該主機具有 `read`（讀取）和 `execute`（執行）權限的秘密。
+
+Conjur 策略定義在 `.yml` 檔案中。有關建議的結構和模式，請參閱 CyberArk Conjur 說明文件中的 [Policy best practices](https://docs.cyberark.com/conjur-enterprise/13.0/en/Content/Operations/Policy/policy-best-practices.htm)。有關策略語法和運算子，請參閱 [Policy syntax](https://docs.cyberark.com/conjur-open-source/Latest/en/Content/Operations/Policy/policy-syntax.htm) 參考。
+
+## 前置條件
+
+- 一個 Conjur 伺服器 (Conjur Cloud, Conjur Enterprise, 或 Conjur Open Source)
+- 一個定義了 Activepieces 主機並授予其存取所需變數權限的 Conjur 策略
+
+## 為 Activepieces 配置 Conjur 主機
+
+若要允許 Activepieces 讀取秘密，請配置一個 Conjur 策略，宣告一個群組 (group)、變數 (variables)、主機 (host)、Layer (layer) 以及正確的權限。以下步驟說明如何建立該策略檔案。
+
+### 範例策略 (Activepieces)
+
+以下策略定義了一個名為 `activepieces` 的策略，其中包含一個群組、兩個變數、一個主機、一個 Layer，以及讓主機可以讀取變數的授權。
+
+```yaml
+- !policy
+  id: activepieces
+  body:
+    - !group activepieces-secrets
+    - &variables
+        - !variable
+            id: key-1
+            kind: password
+        - !variable
+            id: key-2
+            kind: password
+    - !permit
+        role: !group /activepieces/activepieces-secrets
+        privileges: [read, update, execute]
+        resources: *variables
+
+    - !host activepieces
+    - !layer activepieces
+    - !grant
+        role: !layer activepieces
+        members:
+            - !host activepieces
+    - !grant
+        role: !group activepieces-secrets
+        member: !layer activepieces
+```
+
+### 策略步驟 (摘要)
+
+1. **在策略根目錄宣告一個群組** (例如 `activepieces-secrets`)。此群組將被允許讀取（以及選擇性地執行）變數。
+
+2. **宣告變數** 並給予群組對其進行 `read` 和 `execute` 的權限（以便主機可以獲取秘密值）：
+
+   ```yaml
+   - &variables
+     - !variable
+         id: my-secret
+         kind: password
+   - !permit
+       role: !group /your-policy/your-group
+       privileges: [read, execute]
+       resources: *variables
+   ```
+
+3. **宣告主機** Activepieces 將使用的名稱（例如 `activepieces`）和一個 **Layer**（例如 `activepieces`），並將主機加入該 Layer：
+
+   ```yaml
+   - !host activepieces
+   - !layer activepieces
+   - !grant
+       role: !layer activepieces
+       members:
+           - !host activepieces
+   ```
+
+4. **授予 Layer 在該群組中的成員身份**，該群組具有存取變數的權限：
+
+   ```yaml
+   - !grant
+     role: !group activepieces-secrets
+     member: !layer activepieces
+   ```
+
+5. **載入策略** 到 Conjur 中。Conjur 將建立主機並返回一個 **API 金鑰**。您將在連接 Activepieces 時使用此 API 金鑰和主機身分。
+
+載入策略後，Conjur 會返回類似以下的內容：
+
+```json
+{
+  "created_roles": {
+    "conjur:host:activepieces/activepieces": {
+      "id": "conjur:host:activepieces/activepieces",
+      "api_key": "<your-host-api-key>"
+    }
+  },
+  "version": 1
+}
+```
+
+安全地存儲 **api_key**；您將在 Activepieces 中將其輸入為 **API Key**。
+
+## 伺服器 URL 與組織
+
+- **Conjur Cloud**: 使用格式如下的 URL：
+  `https://<subdomain>.secretsmgr.cyberark.cloud/api/`  
+  並將 **Organization account name** 設置為 `conjur`，除非您的 Cloud 租戶使用不同的帳戶。
+- **On-prem / Enterprise**: 使用您的 Conjur 伺服器基礎 URL (例如 `https://conjur.example.com`) 和您的組織帳戶名稱。
+
+## 連接至 Activepieces
+
+1. 前往 **Platform Admin → Security → Secret Managers**。
+2. 從供應商列表中選擇 **CyberArk Conjur**。
+3. 輸入連線詳細資訊：
+   - **URL**: Conjur 伺服器 URL (例如 `https://conjur.example.com` 或上方的 Conjur Cloud URL)。請勿加上結尾斜線。
+   - **Organization account name**: 您的 Conjur 帳戶 (例如 Conjur Cloud 為 `conjur`)。
+   - **Login ID**: 對於主機認證，這必須是帶有 `host/` 前綴的 Conjur 主機 ID，例如 `host/activepieces/activepieces` (策略 ID 和主機名稱，如您的策略中所述)。
+   - **API Key**: 建立主機時返回的主機 API 金鑰 (參見上方的策略載入回應)。
+4. 點擊 **Connect** 以測試並儲存連線。
+
+## 在連線中使用 CyberArk Conjur 秘密
+
+在配置使用秘密的連線時：
+
+1. 點擊憑據欄位旁邊的 **鑰匙圖示** (🔑)。
+2. 選擇 **CyberArk Conjur** 作為秘密管理員。
+3. 輸入 **Secret key**：格式為 `policy_id/variable_id` 的 Conjur 變數路徑。
+   對於上述範例策略，請使用：
+   - `activepieces/key-1`
+   - `activepieces/key-2`  
+
+Activepieces 將以配置的主機身分進行驗證，並在流程執行時從 Conjur 檢索秘密。
+
+<Warning>
+  如果您更新了現有的秘密但沒有看到更新反映，請參閱 [快取 (caching)](/admin-guide/guides/secret-managers/overview_zh_TW#caching)
+</Warning>

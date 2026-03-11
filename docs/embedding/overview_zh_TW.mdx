@@ -1,0 +1,32 @@
+---
+title: '總覽'
+description: '了解嵌入運作方式'
+icon: "cube"
+---
+
+<Snippet file="enterprise-feature.mdx" />
+
+本節提供如何將 Activepieces 編輯器（builder）嵌入您的應用程式，並自動配置（provision）使用者的總覽。
+
+嵌入流程包含以下步驟：
+
+<Steps>
+    <Step title="配置使用者" >
+        產生 JSON Web Token (JWT) 以識別您的客戶並將其傳遞給 SDK，更多資訊請參閱[這裡](./provision-users_zh_TW)。
+    </Step>
+    <Step title="嵌入編輯器">
+        您可以使用 SDK 在您的 SaaS 中嵌入並自定義 Activepieces，更多資訊請參閱[這裡](./embed-builder_zh_TW)。
+    </Step>
+</Steps>
+
+   
+   以下是其中一個嵌入 Activepieces 的 SaaS 介面範例： 
+  ![嵌入範例](../resources/screenshots/embedding-example.png)
+
+<Tip>
+如果您需要在您的 SaaS 中收集使用者的連線（connections），可以透過 SDK 達成。更多資訊請參閱[這裡](./embed-connections_zh_TW)。
+</Tip>
+
+<Tip>
+如果您正在尋找讓 Activepieces 與嵌入它的 SaaS 之間透過 piece 進行溝通的方法，建議您參考[自定義屬性文件](/build-pieces/piece-reference/properties_zh_TW#custom-property-beta)。
+</Tip>

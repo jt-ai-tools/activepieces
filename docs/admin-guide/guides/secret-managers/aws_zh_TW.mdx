@@ -1,0 +1,76 @@
+---
+title: "AWS Secrets Manager"
+description: "將 AWS Secrets Manager 連接到 Activepieces 以進行集中式秘密管理"
+---
+
+AWS Secrets Manager 可協助您保護對應用程式、服務和 IT 資源的存取。此整合使用 **IAM 使用者憑證** (Access Key + Secret Key) 直接與 AWS Secrets Manager 進行身分驗證。
+
+## 前置作業
+
+- 具有建立 IAM 使用者和政策權限的 AWS 帳戶
+- 在 AWS Secrets Manager 中建立和管理秘密 (Secrets) 的權限
+
+## 步驟 1 — 建立 Secrets Manager 存取權限的 IAM 政策
+
+建立一個 IAM 政策，授予 Activepieces 檢索秘密所需的讀取權限。
+
+1. 開啟 [IAM 主控台 → 政策 → 建立政策](https://console.aws.amazon.com/iam/home#/policies$new?step=edit)。
+2. 切換到 **JSON** 索引標籤並貼上：
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:ListSecrets",
+        "secretsmanager:DescribeSecret"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+<Tip>
+在正式環境中，建議將 `Resource` 限制在 Activepieces 需要的特定秘密 ARN，而非使用 `"*"`。
+</Tip>
+
+3. 點擊 **下一步**，命名政策（例如 `ActivepiecesSecretsReadOnly`），然後建立。
+
+## 步驟 2 — 建立 IAM 使用者並附加政策
+
+1. 開啟 [IAM 主控台 → 使用者 → 建立使用者](https://console.aws.amazon.com/iam/home#/users$new)。
+2. 輸入使用者名稱（例如 `activepieces-secrets-user`）並點擊 **下一步**。
+3. 選擇 **直接附加政策**，找到並附加在步驟 1 中建立的政策，然後點擊 **下一步** 和 **建立使用者**。
+4. 開啟新建立的使用者，前往 **安全憑證** 索引標籤，然後點擊 **建立存取金鑰**。
+5. 選擇 **在 AWS 外部執行的應用程式**，點擊 **下一步**，然後點擊 **建立存取金鑰**。
+6. 複製 **Access Key** 和 **Secret Key** — 您在下一個步驟中會用到。
+
+## 步驟 3 — 在 Activepieces 中連接
+
+1. 前往 **平台管理 (Platform Admin) → 安全性 (Security) → 金鑰管理員 (Secret Managers)**。
+2. 從供應商列表中選擇 **AWS Secrets Manager**。
+3. 輸入連線詳細資訊：
+   - **Access Key** — 來自步驟 2 的 Access Key ID (例如 `AKIAIOSFODNN7EXAMPLE`)。
+   - **Secret Key** — 來自步驟 2 的 Secret Access Key。
+   - **Region** — 存儲秘密的 AWS 區域 (例如 `us-east-1`)。
+4. 點擊 **連接 (Connect)** 以測試並儲存連線。
+
+## 在連接中使用 AWS Secrets Manager
+
+在配置需要憑證的全域連接 (Global Connection) 時：
+
+1. 點擊憑證欄位旁邊的 **鑰匙圖示** (🔑)。
+2. 選擇 **AWS Secrets Manager** 作為金鑰管理員。
+3. 填寫：
+   - **Secret Name** — AWS Secrets Manager 中秘密的易記名稱 (Friendly Name)。
+   - **Secret Json key** — 存儲秘密的 JSON 鍵值。
+
+Activepieces 將使用配置的憑證來檢索秘密值，並在執行時將其注入到連接中。
+
+<Warning>
+  如果您更新了現有的秘密但看不到反映的更新，請參考 [快取](/admin-guide/guides/secret-managers/overview_zh_TW#caching)
+</Warning>

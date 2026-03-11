@@ -1,0 +1,53 @@
+---
+title: "管理使用者角色"
+description: "Activepieces 專案權限的文件"
+icon: 'user'
+---
+
+<Snippet file="enterprise-feature.mdx" />
+
+Activepieces 使用角色型存取控制 (Role-Based Access Control, RBAC) 來管理專案內的權限。每個專案都包含多個流程 (Flows) 和使用者，每位使用者都會被指派特定的角色，以定義他們在專案中的操作權限。
+
+## 預設角色
+
+Activepieces 內建四種標準角色。下表顯示各個角色的權限：
+
+| 權限 | 管理員 (Admin) | 編輯者 (Editor) | 操作員 (Operator) | 檢視者 (Viewer) |
+|------------|:-----:|:------:|:--------:|:------:|
+| **流程 (Flows)** |||||
+| 檢視流程 (View Flows) | ✓ | ✓ | ✓ | ✓ |
+| 編輯流程 (Edit Flows) | ✓ | ✓ | | |
+| 發佈 / 切換流程 (Publish / Toggle Flows) | ✓ | ✓ | ✓ | |
+| **執行紀錄 (Runs)** |||||
+| 檢視執行紀錄 (View Runs) | ✓ | ✓ | ✓ | ✓ |
+| 重試執行紀錄 (Retry Runs) | ✓ | ✓ | ✓ | |
+| **連線 (Connections)** |||||
+| 檢視連線 (View Connections) | ✓ | ✓ | ✓ | ✓ |
+| 編輯連線 (Edit Connections) | ✓ | ✓ | ✓ | |
+| **團隊 (Team)** |||||
+| 檢視專案成員 (View Project Members) | ✓ | ✓ | ✓ | ✓ |
+| 新增/移除專案成員 (Add/Remove Project Members) | ✓ | | | |
+| **Git 同步 (Git Sync)**    |      |        |      |      |
+| 設定 Git 儲存庫 (Configure Git Repo)      | ✓    |        |      |      |
+| 從 Git 拉取流程 (Pull Flows from Git)     | ✓    |        |      |      |
+| 推送流程到 Git (Push Flows to Git)       | ✓    |        |      |      |
+
+## 自訂角色
+
+如果預設角色不符合您的需求，您可以建立具有特定權限的自訂角色。
+
+<Steps>
+  <Step title="導覽至專案角色">
+    前往 **平台管理 (Platform Admin)** → **安全性 (Security)** → **專案角色 (Project Roles)**
+  </Step>
+  <Step title="建立新角色">
+    點擊 **建立角色 (Create Role)** 並給予名稱
+  </Step>
+  <Step title="設定權限">
+    選擇您想要授予此角色的特定權限
+  </Step>
+</Steps>
+
+<Tip>
+當您需要精細控制時，自訂角色非常有用。例如：允許使用者檢視和重試執行紀錄，但無法編輯流程。
+</Tip>

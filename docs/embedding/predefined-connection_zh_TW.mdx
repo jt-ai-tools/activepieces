@@ -1,0 +1,255 @@
+---
+title: "預定義連線 (Predefined Connection)"
+icon: "Link"
+---
+
+使用預定義連線，讓使用者在嵌入式應用程式中存取您的組件 (piece) 時，無需重新輸入身分驗證認證資訊。
+
+高階步驟如下：
+- 在平台管理員中使用 API 為專案建立全域連線。只有平台管理員可以編輯或刪除全域連線。
+- （選填）在組件設定中隱藏連線下拉選單。
+
+### 先決條件
+
+- [執行企業版 (Enterprise Edition)](/handbook/engineering/playbooks/run-ee_zh_TW)
+- [建立您的組件](/build-pieces/building-pieces/overview_zh_TW)。稍後我們將自訂組件邏輯以使用預定義連線。
+
+### 建立預定義連線
+
+<Steps>
+  <Step title="建立 API 金鑰">
+    前往 **平台管理 (Platform Admin) → 安全 (Security) → API 金鑰 (API Keys)** 並建立一個 API 金鑰。儲存它以供下一步使用。
+    ![建立 API 金鑰](/resources/screenshots/create-api-key.png)
+  </Step>
+  <Step title="透過 API 建立全域連線">
+    在您的後端加入以下程式碼片段，以便在每次產生 **JWT token** 時建立全域連線。
+
+    此片段執行以下操作：
+        - 如果專案不存在，則建立專案。
+        - 按照特定的命名慣例為專案建立全域連線。
+```js
+const apiKey = 'YOUR_API_KEY';
+const instanceUrl = 'https://cloud.activepieces.com';
+
+// 您 SAAS 中的使用者 / 組織名稱
+const externalProjectId = 'org_1234';
+const pieceName = '@activepieces/piece-gelato';
+// 這取決於您的組件驗證類型，可以是 ['PLATFORM_OAUTH2','SECRET_TEXT','BASIC_AUTH','CUSTOM_AUTH'] 之一
+const pieceAuthType = "CUSTOM_AUTH"
+const connectionProps = {
+    // 填寫您組件驗證所需的屬性 (props)
+}
+const { id: projectId, externalId } = await getOrCreateProject({
+  projectExternalId: externalProjectId,
+  apiKey,
+  instanceUrl,
+});
+
+await createGlobalConnection({
+  projectId,
+  externalProjectId,
+  apiKey,
+  instanceUrl,
+  pieceName,
+  props,
+  pieceAuthType
+});
+
+```
+實作方式：
+
+```js
+async function getOrCreateProject({
+    projectExternalId,
+    apiKey,
+    instanceUrl,
+}: {
+    projectExternalId: string,
+    apiKey: string,
+    instanceUrl: string
+}): Promise<{ id: string, externalId: string }> {
+
+    const projects = await fetch(`${instanceUrl}/api/v1/projects?externalId=${projectExternalId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => response.json())
+        .then(data => data.data)
+        .catch(err => {
+            console.error('Error fetching projects:', err);
+            return [];
+        });
+
+    if (projects.length > 0) {
+        return {
+            id: projects[0].id,
+            externalId: projects[0].externalId
+        };
+    }
+
+    const newProject = await fetch(`${instanceUrl}/api/v1/projects`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            displayName: projectExternalId,
+            metadata: {},
+            externalId: projectExternalId
+        })
+    })
+        .then(response => response.json())
+        .catch(err => {
+            console.error('Error creating project:', err);
+            throw err;
+        });
+
+    return {
+        id: newProject.id,
+        externalId: newProject.externalId
+    };
+} 
+
+async function createGlobalConnection({
+    projectId,
+    externalProjectId,
+    apiKey,
+    instanceUrl,
+    pieceName,
+    props,
+    pieceAuthType
+}: {
+    projectId: string,
+    externalProjectId: string,
+    apiKey: string,
+    instanceUrl: string,
+    pieceName: string,
+    props: Record<string, any>,
+    pieceAuthType
+}) {
+
+    const displayName = 'Gelato Connection';
+    const connectionExternalId = 'gelato_' + externalProjectId;
+
+    return fetch(`${instanceUrl}/api/v1/global-connections`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            displayName,
+            pieceName,
+            metadata: {},
+            type: pieceAuthType,
+            value: {
+                type: pieceAuthType,
+                props
+            },
+            scope: 'PLATFORM',
+            projectIds: [projectId],
+            externalId: connectionExternalId
+        })
+    });
+}
+```
+   
+  </Step>
+</Steps>
+
+### 隱藏連線下拉選單（選填）
+
+<Steps>
+    <Step title="修改觸發器 (Trigger) / 動作 (Action) 定義">
+       在呼叫 `createTrigger` 或 `createAction` 的地方，將 `requireAuth` 設定為 `false`。這將在編輯器的組件設定中隱藏連線下拉選單。接著，我們需要根據命名慣例來獲取它。
+    </Step>
+    <Step title="獲取連線">
+        以下範例說明如何根據命名慣例獲取連線值。請確保在建立全域連線時遵循此命名慣例。
+
+```js
+import {
+   ConnectionsManager,
+   Property,
+   TriggerStrategy
+} from "@activepieces/pieces-framework";
+import {
+   createTrigger
+} from "@activepieces/pieces-framework";
+import {
+   isNil
+} from "@activepieces/shared";
+// 從 index.ts 檔案新增此匯入，其中包含 auth 物件的定義。
+import { auth } from '../..';
+
+const fetchConnection = async (
+	connections: ConnectionsManager,
+	projectExternalId: string | undefined,
+): Promise<PiecePropValueSchema<typeof auth>> => {
+	if (isNil(projectExternalId)) {
+		throw new Error('This project is missing an external id');
+	}
+	// 這裡的命名慣例是 gelato_projectExternalId
+	const connection = await connections.get(`gelato_${projectExternalId}`);
+	if (isNil(connection)) {
+		throw new Error(`Connection not found for project ${projectExternalId}`);
+	}
+
+	return connection as PiecePropValueSchema<typeof auth>;
+};
+
+
+export const newFlavorCreated = createTrigger({
+   requireAuth: false,
+   name: 'newFlavorCreated',
+   displayName: 'new flavor created',
+   description: 'triggers when a new icecream flavor is created.',
+   props: {
+      dropdown: Property.Dropdown({
+         displayName: 'Dropdown',
+         required: true,
+         refreshers: [],
+         options: async (_, {
+            connections,
+            project
+         }) => {
+            const connection = await fetchConnection(connections, (await project.externalId()));
+            // 您的邏輯
+            return {
+               options: [{
+                  label: 'test',
+                  value: 'test'
+               }]
+            }
+         }
+      })
+   },
+   sampleData: {},
+   type: TriggerStrategy.POLLING,
+   async test({connections,project}) {
+      const connection = await fetchConnection(connections, (await project.externalId()));
+      // 配合您的邏輯使用該連線
+      return []
+   },
+   async onEnable({connections,project}) {
+      const connection = await fetchConnection(connections, (await project.externalId()));
+      // 配合您的邏輯使用該連線
+   },
+
+   async onDisable({connections,project}) {
+      const connection = await fetchConnection(connections, (await project.externalId()));
+      // 配合您的邏輯使用該連線
+   },
+
+   async run({connections,project}) {
+    const connection = await fetchConnection(connections, (await project.externalId()));
+      // 配合您的邏輯使用該連線
+      return []
+   },
+});
+```
+    </Step>
+</Steps>

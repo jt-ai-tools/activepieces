@@ -1,0 +1,245 @@
+---
+title: '專案發佈 (Project Releases)'
+description: '了解如何管理和跨專案部署發佈版本'
+icon: 'rocket'
+---
+
+專案發佈 (Project Releases) 允許您在不同專案之間同步流程 (flows)、連接 (connections) 和表格 (tables) — 這對於希望在一個環境中開發並充滿信心部地署到另一個環境的團隊來說至關重要。
+
+<Tip>
+**範例：** 在 **Staging** (測試) 專案中建立並測試您的自動化流程，然後在準備就緒時無縫地將其推廣到 **Production** (正式) 環境。只需導覽至您的 Production 專案 → **Releases** → 從 Staging 建立一個發佈，所有變更將立即套用。
+</Tip>
+## 概覽 (Overview)
+
+建立發佈有三種方式：
+
+| 來源 | 描述 |
+|--------|-------------|
+| **Git** | 從連接的 Git 儲存庫拉取變更 |
+| **Project** | 從您實例中的另一個專案複製流程 |
+| **Rollback** | 還原到先前的發佈狀態 |
+
+
+## 先決條件 (Prerequisites)
+
+
+### 啟用環境 (Enabling Environments)
+
+在您的專案儀表板中，前往設定 (settings)，然後點擊環境 (Environments) 並點擊啟用按鈕。
+
+![啟用環境](/resources/screenshots/enable-environments-1.png)
+
+![啟用環境](/resources/screenshots/enable-environments-2.png)
+## 開始使用
+
+從專案側邊欄導覽至 **Releases** 頁面，以查看所有發佈並建立新發佈。
+
+![專案發佈頁面](/resources/screenshots/project-releases-page.png)
+
+## 連接 Git (選填)
+
+如果您想使用 Git 來追蹤您的變更，您需要先連接一個 Git 儲存庫。這需要啟用環境 (Environments) 功能。
+
+## 建立發佈
+
+### 從專案 (From Project)
+
+將一個專案中的流程、連接和表格變更套用到另一個專案。
+
+<Steps>
+  <Step title="打開建立發佈選單">
+    點擊 **Create Release** 下拉按鈕。
+  </Step>
+  <Step title="選擇 From Project">
+    從下拉選單中選擇 **From Project**。
+  </Step>
+  <Step title="選擇來源專案">
+    選擇您想要複製流程、連接和表格的來源專案。
+  </Step>
+  <Step title="預覽並套用">
+    預覽變更，然後點擊 **Apply Changes**。
+  </Step>
+</Steps>
+
+![從專案建立發佈](/resources/screenshots/create-release-from-project-1.png)
+
+![從專案建立發佈](/resources/screenshots/create-release-from-project-2.png)
+<Warning>
+  在發佈期間建立的新連接是佔位符 (placeholders)，在套用發佈後需要使用有效的憑據重新連接。
+</Warning>
+
+
+### 從 Git (From Git)
+
+<Steps>
+  <Step title="打開建立發佈選單">
+    點擊 **Create Release** 下拉按鈕。
+  </Step>
+  <Step title="選擇 From Git">
+    從下拉選單中選擇 **From Git**。
+  </Step>
+  <Step title="預覽變更">
+    將會出現一個對話框，顯示所有將被套用的變更：
+    - **Flows Changes**: 新增、更新或刪除的流程
+    - **Connections Changes**: 新增或重新命名的連接
+    - **Tables Changes**: 新增、更新或刪除的表格
+  </Step>
+  <Step title="選擇變更">
+    勾選或取消勾選您想要包含在此發佈中的流程。
+  </Step>
+  <Step title="新增發佈詳情">
+    為您的發佈輸入 **Name** (名稱) 和選填的 **Description** (描述)。
+  </Step>
+  <Step title="套用變更">
+    點擊 **Apply Changes** 來建立發佈。
+  </Step>
+</Steps>
+![從 Git 建立發佈](/resources/screenshots/create-git-release.png)
+
+
+
+## 推送所有內容到 Git
+
+如果您的專案已連接到 Git 儲存庫，您可以將所有的流程、連接和表格推送到 Git。
+
+<Steps>
+  <Step title="點擊 Push Everything">
+    在發佈頁面上點擊 **Push Everything** 按鈕。
+  </Step>
+  <Step title="輸入 Commit 訊息">
+    編寫描述性的 commit 訊息來解釋您的變更。
+  </Step>
+  <Step title="推送">
+    點擊 **Push** 將所有已發佈的流程發送到 Git 儲存庫。
+  </Step>
+</Steps>
+
+![推送所有內容到 Git 對話框](/resources/screenshots/push-everything-to-git.png)
+
+
+## 推送個別流程或表格
+
+您也可以將特定的流程或表格推送到 Git，而無需推送所有內容。
+<Warning>
+ 您只能將已發佈 (published) 的流程推送至 Git。
+</Warning>
+<Steps>
+  <Step title="選擇項目">
+    導覽至您的流程或表格，然後選擇您想要推送的項目。
+  </Step>
+  <Step title="打開推送對話框">
+    點擊 **Push to Git** 選項。
+  </Step>
+  <Step title="輸入 Commit 訊息">
+    提供描述您推送內容的 commit 訊息。
+  </Step>
+  <Step title="推送">
+    點擊 **Push** 將選定的項目發送到 Git。
+  </Step>
+</Steps>
+
+![推送至 Git 對話框](/resources/screenshots/push-flows-to-git-1.png)
+
+![推送至 Git 對話框](/resources/screenshots/push-flows-to-git-2.png)
+
+## 回滾發佈 (Rolling Back a Release)
+
+如果套用發佈後出現問題，您可以輕鬆回滾到先前的狀態。
+
+<Steps>
+  <Step title="找到發佈">
+    在發佈清單中找到您想要回滾到的發佈版本。
+  </Step>
+  <Step title="點擊 Rollback">
+    點擊發佈版本旁邊的回滾圖示 (↩)。
+  </Step>
+  <Step title="預覽變更">
+    預覽為恢復該發佈狀態而將套用的變更。
+  </Step>
+  <Step title="套用回滾">
+    選擇要包含的變更，然後點擊 **Apply Changes**。
+  </Step>
+</Steps>
+
+![回滾發佈](/resources/screenshots/rollback-release.png)
+
+## 發佈詳情 (Release Details)
+
+清單中的每個發佈顯示：
+
+| 欄位 | 描述 |
+|--------|-------------|
+| **Name** | 您為發佈指定的名稱 |
+| **Source** | 發佈的來源 (Git, Project, 或 Rollback) |
+| **Imported At** | 發佈建立的時間 |
+| **Imported By** | 建立發佈的使用者 |
+
+點擊任何發佈以查看其完整詳情。
+
+![發佈詳情](/resources/screenshots/release-details.png)
+
+## 了解變更預覽
+
+建立發佈時，您會看到所有變更的預覽：
+
+### 流程變更 (Flow Changes)
+
+- 將建立的新流程
+- 將更新的現有流程
+- 將刪除的流程
+
+### 連接變更 (Connection Changes)
+
+- 新連接是佔位符，必須在發佈後重新連接
+- 重新命名的連接
+
+### 表格變更 (Table Changes)
+
+- 新增、更新和刪除的表格會顯示各自的指示器
+
+
+## 最佳實踐
+
+<CardGroup cols={2}>
+  <Card title="使用描述性的名稱" icon="tag">
+    為您的發佈指定有意義的名稱，例如「v1.2.0 - 新增電子郵件通知」，以便日後輕鬆識別。
+  </Card>
+  <Card title="套用前進行預覽" icon="eye">
+    在套用發佈前，請務必仔細預覽變更，以避免非預期的修改。
+  </Card>
+  <Card title="在開發環境中測試" icon="flask">
+    如果使用 Git 同步，請在將變更部署到正式環境之前，先在開發專案中測試變更。
+  </Card>
+  <Card title="記錄變更" icon="file-lines">
+    使用描述欄位記錄變更內容和原因，以供日後參考。
+  </Card>
+</CardGroup>
+
+## 權限
+
+要建立和管理發佈，您需要 **Write Project Release** 權限。如果您無法存取發佈功能，請聯繫您的實例管理員。
+
+## 疑難排解 (Troubleshooting)
+
+<AccordionGroup>
+  <Accordion title="環境設定被鎖定">
+    必須在您的實例方案中啟用環境 (Environments) 功能才能使用 Git 同步。請聯繫您的實例管理員以升級方案或啟用此功能。
+  </Accordion>
+  <Accordion title="Git 連接失敗">
+    - 確認您的 SSH 私鑰格式正確（以換行符結尾），並確保它沒有通行密碼 (passphrase)。
+    - 確保遠端 URL 是 SSH 格式（而非 HTTPS）
+    - 檢查分支是否存在於儲存庫中
+  </Accordion>
+  <Accordion title="未偵測到變更">
+    如果建立發佈時未顯示任何變更，這表示您的當前專案已與來源同步。
+  </Accordion>
+  <Accordion title="連接佔位符">
+    套用包含新連接的發佈後，請導覽至「Connections」頁面並使用有效的憑據重新連接。
+  </Accordion>
+  <Accordion title="看不到 Push Everything 按鈕">
+    請確保您已配置 Git 設定，如果您正在選擇流程，請確保它們已發佈。
+  </Accordion>
+  <Accordion title="找不到環境設定">
+    從側邊欄導覽至 **Project Settings**，然後點擊 **Environment**。如果您看不到此選項，則您的實例可能未啟用環境功能。
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,31 @@
+---
+title: "設定 AI 提供者"
+description: ""
+icon: "sparkles"
+---
+
+AI 提供者由平台管理員配置，用於集中管理憑證與存取權限，使 [AI pieces](https://www.activepieces.com/pieces/ai) 及其功能可供所有專案中的每個人使用。
+
+## 支援的提供者
+
+- **OpenAI**
+- **Anthropic**
+- **Gemini**
+- **Vercel AI Gateway**
+- **Cloudflare AI Gateway**
+
+## 如何設定
+
+前往 **Admin Console**（管理主控台） → **AI** 頁面。新增您的提供者的 base URL 與 API key。這些設定將套用於所有專案。
+
+![管理 AI 提供者](/resources/screenshots/configure-ai-provider.png)
+
+## 成本控制與日誌紀錄
+
+使用像是 **Vercel AI Gateway** 或 **Cloudflare AI Gateway** 的 AI 閘道來：
+
+- 設定速率限制與預算
+- 記錄並監控所有 AI 請求
+- 追蹤跨專案的使用量
+
+只需在 Admin Console 中將閘道 URL 設定為您提供者的 base URL 即可。

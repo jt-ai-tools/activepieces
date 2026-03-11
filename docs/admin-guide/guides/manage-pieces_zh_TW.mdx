@@ -1,0 +1,88 @@
+---
+title: "如何管理 Pieces"
+description: "控制您的使用者可以使用哪些整合"
+icon: "puzzle-piece"
+---
+
+<Snippet file="enterprise-feature_zh_TW.mdx" />
+
+## 總覽
+
+**Pieces** 是 Activepieces 的基本構建塊 — 它們是使用者可以在自動化流程中使用的整合與連接器（例如 Google Sheets、Slack、OpenAI 等）。
+
+作為平台管理員，您可以完全控制哪些 Pieces 對您的使用者可用。這讓您可以：
+
+- **執行安全政策**：透過限制存取某些整合
+- **簡化使用者體驗**：僅顯示與您的使用場景相關的 Pieces
+- **部署自定義/私有 Pieces**：針對您組織特定的需求
+
+Pieces 管理分為**兩個層級**：
+
+| 層級 | 管理者 | 範圍 |
+|-------|----------------|-------|
+| **平台層級 (Platform Level)** | 平台管理員 | 在整個平台上安裝或移除 |
+| **專案層級 (Project Level)** | 專案管理員 | 為特定專案顯示/隱藏特定 Pieces |
+
+---
+
+## 平台層級管理
+
+平台管理員可以從 **平台管理員 (Platform Admin) → 設定 (Setup) → Pieces** 管理整個 Activepieces 實例的 Pieces。
+
+## 專案層級管理
+
+專案管理員可以進一步限制其特定專案中可用的 Pieces。當不同團隊或專案需要存取不同整合時，這非常有用。
+
+### 在專案中顯示/隱藏 Pieces
+
+<Steps>
+  <Step title="開啟專案設定">
+    導覽至您的專案並前往 **設定 (Settings) → Pieces**。
+  </Step>
+  <Step title="配置可見性">
+    您將看到平台上安裝的所有 Pieces 列表。切換每個 Piece 的可見性：
+    - **已啟用 (Enabled)**：此專案中的使用者可以使用該 Piece
+    - **已停用 (Disabled)**：該 Piece 對此專案中的使用者隱藏
+  </Step>
+  <Step title="儲存變更">
+    變更會立即生效 — 使用者在建立流程時將只會看到已啟用的 Pieces。
+  </Step>
+</Steps>
+
+![管理 Pieces](/resources/screenshots/manage-pieces.png)
+![管理 Pieces](/resources/screenshots/manage-pieces-2.png)
+
+<Note>
+專案層級設定只能**隱藏**已在平台層級安裝的 Pieces。您無法在專案層級添加平台尚未安裝的 Pieces。
+</Note>
+
+
+### 安裝私有 Pieces
+
+<Tip>
+有關建立自定義 Pieces 的詳細說明，請參閱 [建立 Pieces](/build-pieces/building-pieces/overview_zh_TW.md) 檔案。
+</Tip>
+
+
+如果您為組織建立了自定義 Piece，可以將其作為 tarball (`.tgz`) 檔案直接上傳。
+
+<Steps>
+  <Step title="建立您的 Piece">
+    使用 Activepieces CLI 建立您的 Piece：
+    ```bash
+    npm run pieces -- build --name=your-piece-name
+    ```
+    這將在 `dist/packages/pieces/your-piece-name` 中產生一個 tarball。
+  </Step>
+  <Step title="導覽至 Pieces 設定">
+    前往 **平台管理員 (Platform Admin) → 設定 (Setup) → Pieces** 並點擊 **安裝 Piece (Install Piece)**。
+  </Step>
+  <Step title="選擇檔案上傳">
+    選擇 **上傳檔案 (Upload File)** 作為安裝來源。
+  </Step>
+  <Step title="上傳 Tarball">
+    從您的建置輸出中選擇 `.tgz` 檔案並上傳。
+  </Step>
+</Steps>
+
+![安裝 Piece](/resources/screenshots/install-piece.png)

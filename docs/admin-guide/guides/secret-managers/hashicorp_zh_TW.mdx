@@ -1,0 +1,69 @@
+---
+title: "HashiCorp Vault"
+description: "將 HashiCorp Vault 連接到 Activepieces，實現企業級秘密管理"
+---
+
+HashiCorp Vault 是一個企業級的秘密（Secrets）管理系統，為秘密、API 金鑰、密碼和其他敏感資料提供安全儲存和存取。
+
+## 先決條件
+
+在將 HashiCorp Vault 連接到 Activepieces 之前，請確保您擁有：
+
+- **HashiCorp Vault Key-value (KV) 秘密引擎** 版本 2
+- 已[啟用](https://developer.hashicorp.com/vault/docs/auth/approle) **AppRole 認證方法**
+- 已[設定](https://developer.hashicorp.com/vault/docs/auth/approle)一個或多個具有適當政策的 **AppRoles**
+
+## 政策
+
+透過將以下內容新增至您的政策，允許建立的 AppRole 存取您的秘密引擎：
+
+```
+path "sys/mounts" {
+  capabilities = [ "read" ]
+}
+
+path "<secret_engine_name>/data/<secret_name>" {
+  capabilities = [ "read" ]
+}
+```
+或 
+```
+path "sys/mounts" {
+  capabilities = [ "read" ]
+}
+
+path "<secret_engine_name>/data/*" {
+  capabilities = [ "read" ]
+}
+```
+
+## 連接到 Activepieces
+
+1. 前往 **平台管理 (Platform Admin) → 安全 (Security) → 秘密管理器 (Secret Managers)**
+2. 從供應商清單中選擇 **HashiCorp Vault**
+3. 輸入必要的連線詳細資訊：
+   - **URL**：您的 Vault 伺服器 URL（例如：`http://localhost:8200`）
+   - **Role ID**：來自您 AppRole 設定的 Role ID
+   - **Secret ID**：來自您 AppRole 設定的 Secret ID
+   - **Namespace**（選填）：如果使用 Vault Enterprise 命名空間，請填寫 Vault 命名空間
+4. 點擊 **Connect (連接)** 以測試並儲存連線
+
+## 使用 HashiCorp Vault 秘密
+
+當設定需要憑據的連線時：
+
+1. 前往 **平台管理 (Platform Admin) -> 設定 (Setup) -> 全域連線 (Global connections)** 並建立一個連線
+2. 點擊輸入欄位旁邊的 **鑰匙圖示** (🔑)
+3. 從下拉選單中選擇 **HashiCorp Vault**
+4. 以以下格式輸入秘密路徑：`mount/data/path/key`
+   - 如果金鑰是透過 CLI 指令 `vault kv put -mount=secret sec api_key='mysec'` 新增的
+   - 輸入值應為 `secret/data/mysec/api_key`
+
+
+![管理 Oauth2 應用程式](/resources/screenshots/secret-manager.png)
+
+當流程（Flow）執行時，連線將自動從 Vault 檢索秘密。
+
+<Warning>
+  如果您更新了現有的秘密但沒有看到更新反映出來，請參考 [快取 (caching)](/admin-guide/guides/secret-managers/overview_zh_TW#caching)
+</Warning>

@@ -348,3 +348,53 @@ Found 856 files to translate.
 [✓] Completed: ./docs/admin-guide/security/audit-logs/folder-created_zh_TW.mdx
 [✓] Completed: ./docs/admin-guide/security/audit-logs/signing-key-created_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 29 (5 files) ---
+[+] Translating: ./docs/admin-guide/guides/scim/overview.mdx
+[+] Translating: ./docs/admin-guide/guides/scim/providers/okta.mdx
+[+] Translating: ./docs/admin-guide/guides/project-releases.mdx
+[+] Translating: ./docs/admin-guide/guides/permissions.mdx
+[+] Translating: ./docs/admin-guide/guides/event-streaming.mdx
+[✓] Completed: ./docs/admin-guide/guides/scim/overview_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/event-streaming_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/scim/providers/okta_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/project-releases_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/permissions_zh_TW.mdx
+
+--- Processing chunk 30 (5 files) ---
+[+] Translating: ./docs/admin-guide/guides/manage-pieces.mdx
+[+] Translating: ./docs/admin-guide/guides/structure-projects.mdx
+[+] Translating: ./docs/admin-guide/guides/manage-oauth2.mdx
+[+] Translating: ./docs/admin-guide/guides/secret-managers/cyberark-conjur.mdx
+[+] Translating: ./docs/admin-guide/guides/secret-managers/aws.mdx
+[✓] Completed: ./docs/admin-guide/guides/manage-oauth2_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/structure-projects_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/manage-pieces_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/secret-managers/aws_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/secret-managers/cyberark-conjur_zh_TW.mdx
+
+--- Processing chunk 31 (5 files) ---
+[+] Translating: ./docs/admin-guide/guides/secret-managers/overview.mdx
+[+] Translating: ./docs/admin-guide/guides/secret-managers/onepassword.mdx
+[+] Translating: ./docs/admin-guide/guides/secret-managers/hashicorp.mdx
+[+] Translating: ./docs/admin-guide/guides/sso.mdx
+[+] Translating: ./docs/admin-guide/guides/setup-ai-providers.mdx
+[✓] Completed: ./docs/admin-guide/guides/setup-ai-providers_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/secret-managers/onepassword_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/secret-managers/hashicorp_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/sso_zh_TW.mdx
+[✓] Completed: ./docs/admin-guide/guides/secret-managers/overview_zh_TW.mdx
+
+--- Processing chunk 32 (5 files) ---
+[+] Translating: ./docs/embedding/overview.mdx
+[+] Translating: ./docs/embedding/embed-builder.mdx
+[+] Translating: ./docs/embedding/customize-pieces.mdx
+[+] Translating: ./docs/embedding/sdk-server-requests.mdx
+[+] Translating: ./docs/embedding/predefined-connection.mdx
+[✓] Completed: ./docs/embedding/overview_zh_TW.mdx
+[✓] Completed: ./docs/embedding/customize-pieces_zh_TW.mdx
+[✓] Completed: ./docs/embedding/sdk-server-requests_zh_TW.mdx
+[✓] Completed: ./docs/embedding/predefined-connection_zh_TW.mdx
+[✓] Completed: ./docs/embedding/embed-builder_zh_TW.mdx
+[*] Committing progress...

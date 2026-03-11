@@ -161,26 +161,26 @@ Total files:      873
 | ./docs/admin-guide/security/audit-logs/signing-key-created.mdx | Completed | [signing-key-created_zh_TW.mdx](./docs/admin-guide/security/audit-logs/signing-key-created_zh_TW.mdx) |
 | ./docs/admin-guide/security/audit-logs/flow-deleted.mdx | Completed | [flow-deleted_zh_TW.mdx](./docs/admin-guide/security/audit-logs/flow-deleted_zh_TW.mdx) |
 | ./docs/admin-guide/security/audit-logs/user-password-reset.mdx | Completed | [user-password-reset_zh_TW.mdx](./docs/admin-guide/security/audit-logs/user-password-reset_zh_TW.mdx) |
-| ./docs/admin-guide/guides/scim/overview.mdx | Pending | |
-| ./docs/admin-guide/guides/scim/providers/okta.mdx | Pending | |
-| ./docs/admin-guide/guides/project-releases.mdx | Pending | |
-| ./docs/admin-guide/guides/permissions.mdx | Pending | |
-| ./docs/admin-guide/guides/event-streaming.mdx | Pending | |
-| ./docs/admin-guide/guides/manage-pieces.mdx | Pending | |
-| ./docs/admin-guide/guides/structure-projects.mdx | Pending | |
-| ./docs/admin-guide/guides/manage-oauth2.mdx | Pending | |
-| ./docs/admin-guide/guides/secret-managers/cyberark-conjur.mdx | Pending | |
-| ./docs/admin-guide/guides/secret-managers/aws.mdx | Pending | |
-| ./docs/admin-guide/guides/secret-managers/overview.mdx | Pending | |
-| ./docs/admin-guide/guides/secret-managers/onepassword.mdx | Pending | |
-| ./docs/admin-guide/guides/secret-managers/hashicorp.mdx | Pending | |
-| ./docs/admin-guide/guides/sso.mdx | Pending | |
-| ./docs/admin-guide/guides/setup-ai-providers.mdx | Pending | |
-| ./docs/embedding/overview.mdx | Pending | |
-| ./docs/embedding/embed-builder.mdx | Pending | |
-| ./docs/embedding/customize-pieces.mdx | Pending | |
-| ./docs/embedding/sdk-server-requests.mdx | Pending | |
-| ./docs/embedding/predefined-connection.mdx | Pending | |
+| ./docs/admin-guide/guides/scim/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/admin-guide/guides/scim/overview_zh_TW.mdx) |
+| ./docs/admin-guide/guides/scim/providers/okta.mdx | Completed | [okta_zh_TW.mdx](./docs/admin-guide/guides/scim/providers/okta_zh_TW.mdx) |
+| ./docs/admin-guide/guides/project-releases.mdx | Completed | [project-releases_zh_TW.mdx](./docs/admin-guide/guides/project-releases_zh_TW.mdx) |
+| ./docs/admin-guide/guides/permissions.mdx | Completed | [permissions_zh_TW.mdx](./docs/admin-guide/guides/permissions_zh_TW.mdx) |
+| ./docs/admin-guide/guides/event-streaming.mdx | Completed | [event-streaming_zh_TW.mdx](./docs/admin-guide/guides/event-streaming_zh_TW.mdx) |
+| ./docs/admin-guide/guides/manage-pieces.mdx | Completed | [manage-pieces_zh_TW.mdx](./docs/admin-guide/guides/manage-pieces_zh_TW.mdx) |
+| ./docs/admin-guide/guides/structure-projects.mdx | Completed | [structure-projects_zh_TW.mdx](./docs/admin-guide/guides/structure-projects_zh_TW.mdx) |
+| ./docs/admin-guide/guides/manage-oauth2.mdx | Completed | [manage-oauth2_zh_TW.mdx](./docs/admin-guide/guides/manage-oauth2_zh_TW.mdx) |
+| ./docs/admin-guide/guides/secret-managers/cyberark-conjur.mdx | Completed | [cyberark-conjur_zh_TW.mdx](./docs/admin-guide/guides/secret-managers/cyberark-conjur_zh_TW.mdx) |
+| ./docs/admin-guide/guides/secret-managers/aws.mdx | Completed | [aws_zh_TW.mdx](./docs/admin-guide/guides/secret-managers/aws_zh_TW.mdx) |
+| ./docs/admin-guide/guides/secret-managers/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/admin-guide/guides/secret-managers/overview_zh_TW.mdx) |
+| ./docs/admin-guide/guides/secret-managers/onepassword.mdx | Completed | [onepassword_zh_TW.mdx](./docs/admin-guide/guides/secret-managers/onepassword_zh_TW.mdx) |
+| ./docs/admin-guide/guides/secret-managers/hashicorp.mdx | Completed | [hashicorp_zh_TW.mdx](./docs/admin-guide/guides/secret-managers/hashicorp_zh_TW.mdx) |
+| ./docs/admin-guide/guides/sso.mdx | Completed | [sso_zh_TW.mdx](./docs/admin-guide/guides/sso_zh_TW.mdx) |
+| ./docs/admin-guide/guides/setup-ai-providers.mdx | Completed | [setup-ai-providers_zh_TW.mdx](./docs/admin-guide/guides/setup-ai-providers_zh_TW.mdx) |
+| ./docs/embedding/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/embedding/overview_zh_TW.mdx) |
+| ./docs/embedding/embed-builder.mdx | Completed | [embed-builder_zh_TW.mdx](./docs/embedding/embed-builder_zh_TW.mdx) |
+| ./docs/embedding/customize-pieces.mdx | Completed | [customize-pieces_zh_TW.mdx](./docs/embedding/customize-pieces_zh_TW.mdx) |
+| ./docs/embedding/sdk-server-requests.mdx | Completed | [sdk-server-requests_zh_TW.mdx](./docs/embedding/sdk-server-requests_zh_TW.mdx) |
+| ./docs/embedding/predefined-connection.mdx | Completed | [predefined-connection_zh_TW.mdx](./docs/embedding/predefined-connection_zh_TW.mdx) |
 | ./docs/embedding/navigation.mdx | Pending | |
 | ./docs/embedding/embed-connections.mdx | Pending | |
 | ./docs/embedding/provision-users.mdx | Pending | |

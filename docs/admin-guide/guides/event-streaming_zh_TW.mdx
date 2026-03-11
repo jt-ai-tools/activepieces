@@ -1,0 +1,73 @@
+---
+title: "事件串流 (Event Streaming)"
+description: "配置 Webhook 目的地以接收即時平台事件"
+icon: "webhook"
+---
+
+<Snippet file="enterprise-feature_zh_TW.mdx" />
+
+## 總覽
+
+事件串流 (Event Streaming) 允許您配置 Webhook 目的地，以便在 Activepieces 平台發生特定事件時接收即時通知。這使您能夠將 Activepieces 與外部系統、監控工具、分析平台或自定義應用程式整合。
+
+## 使用場景
+
+- **監控與分析**：即時追蹤流程 (flow) 執行、使用者活動和系統變更。
+- **整合**：將事件與外部系統同步，例如 SIEM 工具、資料倉儲或自定義儀表板。
+- **合規性**：在外部系統中維護稽核日誌 (audit trails) 以滿足合規要求。
+- **自動化**：根據平台事件觸發下游處理程序。
+
+## 可用事件
+
+您可以配置目的地以接收以下事件類型：
+
+### 流程 (Flow) 事件
+- **流程已建立 (Flow Created)**：建立新流程時。
+- **流程已更新 (Flow Updated)**：修改流程時。
+- **流程已刪除 (Flow Deleted)**：移除流程時。
+- **流程執行已開始 (Flow Run Started)**：流程開始執行時。
+- **流程執行已完成 (Flow Run Finished)**：流程執行完成時。
+- **流程執行已恢復 (Flow Run Resumed)**：暫停的流程執行恢復時。
+
+### 資料夾事件
+- **資料夾已建立 (Folder Created)**：建立新資料夾時。
+- **資料夾已更新 (Folder Updated)**：修改資料夾時。
+- **資料夾已刪除 (Folder Deleted)**：移除資料夾時。
+
+### 連線 (Connection) 事件
+- **連線已新增或更新 (Connection Upserted)**：建立或更新連線時。
+- **連線已刪除 (Connection Deleted)**：移除連線時。
+
+### 使用者事件
+- **使用者已註冊 (User Signed Up)**：新使用者註冊時。
+- **使用者已登入 (User Signed In)**：使用者登入時。
+- **使用者密碼重設 (User Password Reset)**：請求重設密碼時。
+- **使用者電子郵件已驗證 (User Email Verified)**：使用者驗證其電子郵件時。
+
+### 安全性事件
+- **簽署金鑰已建立 (Signing Key Created)**：生成新簽署金鑰時。
+- **專案角色已建立 (Project Role Created)**：建立專案角色時。
+- **專案角色已更新 (Project Role Updated)**：修改專案角色時。
+- **專案角色已刪除 (Project Role Deleted)**：移除專案角色時。
+- **專案發佈已建立 (Project Release Created)**：建立專案發佈時。
+
+## 如何配置
+
+1. 前往 **平台管理 (Platform Admin) → 基礎設施 (Infrastructure) → 事件目的地 (Event Destinations)**
+2. 點擊 **建立目的地 (Create Destination)**
+3. 輸入您的 **Webhook URL** (必須是有效的 HTTPS 端點)
+4. 選擇您想要接收的 **事件 (Events)**
+5. 點擊 **測試目的地 (Test Destination)** 以驗證連線 (選填)
+6. 點擊 **建立目的地 (Create Destination)** 以儲存
+
+## 要求
+
+- **企業版 (Enterprise Edition)**：事件串流需要已啟用稽核日誌 (Audit Logs) 的企業方案。
+- **HTTPS 端點**：Webhook URL 必須使用 HTTPS。
+- **公開存取**：您的端點必須可以從網際網路存取。
+
+## 故障排除
+
+- **未收到事件**：請驗證您的端點是否可公開存取並回傳 2xx 狀態碼。
+- **測試失敗**：請檢查您的 URL 是否有效且使用 HTTPS。
+- **遺漏事件**：請確保您的目的地配置中已選取該事件類型。

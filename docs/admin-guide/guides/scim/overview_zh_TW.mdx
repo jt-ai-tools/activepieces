@@ -1,0 +1,45 @@
+---
+title: "SCIM 概覽"
+description: "在 Activepieces 中使用 SCIM 自動化使用者生命週期管理。"
+---
+
+<Snippet file="enterprise-feature_zh_TW.mdx" />
+
+## 什麼是 SCIM？
+
+SCIM (System for Cross-domain Identity Management) 讓您的身分識別提供者 (identity provider) 能夠在 Activepieces 中自動建立、更新和停用使用者。
+
+## SCIM 處理的內容
+
+- **配置使用者 (Provision users)**：當使用者在您的身分識別提供者中被指派時。
+- **同步個人資料更新**：例如名稱或電子郵件的變更。
+- **取消配置使用者 (Deprovision users)**：當存取權限被移除或帳號被停用時。
+
+## SCIM 與 SSO
+
+SCIM 處理使用者生命週期管理。  
+SSO 處理登入和身分驗證。
+
+您可以同時使用兩者，以便在您的身分識別提供者中集中管理使用者存取權。
+
+## 支援的提供者
+
+<CardGroup cols={2}>
+  <Card title="Okta" icon="shield-check" href="./providers/okta_zh_TW">
+    設定從 Okta 到 Activepieces 的 SCIM 配置。
+  </Card>
+</CardGroup>
+
+## 配置
+
+| 變數 | 說明 | 預設值 |
+| --- | --- | --- |
+| `AP_SCIM_DEFAULT_PROJECT_ROLE` | 透過 SCIM 群組同步新增成員時指派的專案角色。可接受的值：`Admin`、`Editor`、`Viewer`。 | `Editor` |
+
+## 架構
+
+![SCIM 架構佔位符](/resources/screenshots/scim/scim-overview-placeholder.svg)
+
+<Tip>
+稍後請將此佔位符替換為最終的架構圖。保留相同的圖片路徑以避免文件變更。
+</Tip>

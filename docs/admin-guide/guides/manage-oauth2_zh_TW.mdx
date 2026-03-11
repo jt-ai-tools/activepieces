@@ -1,0 +1,26 @@
+---
+title: "覆蓋 OAuth2 應用程式"
+description: "使用您自己的 OAuth2 認證資訊，而非預設的 Activepieces 應用程式"
+icon: "lock"
+---
+
+<Snippet file="enterprise-feature_zh_TW.mdx" />
+
+## 預設行為
+
+當使用者連接到 Google Sheets 或 Slack 等服務時，他們會看到 "Activepieces" 作為請求存取的應用程式。這無需任何設定即可直接使用。
+
+## 為什麼要替換 OAuth2 應用程式？
+
+- **品牌識別**：在授權畫面中顯示您的公司名稱，而非 "Activepieces"
+- **更高的限制**：某些服務對共享的 OAuth 應用程式有更嚴格的速率限制
+- **合規性**：您的組織可能要求使用公司擁有的認證資訊
+
+## 如何設定
+
+1. 前往 **Platform Admin → Setup → Pieces**
+2. 找到您想要設定的 Piece（例如：Google Sheets）
+3. 點擊鎖頭圖示以開啟 OAuth2 設定
+4. 輸入您自己的 Client ID 和 Client Secret
+
+![管理 OAuth2 應用程式](/resources/screenshots/manage-oauth2.png)

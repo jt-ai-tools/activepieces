@@ -1,0 +1,46 @@
+---
+title: "API 請求"
+description: "從嵌入式應用程式發送請求至您的 Activepieces 實例"
+icon: "server"
+---
+
+<Info>
+**要求：**
+* Activepieces 版本 0.34.5 或更高
+* SDK 版本 0.3.6 或更高
+</Info>
+
+
+
+您可以使用嵌入式 SDK 發送請求至您的實例並取得資料。
+
+<Steps>
+
+   <Step title="初始化 SDK">
+        請按照 [嵌入建置器](./embed-builder_zh_TW) 中的說明進行 SDK 初始化。
+    </Step>
+
+    <Step title="呼叫 (request) 方法">
+        
+
+        ```html
+        <script> 
+        activepieces.request({path:'/flows',method:'GET'}).then(console.log);
+        </script>
+        ```
+
+        **請求參數：**
+
+        | 參數名稱 | 必填 | 類型   | 描述                                 |
+        | -------------- | -------- | ------ | ------------------------------------------- |
+        | path      | ✅      | string | 您實例中想要存取的路徑（我們會在路徑前加上 your_instance_url/api/v1）
+        | method | ✅      | string | 要使用的 HTTP 方法：'GET'、'POST'、'PUT'、'DELETE'、'OPTIONS'、'PATCH' 和 'HEAD'
+        | body      | ❌      | JSON object | 請求的 JSON 內容 (body)
+        | queryParams | ❌ | Record\<string,string\> | 包含在請求中的查詢參數 (query params)
+
+
+
+  </Step>
+
+
+</Steps>
