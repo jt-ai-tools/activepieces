@@ -93,7 +93,7 @@ async function main() {
     const pendingFiles = lines
         .filter(line => line.includes('| Pending |'))
         .map(line => line.split('|')[1].trim())
-        .slice(0, 20);
+        .slice(0, 50);
 
     console.log(`Found ${pendingFiles.length} files to translate.`);
 

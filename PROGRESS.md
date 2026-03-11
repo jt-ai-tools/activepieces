@@ -259,21 +259,21 @@ Total files:      873
 | ./packages/pieces/core/store/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/store/README_zh_TW.md) |
 | ./packages/pieces/framework/README.md | Completed | [README_zh_TW.md](./packages/pieces/framework/README_zh_TW.md) |
 | ./packages/pieces/common/README.md | Completed | [README_zh_TW.md](./packages/pieces/common/README_zh_TW.md) |
-| ./packages/pieces/community/hunter/README.md | Pending | |
-| ./packages/pieces/community/timelines-ai/README.md | Pending | |
-| ./packages/pieces/community/vadoo-ai/README.md | Pending | |
-| ./packages/pieces/community/air-ops/README.md | Pending | |
-| ./packages/pieces/community/instabase/README.md | Pending | |
-| ./packages/pieces/community/amazon-sqs/README.md | Pending | |
-| ./packages/pieces/community/campaign-monitor/README.md | Pending | |
-| ./packages/pieces/community/image-router/README.md | Pending | |
-| ./packages/pieces/community/mailchain/README.md | Pending | |
-| ./packages/pieces/community/cal-com/README.md | Pending | |
-| ./packages/pieces/community/omni-co/README.md | Pending | |
-| ./packages/pieces/community/modelslab/README.md | Pending | |
-| ./packages/pieces/community/attio/README.md | Pending | |
-| ./packages/pieces/community/devin/README.md | Pending | |
-| ./packages/pieces/community/phone-validator/README.md | Pending | |
+| ./packages/pieces/community/hunter/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/hunter/README_zh_TW.md) |
+| ./packages/pieces/community/timelines-ai/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/timelines-ai/README_zh_TW.md) |
+| ./packages/pieces/community/vadoo-ai/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/vadoo-ai/README_zh_TW.md) |
+| ./packages/pieces/community/air-ops/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/air-ops/README_zh_TW.md) |
+| ./packages/pieces/community/instabase/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/instabase/README_zh_TW.md) |
+| ./packages/pieces/community/amazon-sqs/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/amazon-sqs/README_zh_TW.md) |
+| ./packages/pieces/community/campaign-monitor/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/campaign-monitor/README_zh_TW.md) |
+| ./packages/pieces/community/image-router/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/image-router/README_zh_TW.md) |
+| ./packages/pieces/community/mailchain/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/mailchain/README_zh_TW.md) |
+| ./packages/pieces/community/cal-com/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/cal-com/README_zh_TW.md) |
+| ./packages/pieces/community/omni-co/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/omni-co/README_zh_TW.md) |
+| ./packages/pieces/community/modelslab/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/modelslab/README_zh_TW.md) |
+| ./packages/pieces/community/attio/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/attio/README_zh_TW.md) |
+| ./packages/pieces/community/devin/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/devin/README_zh_TW.md) |
+| ./packages/pieces/community/phone-validator/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/phone-validator/README_zh_TW.md) |
 | ./packages/pieces/community/writesonic-bulk/README.md | Pending | |
 | ./packages/pieces/community/gamma/README.md | Pending | |
 | ./packages/pieces/community/greip/README.md | Pending | |
