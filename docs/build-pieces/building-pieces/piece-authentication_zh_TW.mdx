@@ -1,0 +1,37 @@
+---
+title: '新增 Piece 身分驗證'
+icon: 'circle-4'
+description: ''
+---
+
+
+### Piece 身分驗證
+
+Activepieces 支援多種身分驗證形式，您可以在[這裡](../piece-reference/authentication_zh_TW)查看這些形式。
+
+現在，讓我們為這個 Piece 建立身分驗證，這需要在標頭 (headers) 中包含 API Key。
+
+修改 `src/index.ts` 檔案以新增身分驗證：
+
+```ts
+import { PieceAuth, createPiece } from '@activepieces/pieces-framework';
+
+export const gelatoAuth = PieceAuth.SecretText({
+  displayName: 'API Key',
+  required: true,
+  description: 'Please use **test-key** as value for API Key',
+});
+
+export const gelato = createPiece({
+  displayName: 'Gelato',
+  logoUrl: 'https://cdn.activepieces.com/pieces/gelato.png',
+  auth: gelatoAuth,
+  authors: [],
+  actions: [],
+  triggers: [],
+});
+```
+
+<Note>
+  在測試 Gelato 的動作 (actions) 或觸發器 (triggers) 時，請使用 **test-key** 作為 API Key。
+</Note>

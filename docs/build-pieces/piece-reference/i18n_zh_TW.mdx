@@ -1,0 +1,36 @@
+---
+title: '組件多國語言'
+description: '了解如何將組件翻譯成多種語系'
+icon: 'globe'
+---
+
+<Steps>
+  <Step title="產生">
+    執行以下指令來為您的組件建立包含所有需要翻譯字串的翻譯檔案：
+    ```bash
+    npm run cli pieces generate-translation-file PIECE_FOLDER_NAME
+    ```
+  </Step>
+  <Step title="翻譯">
+     複製 `packages/pieces/<community_or_custom>/<your_piece>/src/i18n/translation.json` 檔案，將其重新命名為 `<locale>.json`（例如 `fr.json`）並翻譯其中的數值。
+    <Tip>
+      對於開源組件，您可以使用 [Crowdin 專案](https://crowdin.com/project/activepieces) 來翻譯成不同的語言。這些翻譯將會自動同步回您的程式碼中。
+    </Tip>
+  </Step>
+  
+   <Step title="本地測試">
+    在按照 [設定開發環境](/build-pieces/building-pieces/development-setup_zh_TW) 的步驟操作後，點擊控制面板 (Dashboard) 中標誌旁邊的小齒輪圖示並更改語系 (Locale)。
+
+     ![語系](/resources/i18n-pieces.png)
+    <br></br>
+  
+    在編輯器 (Builder) 中，您的組件現在將以翻譯後的語言顯示：
+    ![法文 Webhooks](/resources/french-webhooks.png)
+  </Step>
+
+  <Step title="發布">
+  請參考此處的文件來 [發布您的組件](/build-pieces/sharing-pieces/overview_zh_TW)
+
+  </Step>
+
+</Steps>

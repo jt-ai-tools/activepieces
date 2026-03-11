@@ -1,0 +1,43 @@
+---
+title: 'Piece 版本控制'
+icon: 'code-compare'
+description: '了解如何對您的 Piece 進行版本控制'
+---
+
+Piece 是 npm 套件，並遵循 **語義化版本 (Semantic Versioning)**。
+
+## 語義化版本 (Semantic Versioning)
+
+版本號由三個數字組成：`MAJOR.MINOR.PATCH`，其中：
+
+- **MAJOR** 當對 Piece 進行破壞性變更時，應增加此數字。
+- **MINOR** 用於新增與先前版本相容的新功能或功能性，除非主版本號小於 1.0，在這種情況下它可以是破壞性變更。
+- **PATCH** 用於修復錯誤和不引入新功能或破壞向後相容性的小型變更。
+
+## 引擎 (Engine)
+在 **草稿 (DRAFT)** 流程版本期間，引擎將針對指定的 Piece 版本使用最新的相容版本。一旦流程發佈，所有 Piece 都將鎖定在特定版本。
+
+**情況 1：Piece 版本低於 1.0**：
+引擎將選擇具有相同 **MINOR** 號碼的最新 **PATCH** 版本。
+
+**情況 2：Piece 版本達到 1.0**：
+引擎將選擇具有相同 **MAJOR** 號碼的最新 **MINOR** 版本。
+
+## 範例
+<Tip>
+當您進行更改時，請記住相應地增加版本。
+</Tip>
+
+### 破壞性變更 (Breaking changes)
+- 移除現有的 action。
+- 新增一個必填的 `action` 屬性 (prop)。
+- 移除現有的 action 屬性，無論是必填還是選填。
+- 從 action 輸出中移除一個屬性。
+- 更改現有 action/trigger 的行為。
+
+### 非破壞性變更 (Non-breaking changes)
+- 新增一個 action。
+- 新增一個選填的 `action` 屬性。
+- 在 action 輸出中新增一個屬性。
+
+也就是說，任何移除都是破壞性的，任何必填的增加也是破壞性的，其餘皆非破壞性。

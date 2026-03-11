@@ -1,0 +1,149 @@
+---
+title: '建立觸發器'
+icon: 'circle-6'
+description: ''
+---
+
+本教學將引導您為 Gelato 組件建立一個用於獲取新冰淇淋口味的觸發器。
+
+## 觸發器定義
+
+要建立觸發器，請執行以下命令：
+
+```bash
+npm run cli triggers create
+```
+
+1. `Piece Folder Name`：這是與觸發器所在資料夾相關聯的名稱。它有助於在組件內組織和分類觸發器。
+2. `Trigger Display Name`：使用者在介面中看到的名稱，清楚傳達觸發器的用途。
+3. `Trigger Description`：UI 中的簡短說明文字，引導使用者了解觸發器的功能與目的。
+4. `Trigger Technique`：指定觸發方式 - [輪詢 (polling)](../piece-reference/triggers/polling-trigger_zh_TW.md) 或 [webhook](../piece-reference/triggers/webhook-trigger_zh_TW.md)。
+
+**範例：**
+
+```bash
+npm run cli triggers create
+
+? Enter the piece folder name : gelato
+? Enter the trigger display name : new flavor created
+? Enter the trigger description : triggers when a new icecream flavor is created.
+? Select the trigger technique: polling
+```
+
+這將在 `packages/pieces/community/gelato/src/lib/triggers` 下建立一個名為 `new-flavor-created.ts` 的新 TypeScript 檔案。
+
+在此檔案中，貼入以下程式碼：
+
+```ts
+import { gelatoAuth } from '../../';
+import {
+  DedupeStrategy,
+  HttpMethod,
+  HttpRequest,
+  Polling,
+  httpClient,
+  pollingHelper,
+} from '@activepieces/pieces-common';
+import {
+  PiecePropValueSchema,
+  TriggerStrategy,
+  createTrigger,
+} from '@activepieces/pieces-framework';
+import dayjs from 'dayjs';
+
+const polling: Polling<
+  PiecePropValueSchema<typeof gelatoAuth>,
+  Record<string, never>
+> = {
+  strategy: DedupeStrategy.TIMEBASED,
+  items: async ({ auth, propsValue, lastFetchEpochMS }) => {
+    const request: HttpRequest = {
+      method: HttpMethod.GET,
+      url: 'https://cloud.activepieces.com/api/v1/webhooks/aHlEaNLc6vcF1nY2XJ2ed/sync',
+      headers: {
+        authorization: auth,
+      },
+    };
+    const res = await httpClient.sendRequest(request);
+    return res.body['flavors'].map((flavor: string) => ({
+      epochMilliSeconds: dayjs().valueOf(),
+      data: flavor,
+    }));
+  },
+};
+
+export const newFlavorCreated = createTrigger({
+  auth: gelatoAuth,
+  name: 'newFlavorCreated',
+  displayName: 'new flavor created',
+  description: 'triggers when a new icecream flavor is created.',
+  props: {},
+  sampleData: {},
+  type: TriggerStrategy.POLLING,
+  async test(context) {
+    return await pollingHelper.test(polling, context);
+  },
+  async onEnable(context) {
+    const { store, auth, propsValue } = context;
+    await pollingHelper.onEnable(polling, { store, auth, propsValue });
+  },
+
+  async onDisable(context) {
+    const { store, auth, propsValue } = context;
+    await pollingHelper.onDisable(polling, { store, auth, propsValue });
+  },
+
+  async run(context) {
+    return await pollingHelper.poll(polling, context);
+  },
+});
+```
+
+輪詢觸發器通常的運作方式如下：
+
+`Run`：run 方法每 5 分鐘執行一次，從指定時間戳記範圍內的端點獲取數據，或持續獲取直到識別出最後一個項目 ID。然後它將新項目以陣列形式返回。在此範例中，利用 `httpClient.sendRequest` 方法檢索新口味，隨後將其與時間戳記一起存儲在 `store` 中。
+
+## 公開定義
+
+為了讓 Activepieces 能夠讀取該觸發器，請將其加入到組件定義中的觸發器陣列。
+
+```typescript
+import { createPiece } from '@activepieces/pieces-framework';
+import { getIcecreamFlavor } from './lib/actions/get-icecream-flavor';
+// 別忘了加入以下 import。
+import { newFlavorCreated } from './lib/triggers/new-flavor-created';
+
+export const gelato = createPiece({
+  displayName: 'Gelato Tutorial',
+  logoUrl: 'https://cdn.activepieces.com/pieces/gelato.png',
+  authors: [],
+  auth: gelatoAuth,
+  actions: [getIcecreamFlavor],
+  // 在這裡加入觸發器。
+  triggers: [newFlavorCreated], // <--------
+});
+```
+
+# 測試
+
+預設情況下，開發設定僅建置特定的組件。請開啟 `packages/server/api/.env` 檔案，並在 `AP_DEV_PIECES` 中包含 "gelato"。
+
+如需更多詳細資訊，請查看 [組件開發](./development-setup_zh_TW.md) 章節。
+
+修改環境變數後，請重新啟動後端。組件將被重新建置。完成此過程後，您需要**重新整理**前端以查看變更。
+
+要測試觸發器，請使用 Activepieces 流程編輯器中的「載入樣本數據」(load sample data)。其功能應如螢幕截圖所示。
+
+<Warning>
+為了讓您的 webhook 可以從網際網路存取，您需要將本地開發實例公開到網際網路，請執行以下操作：
+
+1. 安裝 [localxpose](https://localxpose.io/docs#start-your-first-tunnel)。
+2. 按照文件說明啟動第一個通向 localhost:4200 的隧道。
+3. 複製隧道網域（例如 wozcsvaint.loclx.io），並將 `packages/server/api/.env` 中的 `AP_FRONTEND_URL` 環境變數替換為公開的 URL（例如 https://wozcsvaint.loclx.io）。
+4. 前往 `/packages/web/vite.config.ts`，取消註解 `allowedHosts` 並將值替換為相同的隧道網域（例如 wozcsvaint.loclx.io）。
+
+完成這些設定後，您將能夠測試 webhook 觸發器並執行包含這些觸發器的已發布流程。
+
+</Warning>
+
+![Gelato Action](/resources/screenshots/gelato-trigger.png)

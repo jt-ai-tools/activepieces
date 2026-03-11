@@ -1,0 +1,110 @@
+---
+title: '建立動作'
+icon: 'circle-5'
+description: ''
+---
+
+## 動作定義
+
+現在讓我們建立第一個用於獲取隨機冰淇淋口味的動作。
+
+```bash
+npm run cli actions create
+```
+
+系統將會詢問三個問題來定義您的新組件：
+
+1. `Piece Folder Name`：這是與動作所在資料夾相關聯的名稱。它有助於在組件（Piece）內組織和分類動作。
+2. `Action Display Name`：使用者在介面中看到的名稱，能清晰地傳達動作的目的。
+3. `Action Description`：UI 中的簡短說明文字，引導使用者了解動作的功能和用途。
+
+   接著，讓我們建立動作檔案：
+
+**範例：**
+
+```bash
+npm run cli actions create
+
+? Enter the piece folder name : gelato
+? Enter the action display name : get icecream flavor
+? Enter the action description : fetches random icecream flavor.
+```
+
+這將在 `packages/pieces/community/gelato/src/lib/actions` 目錄中建立一個名為 `get-icecream-flavor.ts` 的新 TypeScript 檔案。
+
+在此檔案中，貼上以下程式碼：
+
+```typescript
+import {
+  createAction,
+  Property,
+  PieceAuth,
+} from '@activepieces/pieces-framework';
+import { httpClient, HttpMethod } from '@activepieces/pieces-common';
+import { gelatoAuth } from '../..';
+
+export const getIcecreamFlavor = createAction({
+  name: 'get_icecream_flavor', // 必須在組件中唯一，不應更改。
+  auth: gelatoAuth,
+  displayName: 'Get Icecream Flavor',
+  description: 'Fetches random icecream flavor',
+  props: {},
+  async run(context) {
+    const res = await httpClient.sendRequest<string[]>({
+      method: HttpMethod.GET,
+      url: 'https://cloud.activepieces.com/api/v1/webhooks/RGjv57ex3RAHOgs0YK6Ja/sync',
+      headers: {
+        Authorization: context.auth, // 在標頭中傳遞 API 金鑰
+      },
+    });
+    return res.body;
+  },
+});
+```
+
+`createAction` 函數接收一個包含多個屬性的物件，包括動作的 `name`、`displayName`、`description`、`props` 以及 `run` 函數。
+
+`name` 屬性是動作的唯一識別碼。`displayName` 和 `description` 屬性用於為動作提供易於閱讀的名稱和描述。
+
+`props` 屬性是一個物件，定義了動作需要使用者提供的屬性。在此範例中，該動作不需要任何屬性。
+
+`run` 函數是執行動作時呼叫的函數。它接收一個 `context` 參數，其中包含動作屬性的值。
+
+`run` 函數利用 `httpClient.sendRequest` 函數發送 GET 請求，獲取隨機冰淇淋口味。它在請求標頭中包含了 API 金鑰認證。最後，它回傳回應主體（response body）。
+
+## 公開定義
+
+為了讓 Activepieces 能夠讀取該動作，請將其新增至組件定義中的動作陣列。
+
+```typescript
+import { createPiece } from '@activepieces/pieces-framework';
+// 不要忘記添加以下匯入。
+import { getIcecreamFlavor } from './lib/actions/get-icecream-flavor';
+
+export const gelato = createPiece({
+  displayName: 'Gelato',
+  logoUrl: 'https://cdn.activepieces.com/pieces/gelato.png',
+  authors: [],
+  auth: gelatoAuth,
+  // 在此處添加動作。
+  actions: [getIcecreamFlavor], // <--------
+  triggers: [],
+});
+```
+
+# 測試
+
+預設情況下，開發設定僅建置特定的組件。打開 `packages/server/api/.env` 檔案，並在 `AP_DEV_PIECES` 中包含 "gelato"。
+
+欲了解更多詳細資訊，請參閱[組件開發](./development-setup_zh_TW)章節。
+
+編輯環境變數後，請重啟後端（backend）。組件將會被重新建置。完成此過程後，您需要**重新整理**前端介面才能看到更改。
+
+<Tip>
+如果建置失敗，請嘗試執行 `npx turbo run build --filter=@activepieces/piece-gelato` 進行除錯。
+它將顯示程式碼中的任何錯誤。
+</Tip>
+
+要測試該動作，請使用 Activepieces 中的流程編輯器（flow builder）。其功能應如截圖所示。
+
+![Gelato Action](/resources/screenshots/gelato-action.png)

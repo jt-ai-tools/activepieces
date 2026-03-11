@@ -1,0 +1,72 @@
+---
+title: '總覽'
+description: ''
+---
+
+本教學將說明建立觸發器 (triggers) 的三種技術：
+
+- `Polling`: 定期呼叫端點以檢查變更。
+- `Webhooks`: 透過單一 URL 監聽使用者事件。
+- `App Webhooks (Subscriptions)`: 使用開發者應用程式（透過 OAuth2）在單一 URL 接收所有已授權的使用者事件（目前不支援）。
+
+若要建立新的觸發器，請執行以下命令：
+
+```bash
+npm run cli triggers create
+```
+
+1. `Piece Folder Name`: 這是與觸發器所在資料夾相關聯的名稱。這有助於在 piece 中組織和分類觸發器。
+2. `Trigger Display Name`: 使用者在介面上看到的名稱，應清楚傳達觸發器的用途。
+3. `Trigger Description`: UI 中的簡短說明文字，引導使用者了解觸發器的功能與目的。
+4. `Trigger Technique`: 指定觸發器類型 - `polling` 或 `webhook`。
+
+# 觸發器結構
+
+```typescript
+export const createNewIssue = createTrigger({
+    auth: PieceAuth | undefined
+    name: string, // 在 piece 中唯一的名稱。
+    displayName: string, // 在介面上的顯示名稱。
+	description: string, // 動作的說明
+    sampleData: null,
+    type: TriggerStrategy.WEBHOOK | TriggerStrategy.POLLING | TriggerStrategy.APP_WEBHOOK,
+
+    props: {}; // 需要使用者填寫的屬性。
+    // 當使用者啟用或發佈流程時執行。
+
+	onEnable: (ctx) => {},
+    // 當使用者停用流程，或在發佈新流程後刪除舊流程時執行。
+	onDisable: (ctx) => {},
+
+    // 觸發器實作，它接收 context 作為參數。
+    // 應回傳一個 payload 陣列，每個 payload 都被視為一次觸發。
+    run: async run(ctx): unknown[] => {}
+})
+```
+
+<Tip>
+  請注意 `run` 方法會回傳一個陣列。這是因為單次輪詢可能包含多個觸發事件，因此陣列中的每個項目都會觸發流程執行。
+</Tip>
+
+## Context 物件
+
+Context 物件包含多個有用的資訊和工具，在開發時非常方便。
+
+```typescript
+// Store：一個簡單、輕量級的鍵值對 (key-value) 儲存庫，在開發需要在多次執行之間保持狀態的觸發器時非常有用，例如儲存上次輪詢的日期。
+await context.store.put('_lastFetchedDate', new Date());
+const lastFetchedData = await context.store.get('_lastFetchedDate', new Date());
+
+// Webhook URL：一個唯一的、自動生成的 URL，將會觸發流程。當你需要開發基於 webhook 的觸發器時非常有用。
+context.webhookUrl;
+
+// Payload：包含第三方發送的 HTTP 請求資訊。它有三個屬性：status、headers 和 body。
+context.payload;
+
+// PropsValue：包含使用者在定義屬性中填寫的資訊。
+context.propsValue;
+```
+
+**App Webhooks (不支援)**
+
+某些服務（例如 `Slack` 和 `Square`）僅支援開發者應用程式層級的 webhook。這意味著該應用程式的所有授權使用者都會被傳送到同一個端點。雖然此技術很快就會得到支援，但目前的一個替代方案是對端點執行輪詢 (polling)。

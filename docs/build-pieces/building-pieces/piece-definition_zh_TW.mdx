@@ -1,0 +1,51 @@
+---
+title: '建立組件定義'
+icon: 'circle-3'
+description: ''
+---
+
+
+本教學將引導您建立一個 Gelato 組件，其中包含一個獲取隨機冰淇淋口味的動作 (Action)，以及一個獲取新建立冰淇淋口味的觸發器 (Trigger)。本教學假設您已熟悉以下內容：
+
+- [Activepieces 本地開發](./development-setup_zh_TW) 或 [GitHub Codespaces](../misc/codespaces_zh_TW)。
+- TypeScript 語法。
+
+## 組件定義 (Piece Definition)
+
+首先，讓我們為 Gelato 產生一個新的組件：
+
+```bash
+npm run cli pieces create
+```
+
+系統會詢問您三個問題來定義您的新組件：
+
+1. `Piece Name`：指定組件的名稱。此名稱在 Activepieces 生態系統中是唯一的。
+2. `Package Name`：(選填) 您可以輸入與組件關聯的 npm 套件名稱。如果留空，將使用預設名稱。
+3. `Piece Type`：根據您的意圖選擇組件類型。如果是針對您的需求量身定制的解決方案，可以選擇 "custom"；如果是設計用於分享給廣大社群使用，則選擇 "community"。
+
+**範例：**
+
+```bash
+npm run cli pieces create
+
+? Enter the piece name: gelato
+? Enter the package name: @activepieces/piece-gelato
+? Select the piece type: community
+```
+
+組件將產生於 `packages/pieces/community/gelato/`，
+`src/index.ts` 檔案應包含以下程式碼：
+
+```ts
+import { PieceAuth, createPiece } from '@activepieces/pieces-framework';
+
+export const gelato = createPiece({
+  displayName: 'Gelato',
+  logoUrl: 'https://cdn.activepieces.com/pieces/gelato.png',
+  auth: PieceAuth.None(),
+  authors: [],
+  actions: [],
+  triggers: [],
+});
+```

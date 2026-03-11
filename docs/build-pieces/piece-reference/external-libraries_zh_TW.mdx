@@ -1,0 +1,20 @@
+---
+title: "外部函式庫"
+icon: 'npm'
+description: "了解如何安裝和使用外部函式庫。"
+---
+
+Activepieces 儲存庫採用 monorepo 結構，並使用 Nx 作為其建置工具。
+
+為了保持主 `package.json` 盡可能輕量，我們將僅用於特定 piece 的函式庫保存在該 piece 的 `package.json` 中。這意味著在新增函式庫時，您應該切換至該 piece 的資料夾，並使用我們的套件管理員 `bun` 進行安裝：
+
+```bash
+cd packages/pieces/<piece-path> 
+bun install --save <library-name>
+```
+
+- 將函式庫導入 (Import) 您的 piece。
+
+指南：
+- 確保使用維護良好的函式庫。
+- 確保函式庫體積不會太大，以避免膨脹套件 (bundle) 大小；這將使 piece 在沙盒 (sandbox) 中載入得更快。

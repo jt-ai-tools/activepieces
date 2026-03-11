@@ -1,0 +1,31 @@
+---
+title: 'Fork 儲存庫'
+icon: "circle-1"
+---
+
+要開始建立 piece，我們需要 fork 包含框架函式庫和開發環境的儲存庫。稍後，我們將把這些 piece 發佈為 `npm` 套件。
+
+請按照以下步驟 fork 儲存庫：
+
+<Warning>
+如果您使用的是 Windows，請先安裝 [WSL](https://learn.microsoft.com/zh-tw/windows/wsl/install) 並在其中設定 git，然後再執行以下指示。
+</Warning>
+1. 前往儲存庫頁面：https://github.com/activepieces/activepieces。
+2. 點擊頁面右上角的 `Fork` 按鈕。
+
+![Fork 儲存庫](/resources/screenshots/fork-repository.jpg)
+
+3. 使用淺層複製（shallow clone）來複製您的 fork，以加快設定速度：
+
+```bash
+git clone --depth=1 https://github.com/YOUR_USERNAME/activepieces.git
+```
+
+<Tip>
+使用 `--depth=1` 只會擷取最新的提交（commit）而不是完整歷史紀錄，能顯著減少複製的大小。
+</Tip>
+
+
+<Tip>
+如果您是企業版客戶並希望使用私有 piece 功能，可以參考關於如何設定 [私有 fork](../misc/private-fork_zh_TW) 的教學。
+</Tip>

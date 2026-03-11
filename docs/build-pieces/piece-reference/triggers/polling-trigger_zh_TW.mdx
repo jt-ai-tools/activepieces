@@ -1,0 +1,111 @@
+---
+title: "輪詢觸發器 (Polling Trigger)"
+description: "定期呼叫端點以檢查變動"
+---
+
+
+
+輪詢觸發器通常的運作方式如下：
+
+**啟用時 (On Enable)：**
+使用 context store 屬性儲存最後的時間戳記或最新的項目 ID。
+
+**執行 (Run)：**
+此方法每 **5 分鐘**執行一次，抓取特定時間戳記之間的端點資料，或遍歷直到找到最後一個項目 ID，並以陣列形式傳回新項目。
+
+**測試 (Testing)：**
+您可以實作一個測試函式，該函式應傳回一些最近的項目。建議將數量限制在五個以內。
+
+**範例：**
+- [New Record Airtable](https://github.com/activepieces/activepieces/blob/main/packages/pieces/community/airtable/src/lib/trigger/new-record.trigger.ts)
+- [New Updated Item Salesforce](https://github.com/activepieces/activepieces/blob/main/packages/pieces/community/salesforce/src/lib/trigger/new-updated-record.ts)
+
+# 輪詢函式庫 (Polling library)
+
+實作輪詢觸發器有多種策略，我們建立了一個函式庫來協助您。
+
+## 策略 (Strategies)
+
+**基於時間 (Timebased)：**
+
+此策略使用時間戳記來抓取新項目。您需要實作 `items` 方法，該方法應傳回最新的項目。
+函式庫將根據時間戳記偵測新項目。
+
+輪詢物件的泛型類型由 props 值和物件類型組成。
+
+```typescript
+const polling: Polling<Polling<AppConnectionValueForAuthProperty<typeof auth>> = {
+  strategy: DedupeStrategy.TIMEBASED,
+  items: async ({ propsValue, lastFetchEpochMS }) => {
+    // Todo: 實作抓取項目的邏輯
+    const items = [ {id: 1, created_date: '2021-01-01T00:00:00Z'}, {id: 2, created_date: '2021-01-01T00:00:00Z'}];
+    return items.map((item) => ({
+      epochMilliSeconds: dayjs(item.created_date).valueOf(),
+      data: item,
+    }));
+  }
+}
+```
+
+**最後 ID 策略 (Last ID Strategy)：**
+
+此策略根據最後一個項目 ID 抓取新項目。要使用此策略，您需要實作 `items` 方法，該方法應傳回最新的項目。
+函式庫將偵測最後一個項目 ID 之後的新項目。
+
+輪詢物件的泛型類型由 props 值和物件類型組成。
+
+```typescript
+const polling: Polling<AppConnectionValueForAuthProperty<typeof auth>, Record<string,any>> = {
+    strategy: DedupeStrategy.LAST_ITEM,
+    items: async ({ propsValue }) => {
+        // 實作抓取項目的邏輯
+        const items = [{ id: 1 }, { id: 2 }];
+        return items.map((item) => ({
+            id: item.id,
+            data: item,
+        }));
+    }
+}
+```
+
+## 觸發器實作 (Trigger Implementation)
+
+在實作輪詢物件後，您可以使用 `pollingHelper` 來實作觸發器。
+
+```typescript
+export const newTicketInView = createTrigger({
+    name: 'new_ticket_in_view',
+    displayName: 'New ticket in view',
+    description: 'Triggers when a new ticket is created in a view',
+    type: TriggerStrategy.POLLING,
+    props: {
+        authentication: Property.SecretText({
+            displayName: 'Authentication',
+            description: markdownProperty,
+            required: true,
+        }),
+    },
+    sampleData: {},
+    onEnable: async (context) => {
+        await pollingHelper.onEnable(polling, {
+            store: context.store,
+            propsValue: context.propsValue,
+            auth: context.auth
+        })
+    },
+    onDisable: async (context) => {
+        await pollingHelper.onDisable(polling, {
+            store: context.store,
+            propsValue: context.propsValue,
+            auth: context.auth
+
+        })
+    },
+    run: async (context) => {
+        return await pollingHelper.poll(polling, context);
+    },
+    test: async (context) => {
+        return await pollingHelper.test(polling, context);
+    }
+});
+```

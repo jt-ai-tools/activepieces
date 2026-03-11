@@ -1,0 +1,446 @@
+---
+title: 'Props (屬性)'
+description: '瞭解觸發器 (triggers) / 動作 (actions) 中使用的不同屬性類型'
+icon: 'input-pipe'
+---
+
+屬性用於動作和觸發器中，以收集來自使用者的資訊。它們也會顯示給使用者進行輸入。以下是一些常用的屬性：
+
+## 基本屬性 (Basic Properties)
+
+這些屬性用於收集使用者的基本資訊。
+
+### 短文字 (Short Text)
+
+此屬性從使用者收集短文字輸入。
+
+**範例：**
+
+```typescript
+Property.ShortText({
+  displayName: 'Name',
+  description: 'Enter your name',
+  required: true,
+  defaultValue: 'John Doe',
+});
+```
+
+### 長文字 (Long Text)
+
+此屬性從使用者收集長文字輸入。
+
+**範例：**
+
+```typescript
+Property.LongText({
+  displayName: 'Description',
+  description: 'Enter a description',
+  required: false,
+});
+```
+
+### 核取方塊 (Checkbox)
+
+此屬性提供一個核取方塊供使用者勾選或取消勾選。
+
+**範例：**
+
+```typescript
+Property.Checkbox({
+  displayName: 'Agree to Terms',
+  description: 'Check this box to agree to the terms',
+  required: true,
+  defaultValue: false,
+});
+```
+
+### Markdown
+
+此屬性向使用者顯示 Markdown 片段，適用於文件或說明。它包含一個 `variant` 選項，使用 `MarkdownVariant` 列舉來設定 Markdown 的樣式：
+
+- **BORDERLESS**：用於極簡、無邊框的佈局。
+- **INFO**：顯示資訊訊息。
+- **WARNING**：提示使用者注意警告資訊。
+- **TIP**：反白顯示有用的提示或建議。
+
+`variant` 的預設值為 **INFO**。
+
+**範例：**
+
+```typescript
+Property.MarkDown({
+    value: '## This is a markdown snippet',
+    variant: MarkdownVariant.WARNING,
+}),
+```
+
+<Tip>
+  如果你想向使用者顯示 Webhook URL，請在 Markdown 片段中使用 `{{ webhookUrl }}`。
+</Tip>
+
+### 日期時間 (DateTime)
+
+此屬性從使用者收集日期和時間。
+
+**範例：**
+
+```typescript
+Property.DateTime({
+  displayName: 'Date and Time',
+  description: 'Select a date and time',
+  required: true,
+  defaultValue: '2023-06-09T12:00:00Z',
+});
+```
+
+### 數字 (Number)
+
+此屬性從使用者收集數字輸入。
+
+**範例：**
+
+```typescript
+Property.Number({
+  displayName: 'Quantity',
+  description: 'Enter a number',
+  required: true,
+});
+```
+
+### 靜態下拉選單 (Static Dropdown)
+
+此屬性提供一個具有預定義選項的下拉選單。
+
+**範例：**
+
+```typescript
+Property.StaticDropdown({
+  displayName: 'Country',
+  description: 'Select your country',
+  required: true,
+  options: {
+    options: [
+      {
+        label: 'Option One',
+
+        value: '1',
+      },
+      {
+        label: 'Option Two',
+        value: '2',
+      },
+    ],
+  },
+});
+```
+
+### 靜態多選下拉選單 (Static Multiple Dropdown)
+
+此屬性提供一個可以多選的下拉選單。
+
+**範例：**
+
+```typescript
+Property.StaticMultiSelectDropdown({
+  displayName: 'Colors',
+  description: 'Select one or more colors',
+  required: true,
+  options: {
+    options: [
+      {
+        label: 'Red',
+        value: 'red',
+      },
+      {
+        label: 'Green',
+        value: 'green',
+      },
+      {
+        label: 'Blue',
+        value: 'blue',
+      },
+    ],
+  },
+});
+```
+
+### JSON
+
+此屬性從使用者收集 JSON 數據。
+
+**範例：**
+
+```typescript
+Property.Json({
+  displayName: 'Data',
+  description: 'Enter JSON data',
+  required: true,
+  defaultValue: { key: 'value' },
+});
+```
+
+### 字典 (Dictionary)
+
+此屬性從使用者收集鍵值對 (key-value pairs)。
+
+**範例：**
+
+```typescript
+Property.Object({
+  displayName: 'Options',
+  description: 'Enter key-value pairs',
+  required: true,
+  defaultValue: {
+    key1: 'value1',
+    key2: 'value2',
+  },
+});
+```
+
+### 檔案 (File)
+
+此屬性從使用者收集檔案，可以透過提供 URL 或上傳檔案來達成。
+
+**範例：**
+
+```typescript
+Property.File({
+  displayName: 'File',
+  description: 'Upload a file',
+  required: true,
+});
+```
+
+### 字串陣列 (Array of Strings)
+
+此屬性從使用者收集字串陣列。
+
+**範例：**
+
+```typescript
+Property.Array({
+  displayName: 'Tags',
+  description: 'Enter tags',
+  required: false,
+  defaultValue: ['tag1', 'tag2'],
+});
+```
+
+### 欄位陣列 (Array of Fields)
+
+此屬性從使用者收集物件陣列。
+
+**範例：**
+
+```typescript
+Property.Array({
+  displayName: 'Fields',
+  description: 'Enter fields',
+  properties: {
+    fieldName: Property.ShortText({
+      displayName: 'Field Name',
+      required: true,
+    }),
+    fieldType: Property.StaticDropdown({
+      displayName: 'Field Type',
+      required: true,
+      options: {
+        options: [
+          { label: 'TEXT', value: 'TEXT' },
+          { label: 'NUMBER', value: 'NUMBER' },
+        ],
+      },
+    }),
+  },
+  required: false,
+  defaultValue: [],
+});
+```
+
+## 動態數據屬性 (Dynamic Data Properties)
+
+這些屬性為收集使用者輸入提供了更進階的選項。
+
+### 下拉選單 (Dropdown)
+
+此屬性允許根據使用者的輸入動態載入選項。
+
+**範例：**
+
+```typescript
+Property.Dropdown({
+  displayName: 'Options',
+  description: 'Select an option',
+  required: true,
+  auth: yourPieceAuth,
+  refreshers: ['auth'],
+  refreshOnSearch: false,
+  options: async ({ auth }, { searchValue }) => {
+    // Search value only works when refreshOnSearch is true
+    if (!auth) {
+      return {
+        disabled: true,
+      };
+    }
+    return {
+      options: [
+        {
+          label: 'Option One',
+          value: '1',
+        },
+        {
+          label: 'Option Two',
+          value: '2',
+        },
+      ],
+    };
+  },
+});
+```
+
+<Tip>
+  存取 Piece `auth` 時，請務必準確使用 `auth` 這個名稱，因為它是硬編碼的。但是對於其他屬性，請使用它們各自的名稱。
+</Tip>
+
+### 多選下拉選單 (Multi-Select Dropdown)
+
+此屬性允許從動態載入的選項中進行多項選擇。
+
+**範例：**
+
+```typescript
+Property.MultiSelectDropdown({
+  displayName: 'Options',
+  description: 'Select one or more options',
+  required: true,
+  refreshers: ['auth'],
+  auth: yourPieceAuth,
+  options: async ({ auth }) => {
+    if (!auth) {
+      return {
+        disabled: true,
+      };
+    }
+    return {
+      options: [
+        {
+          label: 'Option One',
+          value: '1',
+        },
+        {
+          label: 'Option Two',
+          value: '2',
+        },
+      ],
+    };
+  },
+});
+```
+
+<Tip>
+  存取 Piece `auth` 時，請務必準確使用 `auth` 這個名稱，因為它是硬編碼的。但是對於其他屬性，請使用它們各自的名稱。
+</Tip>
+
+### 動態屬性 (Dynamic Properties)
+
+此屬性用於根據 API 回應或使用者輸入動態構建表單。
+
+**範例：**
+
+```typescript
+
+import {
+	httpClient,
+	HttpMethod,
+} from '@activepieces/pieces-common';
+
+
+Property.DynamicProperties({
+  description: 'Dynamic Form',
+  displayName: 'Dynamic Form',
+  required: true,
+  refreshers: ['auth'],
+  auth: yourPieceAuth,
+  props: async ({auth}) => {
+    const apiEndpoint = 'https://someapi.com';
+    const response = await httpClient.sendRequest<{ values: [string[]][] }>({
+        method: HttpMethod.GET,
+        url: apiEndpoint ,
+        //你可以將 auth 值添加到 headers 中
+	  });
+
+    const properties = {
+      prop1: Property.ShortText({
+        displayName: 'Property 1',
+        description: 'Enter property 1',
+        required: true,
+      }),
+      prop2: Property.Number({
+        displayName: 'Property 2',
+        description: 'Enter property 2',
+        required: false,
+      }),
+    };
+
+    return properties;
+  },
+});
+```
+
+
+
+### 自定義屬性 (Custom Property - BETA)
+
+<Warning>
+ 此功能仍處於 BETA 階段，尚未完全發佈。如果你在使用過程中遇到任何問題，請告知我們。請注意，未來可能會發生破壞性變更 (breaking changes)。
+</Warning>
+這是一個允許你向前端注入 JS 程式碼並隨意操作該內容 DOM 的屬性。如果你正在[嵌入 (embedding)](/embedding/overview_zh_TW) Activepieces，並希望有一種方式與嵌入它的 SaaS 進行通訊，這將非常有用。
+它有一個 `code` 屬性，是一個接收物件參數的函數，該參數的結構如下：
+
+
+| 參數名稱 | 類型 | 描述 |
+| --- | --- | --- |
+| onChange | `(value:unknown)=>void` | 一個你用來設定輸入值的回呼函數 (僅在事件處理程式內部呼叫)|
+| value | `unknown` | 你傳遞給 onChange 的值的類型|
+| containerId | `string` | 你可以隨意修改其 DOM 的 HTML 元素的 ID |
+| isEmbedded | `boolean` | 標誌，告訴你程式碼是否在 Activepieces 的[嵌入實例](/embedding/overview_zh_TW)中運行 |
+| projectId | `string` | 包含此屬性的步驟所屬流程的專案 ID |
+| disabled | `boolean` | 標誌，告訴你該屬性是否被禁用 |
+| property | `{ displayName:string, description?: string, required: boolean}` | 當前屬性資訊|
+
+- 你可以在 `code` 屬性函數的末尾返回一個清理函數，以移除你插入的任何監聽器或 HTML 元素 (這對於開發模式非常重要，因為元件會[掛載兩次](https://react.dev/reference/react/useEffect#my-effect-runs-twice-when-the-component-mounts))。
+- 此函數必須是純函數，不得從外部套件導入任何內容，也不得使用函數作用域之外的變數。 
+- 在 Piece 中引入此屬性後，**必須**將其 `minimumSupportedRelease` 屬性標記為至少 `0.58.0`。
+
+以下是如何定義此類屬性的範例：
+```typescript
+ Property.Custom({
+      code:(({value,onChange,containerId})=>{
+        const container = document.getElementById(containerId);
+        const input = document.createElement('input');
+        input.classList.add(...['border','border-solid', 'border-border', 'rounded-md']) 
+        input.type = 'text';
+        input.value = `${value}`;
+        input.oninput = (e: Event) => {
+          const value = (e.target as HTMLInputElement).value;
+          onChange(value);
+        }
+       container!.appendChild(input);
+       const windowCallback = (e:MessageEvent<{type:string,value:string,propertyName:string}>) => {
+        if(e.data.type === 'updateInput' && e.data.propertyName === 'YOUR_PROPERTY_NAME'){
+          input.value= e.data.value;
+          onChange(e.data.value);
+        }
+       }
+       window.addEventListener('message', windowCallback);
+        return ()=>{
+          window.removeEventListener('message', windowCallback);
+          container!.removeChild(input);
+        }
+      }),
+      displayName: 'Custom Property',
+      required: true
+    })
+  ```
+
+- 如果你想瞭解更多關於如何設定 Activepieces 與嵌入它的 SaaS 之間的通訊，請參考 [window postMessage API](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage)。

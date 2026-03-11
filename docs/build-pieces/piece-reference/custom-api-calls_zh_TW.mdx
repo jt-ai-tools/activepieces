@@ -1,0 +1,55 @@
+---
+title: "啟用自定義 API 呼叫"
+description: "瞭解如何為您的組件（pieces）啟用自定義 API 呼叫"
+icon: 'webhook'
+---
+
+自定義 API 呼叫（Custom API Calls）允許使用者在尚未為特定端點（endpoint）實作動作（action）時，直接向該端點發送請求。
+
+這將在組件的動作列表中顯示為 `Custom API Call`。要為組件啟用此動作，您需要在 `actions` 陣列中呼叫 `createCustomApiCallAction`。
+
+## 基礎範例
+
+以下範例為 OpenAI 組件實作了該動作。OpenAI 組件使用 `Bearer token` 授權標頭（authorization header）來識別發送請求的使用者。
+
+```typescript
+actions: [
+  ...yourActions,
+  createCustomApiCallAction({
+    // 組件中定義的 auth 物件
+    auth: openaiAuth,
+    // API 的基礎 URL
+    baseUrl: () => {
+      'https://api.openai.com/v1'
+    },
+    // 將 auth 物件映射到所需的授權標頭
+    authMapping: async (auth) => {
+      return {
+        'Authorization': `Bearer ${auth}`
+      }
+    }
+  })
+]
+```
+
+## 動態基礎 URL 與基本驗證（Basic Auth）範例
+
+以下範例為 Jira Cloud 組件實作了該動作。Jira Cloud 組件的動作使用動態基礎 URL，該 URL 會根據使用者驗證的內容而改變。我們也將實作基本驗證（Basic authentication）標頭。
+
+```typescript
+actions: [
+  ...yourActions,
+  createCustomApiCallAction({
+    baseUrl: (auth) => {
+      return `${(auth as JiraAuth).instanceUrl}/rest/api/3`
+    },
+    auth: jiraCloudAuth,
+    authMapping: async (auth) => {
+      const typedAuth = auth  as JiraAuth
+      return {
+        'Authorization': `Basic ${typedAuth.email}:${typedAuth.apiToken}`
+      }
+    }
+  })
+]
+```

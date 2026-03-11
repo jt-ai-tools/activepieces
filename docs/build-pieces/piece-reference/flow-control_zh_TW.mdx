@@ -1,0 +1,65 @@
+---
+title: '流程控制'
+icon: 'Joystick'
+description: '了解如何從元件 (Piece) 內部控制執行流程'
+---
+
+流程控制 (Flow Controls) 提供了從元件 (Piece) 內部控制執行流程的能力。透過在動作 (Actions) 的 `run` 方法中使用 `ctx` 參數，您可以執行各種操作來控制流程。
+
+## 停止流程 (Stop Flow)
+
+您可以停止流程並對 webhook 觸發器 (trigger) 提供回應。當您想要終止元件的執行並傳回特定回應時，這非常有用。
+
+**包含回應的範例：**
+
+```typescript
+context.run.stop({
+  response: {
+    status: context.propsValue.status ?? StatusCodes.OK,
+    body: context.propsValue.body,
+    headers: (context.propsValue.headers as Record<string, string>) ?? {},
+  },
+});
+```
+
+**不包含回應的範例：**
+
+```typescript
+context.run.stop();
+```
+
+## 暫停流程並等待 Webhook (Pause Flow and Wait for Webhook)
+
+您可以暫停流程並回傳 HTTP 回應，同時提供一個回呼 (callback) URL，您可以透過該 URL 傳送特定負載 (payload) 並繼續流程。
+
+**範例：**
+
+```typescript
+ctx.run.pause({
+  pauseMetadata: {
+    type: PauseType.WEBHOOK,
+    response: {
+      callbackUrl: context.generateResumeUrl({
+        queryParams: {},
+      }),
+    },
+  },
+});
+```
+
+## 暫停流程並延遲 (Pause Flow and Delay)
+
+您可以暫停或延遲流程直到特定的時間戳記。目前唯一支援的暫停類型是基於未來時間戳記的延遲。
+
+**範例：**
+
+```typescript
+ctx.run.pause({
+    pauseMetadata: {
+        type: PauseType.DELAY,
+        resumeDateTime: futureTime.toUTCString()
+    }
+});
+```
+
+這些流程掛鉤 (flow hooks) 讓您能夠透過停止流程或暫停流程直到滿足特定條件，進而控制元件的執行。您可以使用這些掛鉤來自訂動作的行為和流程。

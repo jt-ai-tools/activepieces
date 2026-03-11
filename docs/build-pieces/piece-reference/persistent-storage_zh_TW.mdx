@@ -1,0 +1,45 @@
+---
+title: "持久化儲存"
+icon: 'database'
+description: "了解如何從鍵值對 (key-value) 儲存中存取資料"
+---
+
+觸發器 (triggers) 和動作 (actions) 內部的 `ctx` 參數提供了一個簡單的鍵值對 (key/value) 儲存機制。該儲存是持久化的，這意味著即使在 piece 執行結束後，儲存的值也會被保留。
+
+預設情況下，儲存在流程層級 (flow level) 運作，但也可以配置為在專案層級 (project level) 儲存值。
+
+<Tip>
+儲存範圍是完全隔離的。如果一個鍵被儲存在不同的範圍內，在不同範圍內請求時將無法獲取該值。
+</Tip>
+
+## Put
+
+您可以在儲存中存放具有指定鍵 (key) 的值。
+
+**範例：**
+
+```typescript
+ctx.store.put('KEY', 'VALUE', StoreScope.PROJECT);
+```
+
+## Get
+
+您可以從儲存中檢索與特定鍵關聯的值。
+
+**範例：**
+
+```typescript
+const value = ctx.store.get<string>('KEY', StoreScope.PROJECT);
+```
+
+## Delete
+
+您可以從儲存中刪除鍵值對。
+
+**範例：**
+
+```typescript
+ctx.store.delete('KEY', StoreScope.PROJECT);
+```
+
+這些儲存操作允許您在持久化儲存中存儲、檢索和刪除鍵值對。您可以使用此儲存機制根據需要在觸發器和動作中存儲和檢索數據。

@@ -1,0 +1,38 @@
+---
+title: 'Webhook 觸發器'
+description: '透過單一 URL 監聽使用者事件'
+---
+
+Webhook 觸發器通常的運作方式如下：
+
+**啟用時 (On Enable):**
+使用 `context.webhookUrl` 發送 HTTP 請求，在第三方應用程式中註冊 Webhook，並將 Webhook ID 儲存在 `store` 中。
+
+**握手時 (On Handshake):**
+某些服務需要成功的握手請求，通常包含一些挑戰 (challenge)。其運作方式與正常執行類似，不同之處在於您需要回傳正確的挑戰回應。這是選填的，若要啟用握手，您需要在 `handshakeConfiguration` 選項中配置其中一種可用的握手策略。
+
+**執行時 (Run):**
+您可以在 `context.payload.body` 中找到 HTTP 主體 (body)。如有需要，請修改主體；否則，回傳一個包含單一項目 `context.payload.body` 的陣列。
+
+**停用時 (On Disable):**
+使用 `context.store` 從啟用步驟中獲取 Webhook ID，並在第三方應用程式上刪除該 Webhook。
+
+**測試:**
+您無法使用「測試流程 (Test Flow)」進行測試，因為它使用的是組件 (piece) 中提供的靜態範例數據。
+若要測試觸發器，請發布流程並觸發事件。然後從主儀表板 (dashboard) 查看流程執行紀錄。
+
+**範例:**
+
+- [Typeform 上的新表單提交 (New Form Submission on Typeform)](https://github.com/activepieces/activepieces/blob/main/packages/pieces/community/typeform/src/lib/trigger/new-submission.ts)
+
+<Warning>
+為了讓您的 Webhook 可以從網際網路存取，您需要將本地開發執行個體暴露到網際網路上，請執行以下操作：
+
+1. 安裝 [localxpose](https://localxpose.io/docs#start-your-first-tunnel)。
+2. 按照文件說明啟動第一個通往 localhost:4200 的隧道 (tunnel)。
+3. 複製隧道網域（例如 wozcsvaint.loclx.io），並將 `packages/server/api/.env` 中的 `AP_FRONTEND_URL` 環境變數替換為暴露的網址（例如 https://wozcsvaint.loclx.io）。
+4. 前往 `/packages/web/vite.config.ts`，取消註解 `allowedHosts` 並將其值替換為相同的隧道網域（例如 wozcsvaint.loclx.io）。
+
+完成這些配置後，您將能夠測試 Webhook 觸發器並執行包含這些觸發器的已發布流程。
+
+</Warning>

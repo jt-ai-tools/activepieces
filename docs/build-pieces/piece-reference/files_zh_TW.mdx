@@ -1,0 +1,25 @@
+---
+title: "檔案"
+icon: 'file'
+description: "了解如何使用 files 物件建立檔案引用。"
+---
+
+`ctx.files` 物件允許您根據執行環境將檔案儲存在本地存儲或遠端存儲中。
+
+## 寫入 (Write)
+
+您可以使用 `write` 方法將檔案寫入存儲。它會返回一個字串，可用於其他動作 (actions) 或觸發器 (triggers) 的屬性中以引用該檔案。
+
+**範例：**
+```ts
+const fileReference = await files.write({
+    fileName: 'file.txt',
+    data: Buffer.from('text')
+});
+```
+
+<Tip>
+如果執行環境是測試模式，此程式碼會將檔案儲存在資料庫中，因為測試其他步驟時需要它；否則，它將儲存在本地暫存目錄中。
+</Tip>
+
+關於讀取檔案，如果您在觸發器或動作中使用檔案屬性，它會被自動解析且您可以直接使用。請參閱 [屬性 (properties)](./properties_zh_TW#file) 章節中的 `Property.File`。

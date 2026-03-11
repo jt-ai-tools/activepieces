@@ -1,0 +1,78 @@
+---
+title: "屬性驗證 (Props Validation)"
+description: "了解不同類型的屬性驗證"
+icon: 'magnifying-glass'
+---
+
+Activepieces 使用 Zod 對 Piece 屬性進行執行期 (runtime) 驗證。Zod 提供了一個強大的 Schema 驗證系統，有助於確保您的 Piece 接收到有效的輸入。
+
+要在您的 Piece 中使用 Zod 驗證，請先匯入驗證輔助程式和 Zod：
+
+<Warning>
+請確保 `minimumSupportedRelease` 至少設定為 `0.36.1`，驗證功能才能正常運作。
+</Warning>
+
+```typescript
+import { createAction, Property } from '@activepieces/pieces-framework';
+import { propsValidation } from '@activepieces/pieces-common';
+import { z } from 'zod';
+
+export const getIcecreamFlavor = createAction({
+  name: 'get_icecream_flavor', // Action 的唯一名稱。
+  displayName: '取得冰淇淋口味',
+  description: '根據使用者偏好取得隨機冰淇淋口味。',
+  props: {
+    sweetnessLevel: Property.Number({
+      displayName: '甜度等級',
+      required: true,
+      description: '指定甜度等級 (0 到 10)。',
+    }),
+    includeToppings: Property.Checkbox({
+      displayName: '包含配料',
+      required: false,
+      description: '口味是否應包含配料？',
+      defaultValue: true,
+    }),
+    numberOfFlavors: Property.Number({
+      displayName: '口味數量',
+      required: true,
+      description: '您想要取得多少種口味？(1-5)',
+      defaultValue: 1,
+    }),
+  },
+  async run({ propsValue }) {
+    // 使用 Zod 驗證輸入屬性
+    await propsValidation.validateZod(propsValue, {
+      sweetnessLevel: z.number().min(0).max(10, '甜度等級必須介於 0 到 10 之間。'),
+      numberOfFlavors: z.number().min(1).max(5, '您可以取得 1 到 5 種口味。'),
+    });
+
+    // Action 邏輯
+    const sweetnessLevel = propsValue.sweetnessLevel;
+    const includeToppings = propsValue.includeToppings ?? true; // 預設為 true
+    const numberOfFlavors = propsValue.numberOfFlavors;
+
+    // 模擬取得隨機冰淇淋口味
+    const allFlavors = [
+      'Vanilla',
+      'Chocolate',
+      'Strawberry',
+      'Mint',
+      'Cookie Dough',
+      'Pistachio',
+      'Mango',
+      'Coffee',
+      'Salted Caramel',
+      'Blackberry',
+    ];
+    const selectedFlavors = allFlavors.slice(0, numberOfFlavors);
+
+    return {
+      message: `這是您的 ${numberOfFlavors} 種口味：${selectedFlavors.join(', ')}`,
+      sweetnessLevel: sweetnessLevel,
+      includeToppings: includeToppings,
+    };
+  },
+});
+
+```

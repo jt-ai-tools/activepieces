@@ -1,0 +1,133 @@
+---
+title: "Piece 驗證"
+description: "瞭解 Piece 驗證"
+icon: 'key'
+---
+
+Piece 驗證用於收集使用者憑證並安全地儲存，以便在不同流程中未來使用。
+驗證必須在 `createPiece`、`createTrigger` 和 `createAction` 函數中定義為 `auth` 參數。
+
+這項要求確保了在觸發器（triggers）和動作（actions）中能正確推導出驗證類型。
+
+<Warning>
+`createPiece`、`createTrigger` 和 `createAction` 函數的 `auth` 參數可以接受一個陣列，但您不能擁有超過一個相同類型的 `auth` 屬性，例如兩個 OAUTH2 屬性。
+</Warning>
+
+### 機密文字 (Secret Text)
+
+此驗證用於收集敏感資訊，例如密碼或 API 金鑰。它會顯示為遮罩式輸入欄位。
+
+**範例：**
+
+```typescript
+PieceAuth.SecretText({
+    displayName: 'API Key',
+    description: 'Enter your API key',
+    required: true,
+    // 可選的驗證 (Optional Validation)
+    validate: async ({auth}) => {
+        if(auth.startsWith('sk_')){
+            return {
+                valid: true,
+            }
+        }
+        return {
+            valid: false,
+            error: 'Invalid Api Key'
+        }
+    }
+})
+```
+
+### 使用者名稱與密碼 (Username and Password)
+
+此驗證將使用者名稱和密碼作為獨立欄位收集。
+
+**範例：**
+
+```typescript
+PieceAuth.BasicAuth({
+    displayName: 'Credentials',
+    description: 'Enter your username and password',
+    required: true,
+    username: {
+        displayName: 'Username',
+        description: 'Enter your username',
+    },
+    password: {
+        displayName: 'Password',
+        description: 'Enter your password',
+    },
+    // 可選的驗證 (Optional Validation)
+    validate: async ({auth}) => {
+        if(auth){
+            return {
+                valid: true,
+            }
+        }
+        return {
+            valid: false,
+            error: 'Invalid Api Key'
+        }
+    }
+})
+```
+
+### 自定義 (Custom)
+
+此驗證允許透過收集特定屬性（例如基礎 URL 和存取權杖）來進行自定義驗證。
+
+**範例：**
+
+```typescript
+PieceAuth.CustomAuth({
+    displayName: 'Custom Authentication',
+    description: 'Enter custom authentication details',
+    props: {
+        base_url: Property.ShortText({
+            displayName: 'Base URL',
+            description: 'Enter the base URL',
+            required: true,
+        }),
+        access_token: PieceAuth.SecretText({
+            displayName: 'Access Token',
+            description: 'Enter the access token',
+            required: true
+        })
+    },
+    // 可選的驗證 (Optional Validation)
+    validate: async ({auth}) => {
+        if(auth){
+            return {
+                valid: true,
+            }
+        }
+        return {
+            valid: false,
+            error: 'Invalid Api Key'
+        }
+    },
+    required: true
+})
+```
+
+### OAuth2
+
+此驗證收集 OAuth2 驗證詳細資訊，包括驗證 URL、權杖 URL 和範圍 (scope)。
+
+**範例：**
+
+```typescript
+PieceAuth.OAuth2({
+    displayName: 'OAuth2 Authentication',
+    grantType: OAuth2GrantType.AUTHORIZATION_CODE,
+    required: true,
+    authUrl: 'https://example.com/auth',
+    tokenUrl: 'https://example.com/token',
+    scope: ['read', 'write']
+})
+```
+
+<Tip>
+請注意，`OAuth2GrantType.CLIENT_CREDENTIALS` 也支援基於服務的驗證。
+</Tip>

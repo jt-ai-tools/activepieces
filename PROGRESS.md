@@ -41,26 +41,26 @@ Total files:      873
 | ./docs/build-pieces/sharing-pieces/contribute.mdx | Completed | [contribute_zh_TW.mdx](./docs/build-pieces/sharing-pieces/contribute_zh_TW.mdx) |
 | ./docs/build-pieces/sharing-pieces/private.mdx | Completed | [private_zh_TW.mdx](./docs/build-pieces/sharing-pieces/private_zh_TW.mdx) |
 | ./docs/build-pieces/piece-reference/examples.mdx | Completed | [examples_zh_TW.mdx](./docs/build-pieces/piece-reference/examples_zh_TW.mdx) |
-| ./docs/build-pieces/piece-reference/files.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/properties.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/triggers/polling-trigger.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/triggers/overview.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/triggers/webhook-trigger.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/authentication.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/piece-versioning.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/flow-control.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/custom-api-calls.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/properties-validation.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/i18n.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/persistent-storage.mdx | Pending | |
-| ./docs/build-pieces/piece-reference/external-libraries.mdx | Pending | |
-| ./docs/build-pieces/building-pieces/overview.mdx | Pending | |
-| ./docs/build-pieces/building-pieces/start-building.mdx | Pending | |
-| ./docs/build-pieces/building-pieces/setup-fork.mdx | Pending | |
-| ./docs/build-pieces/building-pieces/create-action.mdx | Pending | |
-| ./docs/build-pieces/building-pieces/create-trigger.mdx | Pending | |
-| ./docs/build-pieces/building-pieces/piece-authentication.mdx | Pending | |
-| ./docs/build-pieces/building-pieces/piece-definition.mdx | Pending | |
+| ./docs/build-pieces/piece-reference/files.mdx | Completed | [files_zh_TW.mdx](./docs/build-pieces/piece-reference/files_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/properties.mdx | Completed | [properties_zh_TW.mdx](./docs/build-pieces/piece-reference/properties_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/triggers/polling-trigger.mdx | Completed | [polling-trigger_zh_TW.mdx](./docs/build-pieces/piece-reference/triggers/polling-trigger_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/triggers/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/build-pieces/piece-reference/triggers/overview_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/triggers/webhook-trigger.mdx | Completed | [webhook-trigger_zh_TW.mdx](./docs/build-pieces/piece-reference/triggers/webhook-trigger_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/authentication.mdx | Completed | [authentication_zh_TW.mdx](./docs/build-pieces/piece-reference/authentication_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/piece-versioning.mdx | Completed | [piece-versioning_zh_TW.mdx](./docs/build-pieces/piece-reference/piece-versioning_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/flow-control.mdx | Completed | [flow-control_zh_TW.mdx](./docs/build-pieces/piece-reference/flow-control_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/custom-api-calls.mdx | Completed | [custom-api-calls_zh_TW.mdx](./docs/build-pieces/piece-reference/custom-api-calls_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/properties-validation.mdx | Completed | [properties-validation_zh_TW.mdx](./docs/build-pieces/piece-reference/properties-validation_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/i18n.mdx | Completed | [i18n_zh_TW.mdx](./docs/build-pieces/piece-reference/i18n_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/persistent-storage.mdx | Completed | [persistent-storage_zh_TW.mdx](./docs/build-pieces/piece-reference/persistent-storage_zh_TW.mdx) |
+| ./docs/build-pieces/piece-reference/external-libraries.mdx | Completed | [external-libraries_zh_TW.mdx](./docs/build-pieces/piece-reference/external-libraries_zh_TW.mdx) |
+| ./docs/build-pieces/building-pieces/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/build-pieces/building-pieces/overview_zh_TW.mdx) |
+| ./docs/build-pieces/building-pieces/start-building.mdx | Completed | [start-building_zh_TW.mdx](./docs/build-pieces/building-pieces/start-building_zh_TW.mdx) |
+| ./docs/build-pieces/building-pieces/setup-fork.mdx | Completed | [setup-fork_zh_TW.mdx](./docs/build-pieces/building-pieces/setup-fork_zh_TW.mdx) |
+| ./docs/build-pieces/building-pieces/create-action.mdx | Completed | [create-action_zh_TW.mdx](./docs/build-pieces/building-pieces/create-action_zh_TW.mdx) |
+| ./docs/build-pieces/building-pieces/create-trigger.mdx | Completed | [create-trigger_zh_TW.mdx](./docs/build-pieces/building-pieces/create-trigger_zh_TW.mdx) |
+| ./docs/build-pieces/building-pieces/piece-authentication.mdx | Completed | [piece-authentication_zh_TW.mdx](./docs/build-pieces/building-pieces/piece-authentication_zh_TW.mdx) |
+| ./docs/build-pieces/building-pieces/piece-definition.mdx | Completed | [piece-definition_zh_TW.mdx](./docs/build-pieces/building-pieces/piece-definition_zh_TW.mdx) |
 | ./docs/build-pieces/building-pieces/development-setup.mdx | Pending | |
 | ./docs/install/options/gcp.mdx | Pending | |
 | ./docs/install/options/aws.mdx | Pending | |
