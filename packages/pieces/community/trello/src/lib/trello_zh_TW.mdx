@@ -1,0 +1,59 @@
+---
+title: 'Trello'
+---
+
+## 使用 Activepieces 建立您的第一張 Trello 卡片
+
+1. 建立一個新的集合 (Collection)
+2. 選擇觸發器為「排程」(Schedule)，我們將使用其預設值 5 分鐘
+3. 點擊 + 號新增一個 Piece
+4. 選擇「Trello」Piece
+5. 在右側欄選擇「建立卡片」(Create Card) 動作
+6. 選擇您先前建立的 Trello API Key 連線
+7. 選擇您先前建立的 Trello Token Key 連線
+8. 前往您想要建立新卡片的 Trello 看板
+9. 建立一張新卡片，命名為「test」
+10. 點進該卡片
+11. 在網址後方加上「.json」，這應該會回傳一長串 JSON 文字
+12. 尋找名為「idList」的值，它看起來應該像這樣：`"idList":"5aea17e911c71fee96375d94"`
+13. 複製 idList 的值（在此範例中為 `5aea17e911c71fee96375d94`），並將其輸入到 idList 欄位中
+14. 設定您想要建立的卡片名稱
+15. 設定要輸入卡片的描述（選填）
+16. 最後，點擊「測試流程」(Test Flow) 來測試我們的流程
+17. 您應該會在選定的清單中看到一張新建立的卡片
+18. 現在點擊發佈 (Publish)，就完成了！
+
+---
+
+---
+
+## 透過 Activepieces 獲取卡片資訊
+
+1. 建立一個新的集合 (Collection)
+2. 選擇觸發器為「排程」(Schedule)，我們將使用其預設值 5 分鐘
+3. 點擊 + 號新增一個 Piece
+4. 選擇「Trello」Piece
+5. 在右側欄選擇「獲取卡片」(Get Card) 動作
+6. 選擇您先前建立的 Trello API Key 連線
+7. 選擇您先前建立的 Trello Token Key 連線
+8. 前往您想要建立新卡片的 Trello 看板
+9. 建立一張新卡片，命名為「test」
+10. 點進該卡片
+11. 在網址後方加上「.json」，這應該會回傳一長串 JSON 文字
+12. 尋找名為「id」的值，它看起來應該像這樣：`"id":"5aea17e911c71fee96375d94"`
+13. 複製 id 的值（在此範例中為 `5aea17e911c71fee96375d94`），並將其輸入到 Card ID 欄位中
+14. 最後，點擊「測試流程」(Test Flow) 來測試我們的流程
+15. 您應該會看到該卡片的詳細資訊
+16. 現在點擊發佈 (Publish)，就完成了！
+
+---
+
+## 觸發器 (Triggers)
+
+TRIGGERS
+
+---
+
+## 動作 (Actions)
+
+ACTIONS

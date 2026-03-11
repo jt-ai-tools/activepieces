@@ -1,13 +1,25 @@
 #!/bin/bash
-# Find all .md and .mdx files, excluding PROGRESS.md and already translated files
+
+# Find all original .md and .mdx files (excluding PROGRESS.md and existing zh_TW files)
 FILES=$(./scripts/list_md_files.sh)
-TOTAL=$(echo "$FILES" | wc -l)
+
+TOTAL=0
 TRANSLATED=0
 
-while read -r file; do
-    if [ -f "${file%.md}_zh_TW.md" ] || [ -f "${file%.mdx}_zh_TW.mdx" ]; then
-        ((TRANSLATED++))
+for file in $FILES; do
+    TOTAL=$((TOTAL + 1))
+    
+    # Generate the translated file path
+    EXT="${file##*.}"
+    BASE="${file%.*}"
+    ZH_TW_FILE="${BASE}_zh_TW.${EXT}"
+    
+    if [[ -f "$ZH_TW_FILE" ]]; then
+        TRANSLATED=$((TRANSLATED + 1))
+    else
+        echo "Missing translation: $file"
     fi
-done <<< "$FILES"
+done
 
-echo "Translation Progress: $TRANSLATED / $TOTAL"
+echo "--------------------------------"
+echo "Progress: $TRANSLATED / $TOTAL"
