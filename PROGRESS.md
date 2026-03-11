@@ -239,26 +239,26 @@ Total files:      873
 | ./packages/pieces/core/date-helper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/date-helper/README_zh_TW.md) |
 | ./packages/pieces/core/math-helper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/math-helper/README_zh_TW.md) |
 | ./packages/pieces/core/sftp/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/sftp/README_zh_TW.md) |
-| ./packages/pieces/core/pdf/README.md | Pending | |
-| ./packages/pieces/core/text-helper/README.md | Pending | |
-| ./packages/pieces/core/subflows/README.md | Pending | |
-| ./packages/pieces/core/manual-trigger/README.md | Pending | |
-| ./packages/pieces/core/xml/README.md | Pending | |
-| ./packages/pieces/core/qrcode/README.md | Pending | |
-| ./packages/pieces/core/tags/README.md | Pending | |
-| ./packages/pieces/core/connections/README.md | Pending | |
-| ./packages/pieces/core/http/README.md | Pending | |
-| ./packages/pieces/core/graphql/README.md | Pending | |
-| ./packages/pieces/core/csv/README.md | Pending | |
-| ./packages/pieces/core/smtp/README.md | Pending | |
-| ./packages/pieces/core/data-mapper/README.md | Pending | |
-| ./packages/pieces/core/file-helper/README.md | Pending | |
-| ./packages/pieces/core/data-summarizer/README.md | Pending | |
-| ./packages/pieces/core/delay/README.md | Pending | |
-| ./packages/pieces/core/approval/README.md | Pending | |
-| ./packages/pieces/core/store/README.md | Pending | |
-| ./packages/pieces/framework/README.md | Pending | |
-| ./packages/pieces/common/README.md | Pending | |
+| ./packages/pieces/core/pdf/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/pdf/README_zh_TW.md) |
+| ./packages/pieces/core/text-helper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/text-helper/README_zh_TW.md) |
+| ./packages/pieces/core/subflows/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/subflows/README_zh_TW.md) |
+| ./packages/pieces/core/manual-trigger/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/manual-trigger/README_zh_TW.md) |
+| ./packages/pieces/core/xml/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/xml/README_zh_TW.md) |
+| ./packages/pieces/core/qrcode/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/qrcode/README_zh_TW.md) |
+| ./packages/pieces/core/tags/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/tags/README_zh_TW.md) |
+| ./packages/pieces/core/connections/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/connections/README_zh_TW.md) |
+| ./packages/pieces/core/http/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/http/README_zh_TW.md) |
+| ./packages/pieces/core/graphql/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/graphql/README_zh_TW.md) |
+| ./packages/pieces/core/csv/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/csv/README_zh_TW.md) |
+| ./packages/pieces/core/smtp/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/smtp/README_zh_TW.md) |
+| ./packages/pieces/core/data-mapper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/data-mapper/README_zh_TW.md) |
+| ./packages/pieces/core/file-helper/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/file-helper/README_zh_TW.md) |
+| ./packages/pieces/core/data-summarizer/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/data-summarizer/README_zh_TW.md) |
+| ./packages/pieces/core/delay/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/delay/README_zh_TW.md) |
+| ./packages/pieces/core/approval/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/approval/README_zh_TW.md) |
+| ./packages/pieces/core/store/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/store/README_zh_TW.md) |
+| ./packages/pieces/framework/README.md | Completed | [README_zh_TW.md](./packages/pieces/framework/README_zh_TW.md) |
+| ./packages/pieces/common/README.md | Completed | [README_zh_TW.md](./packages/pieces/common/README_zh_TW.md) |
 | ./packages/pieces/community/hunter/README.md | Pending | |
 | ./packages/pieces/community/timelines-ai/README.md | Pending | |
 | ./packages/pieces/community/vadoo-ai/README.md | Pending | |
@@ -862,18 +862,18 @@ Total files:      873
 | ./packages/pieces/community/appfollow/README.md | Pending | |
 | ./packages/pieces/community/couchbase/README.md | Pending | |
 | ./packages/pieces/community/giftbit/README.md | Pending | |
-| ./packages/pieces/custom/README.md | Pending | |
-| ./packages/server/common/README.md | Pending | |
-| ./packages/server/api/README.md | Pending | |
-| ./packages/server/worker/README.md | Pending | |
-| ./packages/server/engine/README.md | Pending | |
-| ./packages/shared/README.md | Pending | |
-| ./packages/cli/README.md | Pending | |
-| ./.github/CODE_OF_CONDUCT.md | Pending | |
-| ./.github/pull_request_template.md | Pending | |
-| ./.github/ISSUE_TEMPLATE/feature_request.md | Pending | |
-| ./.github/ISSUE_TEMPLATE/bug_report.md | Pending | |
-| ./.github/ISSUE_TEMPLATE/piece-request.md | Pending | |
-| ./.github/ISSUE_TEMPLATE/mcp_bounty.md | Pending | |
-| ./CLAUDE.md | Pending | |
-| ./SECURITY.md | Pending | |
+| ./packages/pieces/custom/README.md | Completed | [README_zh_TW.md](./packages/pieces/custom/README_zh_TW.md) |
+| ./packages/server/common/README.md | Completed | [README_zh_TW.md](./packages/server/common/README_zh_TW.md) |
+| ./packages/server/api/README.md | Completed | [README_zh_TW.md](./packages/server/api/README_zh_TW.md) |
+| ./packages/server/worker/README.md | Completed | [README_zh_TW.md](./packages/server/worker/README_zh_TW.md) |
+| ./packages/server/engine/README.md | Completed | [README_zh_TW.md](./packages/server/engine/README_zh_TW.md) |
+| ./packages/shared/README.md | Completed | [README_zh_TW.md](./packages/shared/README_zh_TW.md) |
+| ./packages/cli/README.md | Completed | [README_zh_TW.md](./packages/cli/README_zh_TW.md) |
+| ./.github/CODE_OF_CONDUCT.md | Completed | [CODE_OF_CONDUCT_zh_TW.md](./.github/CODE_OF_CONDUCT_zh_TW.md) |
+| ./.github/pull_request_template.md | Completed | [pull_request_template_zh_TW.md](./.github/pull_request_template_zh_TW.md) |
+| ./.github/ISSUE_TEMPLATE/feature_request.md | Completed | [feature_request_zh_TW.md](./.github/ISSUE_TEMPLATE/feature_request_zh_TW.md) |
+| ./.github/ISSUE_TEMPLATE/bug_report.md | Completed | [bug_report_zh_TW.md](./.github/ISSUE_TEMPLATE/bug_report_zh_TW.md) |
+| ./.github/ISSUE_TEMPLATE/piece-request.md | Completed | [piece-request_zh_TW.md](./.github/ISSUE_TEMPLATE/piece-request_zh_TW.md) |
+| ./.github/ISSUE_TEMPLATE/mcp_bounty.md | Completed | [mcp_bounty_zh_TW.md](./.github/ISSUE_TEMPLATE/mcp_bounty_zh_TW.md) |
+| ./CLAUDE.md | Completed | [CLAUDE_zh_TW.md](./CLAUDE_zh_TW.md) |
+| ./SECURITY.md | Completed | [SECURITY_zh_TW.md](./SECURITY_zh_TW.md) |
