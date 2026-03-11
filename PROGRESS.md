@@ -181,26 +181,26 @@ Total files:      873
 | ./docs/embedding/customize-pieces.mdx | Completed | [customize-pieces_zh_TW.mdx](./docs/embedding/customize-pieces_zh_TW.mdx) |
 | ./docs/embedding/sdk-server-requests.mdx | Completed | [sdk-server-requests_zh_TW.mdx](./docs/embedding/sdk-server-requests_zh_TW.mdx) |
 | ./docs/embedding/predefined-connection.mdx | Completed | [predefined-connection_zh_TW.mdx](./docs/embedding/predefined-connection_zh_TW.mdx) |
-| ./docs/embedding/navigation.mdx | Pending | |
-| ./docs/embedding/embed-connections.mdx | Pending | |
-| ./docs/embedding/provision-users.mdx | Pending | |
-| ./docs/embedding/sdk-changelog.mdx | Pending | |
-| ./docs/_snippets/replace-oauth2-apps.mdx | Pending | |
-| ./docs/_snippets/execution-mode.mdx | Pending | |
-| ./docs/_snippets/enterprise-feature.mdx | Pending | |
-| ./docs/about/changelog.mdx | Pending | |
-| ./docs/about/i18n.mdx | Pending | |
-| ./docs/about/license.mdx | Pending | |
-| ./docs/README.md | Pending | |
-| ./docs/handbook/customer-support/overview.mdx | Pending | |
-| ./docs/handbook/customer-support/handle-requests.mdx | Pending | |
-| ./docs/handbook/customer-support/tone.mdx | Pending | |
-| ./docs/handbook/customer-support/pylon.mdx | Pending | |
-| ./docs/handbook/overview.mdx | Pending | |
-| ./docs/handbook/product/interface-design.mdx | Pending | |
-| ./docs/handbook/team.mdx | Pending | |
-| ./docs/handbook/people/time.mdx | Pending | |
-| ./docs/handbook/hiring/hiring.mdx | Pending | |
+| ./docs/embedding/navigation.mdx | Completed | [navigation_zh_TW.mdx](./docs/embedding/navigation_zh_TW.mdx) |
+| ./docs/embedding/embed-connections.mdx | Completed | [embed-connections_zh_TW.mdx](./docs/embedding/embed-connections_zh_TW.mdx) |
+| ./docs/embedding/provision-users.mdx | Completed | [provision-users_zh_TW.mdx](./docs/embedding/provision-users_zh_TW.mdx) |
+| ./docs/embedding/sdk-changelog.mdx | Completed | [sdk-changelog_zh_TW.mdx](./docs/embedding/sdk-changelog_zh_TW.mdx) |
+| ./docs/_snippets/replace-oauth2-apps.mdx | Completed | [replace-oauth2-apps_zh_TW.mdx](./docs/_snippets/replace-oauth2-apps_zh_TW.mdx) |
+| ./docs/_snippets/execution-mode.mdx | Completed | [execution-mode_zh_TW.mdx](./docs/_snippets/execution-mode_zh_TW.mdx) |
+| ./docs/_snippets/enterprise-feature.mdx | Completed | [enterprise-feature_zh_TW.mdx](./docs/_snippets/enterprise-feature_zh_TW.mdx) |
+| ./docs/about/changelog.mdx | Completed | [changelog_zh_TW.mdx](./docs/about/changelog_zh_TW.mdx) |
+| ./docs/about/i18n.mdx | Completed | [i18n_zh_TW.mdx](./docs/about/i18n_zh_TW.mdx) |
+| ./docs/about/license.mdx | Completed | [license_zh_TW.mdx](./docs/about/license_zh_TW.mdx) |
+| ./docs/README.md | Completed | [README_zh_TW.md](./docs/README_zh_TW.md) |
+| ./docs/handbook/customer-support/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/handbook/customer-support/overview_zh_TW.mdx) |
+| ./docs/handbook/customer-support/handle-requests.mdx | Completed | [handle-requests_zh_TW.mdx](./docs/handbook/customer-support/handle-requests_zh_TW.mdx) |
+| ./docs/handbook/customer-support/tone.mdx | Completed | [tone_zh_TW.mdx](./docs/handbook/customer-support/tone_zh_TW.mdx) |
+| ./docs/handbook/customer-support/pylon.mdx | Completed | [pylon_zh_TW.mdx](./docs/handbook/customer-support/pylon_zh_TW.mdx) |
+| ./docs/handbook/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/handbook/overview_zh_TW.mdx) |
+| ./docs/handbook/product/interface-design.mdx | Completed | [interface-design_zh_TW.mdx](./docs/handbook/product/interface-design_zh_TW.mdx) |
+| ./docs/handbook/team.mdx | Completed | [team_zh_TW.mdx](./docs/handbook/team_zh_TW.mdx) |
+| ./docs/handbook/people/time.mdx | Completed | [time_zh_TW.mdx](./docs/handbook/people/time_zh_TW.mdx) |
+| ./docs/handbook/hiring/hiring.mdx | Completed | [hiring_zh_TW.mdx](./docs/handbook/hiring/hiring_zh_TW.mdx) |
 | ./docs/handbook/hiring/levels.mdx | Pending | |
 | ./docs/handbook/hiring/team.mdx | Pending | |
 | ./docs/handbook/hiring/compensation.mdx | Pending | |

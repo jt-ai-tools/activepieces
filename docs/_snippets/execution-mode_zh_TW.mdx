@@ -1,0 +1,6 @@
+| 名稱 | 程式碼片段支援 NPM | Docker 需要特權模式 | 效能 | 支援多租戶安全 | Worker 可重複使用 | 環境變數 |
+|-------------------------------|----------------------------|----------------------------------|-----------------------|-------------------------|------------------|-------------------------------------------|
+| V8/程式碼沙箱 | ❌ | 否 | 快速且輕量 | ✅ | ✅ | 將 `AP_EXECUTION_MODE` 設為 `SANDBOX_CODE_ONLY` |
+| 無沙箱 | ✅ | 否 | 快速且輕量 | ❌ | ✅ | 將 `AP_EXECUTION_MODE` 設為 `UNSANDBOXED` |
+| 內核命名空間沙箱 (Kernel Namespaces Sandboxing) | ✅ | 是 | 慢且消耗 CPU | ✅ | ❌ | 將 `AP_EXECUTION_MODE` 設為 `SANDBOX_PROCESS` |
+| 混合沙箱 (Combined Sandboxing) | ❌ | 是 | 中等且消耗 CPU | ✅ | ✅ | 將 `AP_EXECUTION_MODE` 設為 `SANDBOX_CODE_AND_PROCESS` |

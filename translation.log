@@ -398,3 +398,53 @@ Found 856 files to translate.
 [✓] Completed: ./docs/embedding/predefined-connection_zh_TW.mdx
 [✓] Completed: ./docs/embedding/embed-builder_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 33 (5 files) ---
+[+] Translating: ./docs/embedding/navigation.mdx
+[+] Translating: ./docs/embedding/embed-connections.mdx
+[+] Translating: ./docs/embedding/provision-users.mdx
+[+] Translating: ./docs/embedding/sdk-changelog.mdx
+[+] Translating: ./docs/_snippets/replace-oauth2-apps.mdx
+[✓] Completed: ./docs/embedding/navigation_zh_TW.mdx
+[✓] Completed: ./docs/embedding/embed-connections_zh_TW.mdx
+[✓] Completed: ./docs/embedding/provision-users_zh_TW.mdx
+[✓] Completed: ./docs/embedding/sdk-changelog_zh_TW.mdx
+[✓] Completed: ./docs/_snippets/replace-oauth2-apps_zh_TW.mdx
+
+--- Processing chunk 34 (5 files) ---
+[+] Translating: ./docs/_snippets/execution-mode.mdx
+[+] Translating: ./docs/_snippets/enterprise-feature.mdx
+[+] Translating: ./docs/about/changelog.mdx
+[+] Translating: ./docs/about/i18n.mdx
+[+] Translating: ./docs/about/license.mdx
+[✓] Completed: ./docs/_snippets/enterprise-feature_zh_TW.mdx
+[✓] Completed: ./docs/about/license_zh_TW.mdx
+[✓] Completed: ./docs/_snippets/execution-mode_zh_TW.mdx
+[✓] Completed: ./docs/about/i18n_zh_TW.mdx
+[✓] Completed: ./docs/about/changelog_zh_TW.mdx
+
+--- Processing chunk 35 (5 files) ---
+[+] Translating: ./docs/README.md
+[+] Translating: ./docs/handbook/customer-support/overview.mdx
+[+] Translating: ./docs/handbook/customer-support/handle-requests.mdx
+[+] Translating: ./docs/handbook/customer-support/tone.mdx
+[+] Translating: ./docs/handbook/customer-support/pylon.mdx
+[✓] Completed: ./docs/handbook/customer-support/tone_zh_TW.mdx
+[✓] Completed: ./docs/handbook/customer-support/pylon_zh_TW.mdx
+[✓] Completed: ./docs/handbook/customer-support/overview_zh_TW.mdx
+[✓] Completed: ./docs/handbook/customer-support/handle-requests_zh_TW.mdx
+[✓] Completed: ./docs/README_zh_TW.md
+
+--- Processing chunk 36 (5 files) ---
+[+] Translating: ./docs/handbook/overview.mdx
+[+] Translating: ./docs/handbook/product/interface-design.mdx
+[+] Translating: ./docs/handbook/team.mdx
+[+] Translating: ./docs/handbook/people/time.mdx
+[+] Translating: ./docs/handbook/hiring/hiring.mdx
+[✓] Completed: ./docs/handbook/overview_zh_TW.mdx
+[✓] Completed: ./docs/handbook/team_zh_TW.mdx
+[✓] Completed: ./docs/handbook/people/time_zh_TW.mdx
+[✓] Completed: ./docs/handbook/product/interface-design_zh_TW.mdx
+[✓] Completed: ./docs/handbook/hiring/hiring_zh_TW.mdx
+[*] Committing progress...

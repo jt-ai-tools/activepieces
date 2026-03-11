@@ -1,0 +1,127 @@
+---
+title: "SDK 變更日誌"
+description: "Activepieces SDK 所有重大變更的記錄"
+icon: "code-commit"
+---
+
+
+
+<Warning>
+**重大變更 (Breaking Change)：** <br></br> <br></br> 如果您的 Activepieces 映像檔版本低於 0.45.0，且（您正在使用嵌入式 SDK 的 connect 方法，並需要在使用者建立連線後傳回連線的 externalId，或者您想要重新連線具有特定 externalId 的連線），則必須將 Activepieces 映像檔升級至 >= 0.45.0
+</Warning>
+
+<Warning> 
+ 在 Activepieces 映像檔版本 0.32.1 到 0.46.4 之間，導覽處理常式 (navigation handler) 會在路徑中包含專案 ID，這可能會破壞使用導覽處理常式者的實作邏輯。此問題已在 0.46.5 及之後的版本中修正，處理常式不再會在路由前加上專案 ID。
+</Warning>
+
+變更日誌格式：MM/DD/YYYY (版本)
+
+
+
+### 10/27/2025 (0.8.1)
+- SDK URL: https://cdn.activepieces.com/sdk/embed/0.8.1.js
+- 修復了一個錯誤：如果您啟動導覽路由時未以 '/' 開頭，它會將您重導向至 '/flows'
+
+### 09/21/2025 (0.8.0)
+- SDK URL: https://cdn.activepieces.com/sdk/embed/0.8.0.js
+- 此版本要求您將 **Activepieces 升級至 [0.70.0](https://github.com/activepieces/activepieces/releases/tag/0.70.0)**。
+- 移除了 `embedding.dashboard.hideSettings`。
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.dashboard.hidePageHeader` 參數 **(值：true | false)**。
+
+
+
+### 07/30/2025 (0.7.0)
+- SDK URL: https://cdn.activepieces.com/sdk/embed/0.7.0.js
+- 此版本要求您將 **Activepieces 升級至 [0.66.7](https://github.com/activepieces/activepieces/releases/tag/0.66.7)**
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.dashboard.hideSettings` 參數 **(值：true | false)**。
+
+### 07/07/2025 (0.6.0)
+- SDK URL: https://cdn.activepieces.com/sdk/embed/0.6.0.js
+- 此版本要求您將 **Activepieces 升級至 [0.66.1](https://github.com/activepieces/activepieces/releases/tag/0.66.1)**
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.dashboard.hideFlowsPageNavbar` 參數 **(值：true | false)**。
+- **(重大變更)** `embedding.dashboard.hideSidebar` 原本用於隱藏儀表板中流程表格上方的導覽列，現在改為依賴 `embedding.dashboard.hideFlowsPageNavbar`。
+
+
+
+
+
+### 03/07/2025 (0.5.0)
+- SDK URL: https://cdn.activepieces.com/sdk/embed/0.5.0.js
+- 此版本要求您將 **Activepieces 升級至 [0.64.2](https://github.com/activepieces/activepieces/releases/tag/0.64.2)**
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.hideDuplicateFlow` 參數 **(值：true | false)**。
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.builder.homeButtonIcon` 參數 **(值：'logo' | 'back')**，如果設置為 **'back'**，則會移除懸停在首頁按鈕上時顯示的工具提示。
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.locale` 參數，它接受 [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) 語系代碼，以下是支援的代碼：**('en' | 'nl' | 'it' | 'de' | 'fr' | 'bg' | 'uk' | 'hu' | 'es' | 'ja' | 'id' | 'vi' | 'zh' | 'pt')**
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.styling.mode` 參數 **(值：'light' | 'dark')**
+- **(重大變更)** 從 [configure](./embed-builder_zh_TW#configure-parameters) 方法中移除了 `embedding.builder.hideLogo` 參數。
+- **(重大變更)** 從 SDK 中移除了 MCP 方法。
+
+
+
+### 17/06/2025 (0.5.0-rc.1)
+- SDK URL: https://cdn.activepieces.com/sdk/embed/0.5.0-rc.1.js
+- 此版本要求您將 **Activepieces 升級至 [0.64.0-rc.0](https://github.com/activepieces/activepieces/pkgs/container/activepieces/438888138?tag=0.64.0-rc.0)**
+- 還原了 [configure](./embed-builder_zh_TW#configure-parameters) 方法中的 `prefix` 參數。
+
+
+
+
+### 16/06/2025 (0.5.0-rc.0)
+- SDK URL: https://cdn.activepieces.com/sdk/embed/0.5.0-rc.0.js
+- 此版本要求您將 **Activepieces 升級至 [0.64.0-rc.0](https://github.com/activepieces/activepieces/pkgs/container/activepieces/438888138?tag=0.64.0-rc.0)**
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.hideDuplicateFlow` 參數 **(值：true | false)**。
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.builder.homeButtonIcon` 參數 **(值：'logo' | 'back')**，如果設置為 **'back'**，則會移除懸停在首頁按鈕上時顯示的工具提示。
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.locale` 參數，它接受 [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) 語系代碼，以下是支援的代碼：**('en' | 'nl' | 'it' | 'de' | 'fr' | 'bg' | 'uk' | 'hu' | 'es' | 'ja' | 'id' | 'vi' | 'zh' | 'pt')**
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.styling.mode` 參數 **(值：'light' | 'dark')**
+- **(重大變更)** 從 [configure](./embed-builder_zh_TW#configure-parameters) 方法中移除了 `prefix` 參數。
+- **(重大變更)** 從 [configure](./embed-builder_zh_TW#configure-parameters) 方法中移除了 `embedding.builder.hideLogo` 參數。
+
+
+
+
+### 26/05/2025 (0.4.1)
+- 修復了嵌入式 HTML 檔案有時會被快取的問題。
+
+
+### 20/05/2025 (0.4.0)
+
+-- 注意：我們之前未將新增選用參數視為重大變更，因此只增加了修補版本號，但這是錯誤的，從現在起我們將針對此類變更增加次要版本號，而修補版本號將僅用於修復錯誤。
+- 此版本要求您將 Activepieces 更新至 0.56.0
+- 在 [configure](./embed-builder_zh_TW#configure-parameters) 方法中新增了 `embedding.hideExportAndImportFlow` 參數。
+- 為 configure 方法的參數 `embed.builder.disableNavigation` 新增了可能的值 "keep_home_button_only"，這將僅保留首頁按鈕，並隱藏資料夾名稱與刪除流程操作。
+- 在 configure 方法中新增了新參數 `embed.builder.homeButtonClickedHandler`，用於覆蓋點擊首頁按鈕時的導覽行為。
+
+
+
+### 17/04/2025 (0.3.7)
+- 新增了用於更新 MCP 配置的 MCP 方法。
+
+
+
+### 16/04/2025 (0.3.6)
+- 新增了 [request](./sdk-server-requests_zh_TW) 方法，允許您呼叫我們的後端 API。
+
+
+### 24/2/2025 (0.3.5)
+- 為 connect 方法新增了一個新參數，使連線對話方塊成為彈出視窗，而不是佔據整個頁面的 iframe。
+- 修復了 connect 方法傳回的 Promise 始終被解析為 \{connection: undefined\} 的錯誤。
+- 現在，當您使用帶有 "connectionName" 參數的 connect 方法時，使用者將重新連線至具有匹配 externalId 的連線，而不是建立新連線。
+
+
+
+### 04/02/2025 (0.3.4)
+
+- 此版本要求您將 Activepieces 更新至 0.41.0
+- 增加了向嵌入式 SDK 傳遞字型系列名稱和字型 URL 的功能。
+
+
+### 26/01/2025 (0.3.3)
+
+- 此版本要求您將 Activepieces 更新至 0.39.8
+- activepieces.configure 方法在使用者通過驗證之前就被解析的問題已修正，現在您可以使用 activepieces.navigate 方法導覽至您所需的初始路由。
+
+
+### 04/12/2024 (0.3.0)
+
+- 新增自定義導覽處理常式 ([#4500](https://github.com/activepieces/activepieces/pull/4500))
+- 允許在 connect 方法中為連線傳遞預定義名稱 ([#4485](https://github.com/activepieces/activepieces/pull/4485))
+- 新增變更日誌 ([#4503](https://github.com/activepieces/activepieces/pull/4503))

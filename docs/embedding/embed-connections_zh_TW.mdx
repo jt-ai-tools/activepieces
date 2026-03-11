@@ -1,0 +1,74 @@
+---
+title: "建立/更新連接"
+description: ""
+icon: "cards"
+---
+
+<Info>
+**需求：**
+* Activepieces 版本 0.34.5 或更高
+* SDK 版本 0.3.2 或更高
+</Info>
+<Snippet file="replace-oauth2-apps.mdx" />
+
+<Info>
+   "connectionName" 是連接的 externalId（您可以透過在連接表中將滑鼠懸停在連接名稱上來獲取）。<br />
+   為了保持向下相容性，我們保留了相同的參數名稱，任何從 < 0.35.1 版本升級其執行體 (instance) 的使用者都不會遇到相關問題。
+</Info>
+
+<Warning>
+**重大變更：** <br/><br/> 如果您的 Activepieces 執行體版本低於 0.45.0，且（您正在使用嵌入式 SDK 的 connect 方法，並需要在使用者建立連接後回傳連接的 externalId，或者您想要重新連接具有特定 externalId 的連接），則您必須將執行體升級至 >= 0.45.0
+</Warning>
+
+- 您可以在您的 SaaS 中使用嵌入式 SDK，允許您的使用者建立連接並將其儲存在 Activepieces 中。
+
+<Steps>
+    <Step title="初始化 SDK">
+        請按照 [嵌入式建置器 (Embed Builder)](./embed-builder_zh_TW) 中的說明進行操作。
+    </Step>
+    <Step title="呼叫 Connect 方法">
+        初始化 SDK 後，您將可以存取 `window` 物件中名為 `activepieces` 的屬性。呼叫其 `connect` 方法以開啟新的連接對話框，如下所示。
+
+        ```html
+        <script> 
+        activepieces.connect({pieceName:'@activepieces/piece-google-sheets'});
+        </script>
+        ```
+
+        **Connect 參數：**
+
+        | 參數名稱 | 必填 | 類型   | 描述                                 |
+        | -------------- | -------- | ------ | ------------------------------------------- |
+        | pieceName      | ✅      | string | 您想為其建立連接的 piece 名稱。
+        | connectionName | ❌      | string | 連接的 external Id（您可以透過在連接表中將滑鼠懸停在連接名稱上來獲取），提供此參數時，建立/更新的連接將使用此名稱作為 external Id 和顯示名稱。
+        | newWindow      | ❌      | \{ width?: number, height?: number, top?: number, left?: number \} | 如果設定此參數，連接對話框將在新視窗中開啟，而不是佔滿整個頁面的 iframe。
+
+        **Connect 結果**
+
+        `connect` 方法回傳一個 `promise`，其解析結果如下：
+
+        ```ts
+        {
+            connection?: {
+                id: string,
+                name: string
+            }
+        }
+        ```
+        <Info>
+        `name` 是連接的 externalId。
+        如果使用者關閉對話框且未建立連接，則 `connection` 為 undefined。
+        </Info>
+
+       
+        
+
+     
+
+        <Tip>
+        您可以在建置器中使用 `connections` piece，並透過其名稱來檢索已建立的連接。
+        ![建置器中的連接](/resources/screenshots/connections-piece.png)
+        ![建置器中的連接用法](/resources/screenshots/connections-piece-usage.png)
+        </Tip>
+    </Step>
+</Steps>

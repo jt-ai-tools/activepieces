@@ -1,0 +1,113 @@
+---
+title: "配置使用者"
+description: "自動將您的 SaaS 使用者驗證至您的 Activepieces 實例"
+icon: 'user'
+---
+
+<Snippet file="enterprise-feature.mdx" />
+
+## 概覽
+
+在 Activepieces 中，有**專案 (Projects)**和**使用者 (Users)**。每個專案都會配置其在您的 SaaS 中對應的工作區、專案或團隊。接著，使用者會映射到 Activepieces 中對應的使用者。
+
+為了實現這一點，後端將產生一個已簽署的權杖 (Signed Token)，其中包含自動建立使用者和專案所需的所有資訊。如果使用者或專案已存在，它將跳過建立步驟並直接讓使用者登入。
+
+<Steps>
+  <Step title="步驟 1：取得簽署金鑰">
+    您可以前往 **Platform Settings (平台設定) -> Signing Keys (簽署金鑰) -> Generate Signing Key (產生簽署金鑰)** 來產生簽署金鑰。
+
+    這將產生一對公鑰與私鑰。公鑰將由 Activepieces 用於驗證您發送的 JWT 權杖簽章。私鑰則由您用於簽署 JWT 權杖。
+
+    ![建立簽署金鑰](../resources/screenshots/create-signing-key.png)
+    <Warning>
+      請將您的私鑰儲存在安全的地方，因為它不會儲存在 Activepieces 中。
+    </Warning>
+  </Step>
+
+  <Step title="步驟 2：產生 JWT">
+    簽署金鑰將用於為您網站上目前登入的使用者產生 JWT 權杖，該權杖將作為查詢參數發送到 Activepieces Iframe，以驗證使用者並將權杖交換為有效期更長的權杖。
+
+    要產生這些權杖，您需要在後端添加程式碼，使用 RS256 演算法產生權杖，因此 JWT 標頭 (Header) 看起來會像這樣：
+
+    <Tip>
+      要取得 `SIGNING_KEY_ID`，請參閱簽署金鑰表格並查看第一欄中的值。
+       ![簽署金鑰 ID](../resources/screenshots/signing-key-id.png)
+    </Tip>
+
+    ```json
+    {
+      "alg": "RS256",
+      "typ": "JWT",
+      "kid": "SIGNING_KEY_ID"
+    }
+    ```
+
+    已簽署的權杖必須在 Payload 中包含以下聲明 (Claims)：
+    ```json
+    {
+      "version": "v3",
+      "externalUserId": "user_id",
+      "externalProjectId": "user_project_id",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "EDITOR",
+      "piecesFilterType": "NONE",
+      "exp": 1856563200,
+      "tasks": 50000,
+      "aiCredits": 250
+    }
+    ```
+
+    | 聲明 (Claim)      | 說明                                            |
+    |-------------------|-------------------------------------------------|
+    | externalUserId    | **您的**軟體中該使用者的唯一識別碼 |
+    | externalProjectId | **您的**軟體中該使用者專案的唯一識別碼 |
+    | projectDisplayName| 使用者專案的顯示名稱 |
+    | firstName         | 使用者的名字                           |
+    | lastName          | 使用者的姓氏                            |
+    | role              | 使用者在 Activepieces 專案中的角色（例如：**EDITOR**, **VIEWER**, **ADMIN**）           |
+    | exp               | 權杖的過期時間戳記（Unix 時間戳記）  |
+    | piecesFilterType  | 自訂專案組件，請參閱 [自訂組件](/embedding/customize-pieces_zh_TW)  |
+    | piecesTags        | 自訂專案組件，請參閱 [自訂組件](/embedding/customize-pieces_zh_TW)  |
+    | tasks             | 自訂您使用者專案的任務數量限制 |
+    | aiCredits         | 自訂您使用者專案的 AI 額度限制 |
+
+    您可以使用任何 JWT 函式庫來產生權杖。以下是使用 Node.js 中的 jsonwebtoken 函式庫的範例：
+
+    <Tip>
+      **溫馨提示 #1**：您也可以使用這個[工具](https://dinochiesa.github.io/jwt/)快速產生範例。
+    </Tip>
+
+    <Tip>
+      **溫馨提示 #2**：請確保過期時間非常短，因為這是一個臨時權杖，將會被交換為有效期更長的權杖。
+    </Tip>
+
+    ```javascript Node.js
+    const jwt = require('jsonwebtoken');
+
+    // JWT NumericDates 以秒為單位：
+    const currentTime = Math.floor(Date.now() / 1000);
+    let token = jwt.sign(
+      {
+        version: "v3",
+        externalUserId: "user_id",
+        externalProjectId: "user_project_id",
+        firstName: "John",
+        lastName: "Doe",
+        role: "EDITOR",
+        piecesFilterType: "NONE",
+        exp: currentTime + (60 * 60), // 從現在起 1 小時
+      },
+      process.env.ACTIVEPIECES_SIGNING_KEY,
+      {
+        algorithm: "RS256",
+        header: {
+          kid: signingKeyID, // 在標頭中包含 "kid"
+        },
+      }
+    );
+    ```
+
+    產生權杖後，請查看嵌入文件以了解如何在 Iframe 中嵌入權杖。
+  </Step>
+</Steps>

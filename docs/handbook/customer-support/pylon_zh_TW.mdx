@@ -1,0 +1,50 @@
+---
+title: "如何使用 Pylon"
+description: "使用 Pylon 管理客戶支援工單的指南"
+icon: "hexagon"
+---
+
+在 Activepieces，我們使用 Pylon 透過看板 (Kanban board) 來管理基於 Slack 的客戶支援請求。
+
+瞭解更多關於 Pylon 的功能：https://docs.usepylon.com/pylon-docs
+
+![顯示不同工單管理欄位的 Pylon 看板](/resources/pylon-board.png)
+
+### New 欄位
+包含尚未審閱的新支援請求
+- 行動項目：
+  - 即使你還沒有答案，也要快速回應。這裡重要的是回覆你將會查看該問題，這是贏得客戶心的關鍵。
+
+
+### On You 欄位
+包含需要你注意和回應的活躍工單。這些工單需要立即審閱和行動。
+
+- 行動項目：
+  - 根據下方的指南設定工單欄位（狀態 status 和優先級 priority）
+  - 查看 [處理請求頁面](./handle-requests_zh_TW) 以了解如何處理工單
+
+<Tip>
+作為支援工程師，目標是保持 "New" 和 "On You" 欄位為空。
+</Tip>
+
+
+### On Hold 欄位
+
+僅包含已連結 Linear 議題 (issue) 的工單。
+
+- 在執行以下操作後將工單移至此處：
+  - 你已確認客戶的問題
+  - 你已建立 Linear 議題（如果尚未存在 —— 請避免重複！）
+  - 你已在 Pylon 中連結該議題
+  - 你已將其分配給團隊成員（僅限緊急情況）
+
+<Warning>
+請不要在沒有建立議題的情況下將工單置於暫緩 (on hold) 狀態。
+</Warning>
+
+<Note>
+當連結的 GitHub 議題關閉時，工單將自動移回 "On You" 欄位。
+</Note>
+
+### Closed 欄位
+這意味著你完成了一項出色的工作，工單已到達已解決工單的終點，不再需要進一步關注。

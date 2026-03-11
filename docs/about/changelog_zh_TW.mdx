@@ -1,0 +1,53 @@
+---
+title: "更新日誌"
+description: "Activepieces 所有顯著變更的記錄"
+icon: "code-commit"
+---
+
+<Update label="2026 年 3 月" description="儀表板 2.0">
+
+### 儀表板 2.0 — 全面 UI 重新設計
+
+針對所有平台管理 (Platform Admin) 和專案頁面進行了全面的視覺更新，提供更簡潔、更一致的介面。
+
+**平台管理 (Platform Admin)**
+
+- **專案 (Projects)** — 篩選標籤 (filter chips)、內嵌編輯圖示，以及不含品牌標誌的更簡潔側邊欄
+- **使用者 (Users)** — 新增「角色」和「最後活動」欄位、專用的「邀請」按鈕，以及每列的動作選單
+- **專案角色 (Project Roles)** — 從表格切換到卡片式佈局，並具備權限檢視功能
+- **稽核日誌 (Audit Logs)** — 已全面啟用，具備動作 (Action)、執行者 (Performed By)、專案和日期範圍篩選器，外加帶有完整 JSON payload 檢視器的詳細資訊側滑面板
+- **秘密管理器 (Secret Managers)** — 採用卡片式佈局，支援 Hashicorp Vault、AWS Secrets Manager、Cyberark Conjur 和 1Password
+- **品牌化 (Branding)** — 更新了頁面佈局
+
+**專案頁面**
+
+- **自動化 (Automations)** — 從「Flows」重新命名，具備類型和擁有者篩選器、搜尋、步驟圖示詳細資訊、狀態切換和收藏功能
+- **連接 (Connections)** — Pieces 和擁有者篩選器、流程使用次數、內嵌編輯和重新整理動作
+- **執行記錄 (Runs)** — 更新了分頁導覽和一致的樣式
+
+**一般改進**
+
+- 統一了自動化、執行記錄和連接之間的分頁導覽
+- 在專案側邊欄底部新增了平台管理 (Platform Admin) 連結
+- 使用側滑面板進行詳細資訊檢視，而非全頁導覽
+- 全面採用「上一步 / 下一步」分頁樣式
+- 側邊欄標頭替換為「返回應用程式」連結
+
+</Update>
+
+<Update label="2026 年 3 月" description="預發佈環境與發佈流程">
+
+### 專用的預發佈 (Staging) 環境與改進的發佈流程
+
+所有變更在進入正式環境 (Production) 之前，現在都會經過專用的預發佈環境。每次更新在推廣之前都會經過至少 16 小時的內部驗證，確保為使用者提供更高的可靠性並減少中斷。
+
+- **預發佈優先部署** — 每個變更在正式上線前都會在類正式環境中進行測試
+- **每日正式環境推廣** — 只有經過驗證且穩定的版本才會推廣到正式環境
+- **每週地端 (Self-hosted) 版本發佈** — 每週為地端客戶發佈可預測且穩定的版本
+- **緊急熱修復路徑** — 在需要時，關鍵修復仍可快速追蹤至正式環境
+
+[閱讀更多關於我們的發佈週期](/handbook/engineering/onboarding/release-cycle)
+
+</Update>
+
+如需查看先前的發佈版本，請參閱 [GitHub Releases](https://github.com/activepieces/activepieces/releases) 頁面。

@@ -1,0 +1,86 @@
+---
+title: "導覽"
+description: ""
+icon: "signs-post"
+---
+
+預設情況下，在內嵌的 Activepieces 實例中進行導覽不會影響用戶端的瀏覽器歷史記錄或顯示的 URL。Activepieces 僅提供一個 **handler**，它會在 **iframe** 中的每一次路由變更時觸發。
+
+## 自動同步 URL 
+
+您可以在配置 SDK 時使用以下程式碼片段，它將實作一個 handler 來同步 Activepieces iframe 與您的瀏覽器：
+
+<Tip>
+以下程式碼片段會監聽使用者點擊「返回」的操作，因此它會使用 `activepieces.navigate` 將路由同步回 iframe，並在 handler 中更新瀏覽器的 URL。
+</Tip>
+
+```js
+const instanceUrl = 'YOUR_INSTANCE_URL';
+const jwtToken = 'YOUR_GENERATED_JWT_TOKEN';
+const containerId = 'YOUR_CONTAINER_ID';
+activepieces.configure({
+  instanceUrl,
+  jwtToken,
+  embedding: {
+    containerId,
+    builder: {
+      disableNavigation: false,
+      hideFlowName: false
+    },
+    dashboard: {
+      hideSidebar: false
+    },
+    hideFolders: false,
+    navigation: {
+      handler: ({ route }) => {
+        // 路由可能在末尾包含搜尋參數
+        if (!window.location.href.endsWith(route)) {
+          window.history.pushState({}, "", window.location.origin + route);
+        }
+      }
+    }
+  },
+});
+
+window.addEventListener("popstate", () => {
+  const route = activepieces.extractActivepiecesRouteFromUrl({ vendorUrl: window.location.href });
+  activepieces.navigate({ route });
+});
+```
+
+## Navigate 方法
+
+如果您使用 `activepieces.navigate({ route: '/flows' })`，這將告知內嵌 SDK 要導覽至何處。
+
+以下是 SDK 可以導覽到的路由列表：
+
+| 路由 | 描述 |
+| --- | --- |
+| `/flows` | 流程列表 (Flows table) |
+| `/flows/{flowId}` | 在編輯器中開啟流程 |
+| `/runs` | 執行記錄列表 (Runs table) |
+| `/runs/{runId}` | 在編輯器中開啟執行記錄 |
+| `/connections` | 連線列表 (Connections table) |
+| `/tables` | 表格列表 (Tables table) |
+| `/tables/{tableId}` | 開啟表格 |
+| `todos` | 待辦事項列表 (Todos table) |
+| `todos/{todoId}` | 開啟待辦事項 |
+
+
+## 導覽至初始路由
+
+在使用 `configure` 初始化 SDK 後，您可以呼叫 `navigate` 方法：
+
+```js
+const flowId = '1234';
+const instanceUrl = 'YOUR_INSTANCE_URL';
+const jwtToken = 'YOUR_GENERATED_JWT_TOKEN';
+activepieces.configure({
+	instanceUrl,
+	jwtToken,
+}).then(() => {
+	activepieces.navigate({
+		route: `/flows/${flowId}`
+	})
+});
+```
