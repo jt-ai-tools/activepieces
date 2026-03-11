@@ -274,21 +274,21 @@ Total files:      873
 | ./packages/pieces/community/attio/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/attio/README_zh_TW.md) |
 | ./packages/pieces/community/devin/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/devin/README_zh_TW.md) |
 | ./packages/pieces/community/phone-validator/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/phone-validator/README_zh_TW.md) |
-| ./packages/pieces/community/writesonic-bulk/README.md | Pending | |
-| ./packages/pieces/community/gamma/README.md | Pending | |
-| ./packages/pieces/community/greip/README.md | Pending | |
-| ./packages/pieces/community/time-ops/README.md | Pending | |
-| ./packages/pieces/community/drip/README.md | Pending | |
-| ./packages/pieces/community/freshdesk/README.md | Pending | |
-| ./packages/pieces/community/generatebanners/README.md | Pending | |
-| ./packages/pieces/community/microsoft-teams/README.md | Pending | |
-| ./packages/pieces/community/brave-search/README.md | Pending | |
-| ./packages/pieces/community/zendesk-sell/README.md | Pending | |
-| ./packages/pieces/community/fillout-forms/README.md | Pending | |
-| ./packages/pieces/community/lofty/README.md | Pending | |
-| ./packages/pieces/community/moxie-crm/README.md | Pending | |
-| ./packages/pieces/community/contentful/README.md | Pending | |
-| ./packages/pieces/community/twin-labs/README.md | Pending | |
+| ./packages/pieces/community/writesonic-bulk/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/writesonic-bulk/README_zh_TW.md) |
+| ./packages/pieces/community/gamma/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/gamma/README_zh_TW.md) |
+| ./packages/pieces/community/greip/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/greip/README_zh_TW.md) |
+| ./packages/pieces/community/time-ops/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/time-ops/README_zh_TW.md) |
+| ./packages/pieces/community/drip/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/drip/README_zh_TW.md) |
+| ./packages/pieces/community/freshdesk/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/freshdesk/README_zh_TW.md) |
+| ./packages/pieces/community/generatebanners/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/generatebanners/README_zh_TW.md) |
+| ./packages/pieces/community/microsoft-teams/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/microsoft-teams/README_zh_TW.md) |
+| ./packages/pieces/community/brave-search/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/brave-search/README_zh_TW.md) |
+| ./packages/pieces/community/zendesk-sell/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/zendesk-sell/README_zh_TW.md) |
+| ./packages/pieces/community/fillout-forms/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/fillout-forms/README_zh_TW.md) |
+| ./packages/pieces/community/lofty/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/lofty/README_zh_TW.md) |
+| ./packages/pieces/community/moxie-crm/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/moxie-crm/README_zh_TW.md) |
+| ./packages/pieces/community/contentful/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/contentful/README_zh_TW.md) |
+| ./packages/pieces/community/twin-labs/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/twin-labs/README_zh_TW.md) |
 | ./packages/pieces/community/microsoft-power-bi/README.md | Pending | |
 | ./packages/pieces/community/fliqr-ai/README.md | Pending | |
 | ./packages/pieces/community/dust/README.md | Pending | |
