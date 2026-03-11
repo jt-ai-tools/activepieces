@@ -215,25 +215,25 @@ Total files:      873
 | ./docs/handbook/engineering/playbooks/run-ee.mdx | Completed | [run-ee_zh_TW.mdx](./docs/handbook/engineering/playbooks/run-ee_zh_TW.mdx) |
 | ./docs/handbook/engineering/onboarding/how-we-work.mdx | Completed | [how-we-work_zh_TW.mdx](./docs/handbook/engineering/onboarding/how-we-work_zh_TW.mdx) |
 | ./docs/handbook/engineering/onboarding/on-call.mdx | Completed | [on-call_zh_TW.mdx](./docs/handbook/engineering/onboarding/on-call_zh_TW.mdx) |
-| ./docs/handbook/engineering/onboarding/onboarding-check-list.mdx | Pending | |
-| ./docs/handbook/engineering/onboarding/release-cycle.mdx | Pending | |
-| ./docs/handbook/engineering/onboarding/stack.mdx | Pending | |
-| ./docs/handbook/engineering/onboarding/downtime-incident.mdx | Pending | |
-| ./docs/overview/welcome.mdx | Pending | |
-| ./docs/flows/passing-data.mdx | Pending | |
-| ./docs/flows/known-limits.mdx | Pending | |
-| ./docs/flows/building-flows.mdx | Pending | |
-| ./docs/flows/debugging-runs.mdx | Pending | |
-| ./docs/flows/publishing-flows.mdx | Pending | |
-| ./docs/flows/versioning.mdx | Pending | |
-| ./README.md | Pending | |
-| ./CONTRIBUTING.md | Pending | |
-| ./packages/web/CLAUDE.md | Pending | |
-| ./packages/ee/embed-sdk/README.md | Pending | |
-| ./packages/pieces/core/webhook/README.md | Pending | |
-| ./packages/pieces/core/tables/README.md | Pending | |
-| ./packages/pieces/core/crypto/README.md | Pending | |
-| ./packages/pieces/core/schedule/README.md | Pending | |
+| ./docs/handbook/engineering/onboarding/onboarding-check-list.mdx | Completed | [onboarding-check-list_zh_TW.mdx](./docs/handbook/engineering/onboarding/onboarding-check-list_zh_TW.mdx) |
+| ./docs/handbook/engineering/onboarding/release-cycle.mdx | Completed | [release-cycle_zh_TW.mdx](./docs/handbook/engineering/onboarding/release-cycle_zh_TW.mdx) |
+| ./docs/handbook/engineering/onboarding/stack.mdx | Completed | [stack_zh_TW.mdx](./docs/handbook/engineering/onboarding/stack_zh_TW.mdx) |
+| ./docs/handbook/engineering/onboarding/downtime-incident.mdx | Completed | [downtime-incident_zh_TW.mdx](./docs/handbook/engineering/onboarding/downtime-incident_zh_TW.mdx) |
+| ./docs/overview/welcome.mdx | Completed | [welcome_zh_TW.mdx](./docs/overview/welcome_zh_TW.mdx) |
+| ./docs/flows/passing-data.mdx | Completed | [passing-data_zh_TW.mdx](./docs/flows/passing-data_zh_TW.mdx) |
+| ./docs/flows/known-limits.mdx | Completed | [known-limits_zh_TW.mdx](./docs/flows/known-limits_zh_TW.mdx) |
+| ./docs/flows/building-flows.mdx | Completed | [building-flows_zh_TW.mdx](./docs/flows/building-flows_zh_TW.mdx) |
+| ./docs/flows/debugging-runs.mdx | Completed | [debugging-runs_zh_TW.mdx](./docs/flows/debugging-runs_zh_TW.mdx) |
+| ./docs/flows/publishing-flows.mdx | Completed | [publishing-flows_zh_TW.mdx](./docs/flows/publishing-flows_zh_TW.mdx) |
+| ./docs/flows/versioning.mdx | Completed | [versioning_zh_TW.mdx](./docs/flows/versioning_zh_TW.mdx) |
+| ./README.md | Completed | [README_zh_TW.md](./README_zh_TW.md) |
+| ./CONTRIBUTING.md | Completed | [CONTRIBUTING_zh_TW.md](./CONTRIBUTING_zh_TW.md) |
+| ./packages/web/CLAUDE.md | Completed | [CLAUDE_zh_TW.md](./packages/web/CLAUDE_zh_TW.md) |
+| ./packages/ee/embed-sdk/README.md | Completed | [README_zh_TW.md](./packages/ee/embed-sdk/README_zh_TW.md) |
+| ./packages/pieces/core/webhook/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/webhook/README_zh_TW.md) |
+| ./packages/pieces/core/tables/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/tables/README_zh_TW.md) |
+| ./packages/pieces/core/crypto/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/crypto/README_zh_TW.md) |
+| ./packages/pieces/core/schedule/README.md | Completed | [README_zh_TW.md](./packages/pieces/core/schedule/README_zh_TW.md) |
 | ./packages/pieces/core/image-helper/README.md | Pending | |
 | ./packages/pieces/core/forms/README.md | Pending | |
 | ./packages/pieces/core/date-helper/README.md | Pending | |

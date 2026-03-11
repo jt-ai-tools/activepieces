@@ -1,0 +1,98 @@
+---
+title: 處理停機時間
+icon: turn-down
+---
+
+![Downtime Incident](https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdTZnbGxjc3k5d3NxeXQwcmhxeTRsbnNybnd4NG41ZnkwaDdsa3MzeSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2UCt7zbmsLoCXybx6t/giphy.gif)
+
+## 📋 開始之前所需的準備
+
+請確保以下項目已準備就緒：
+- **[Incident.io 設定](../playbooks/setup-incident-io_zh_TW)**：用於管理事件。
+- **ClickStack**：用於檢查日誌與錯誤。
+- **Checkly 偵錯**：用於測試與監控。
+
+---
+
+## 🚨 保持冷靜並採取行動
+
+<Warning>
+  不要驚慌！請按照以下步驟修復問題。
+</Warning>
+
+1. **通知您的使用者**：
+   - 讓您的使用者知道目前有問題。在 [Community](https://community.activepieces.com) 和 Discord 上發布訊息。
+   - 範例訊息：*“我們正在調查服務中出現的問題。感謝您的耐心配合！”*
+
+2. **找出問題所在**：
+   - 收集細節。什麼東西無法運作？什麼時候開始的？
+
+3. **更新狀態頁面**：
+   - 使用 [Incident.io](https://incident.io) 更新狀態頁面。將其設置為 *“Investigating” (調查中)* 或 *“Partial Outage” (部分停機)*。
+
+---
+
+## 🔍 檢查基礎架構問題
+
+1. **查看 DigitalOcean**：
+   - 檢查 CPU、記憶體或磁碟使用率是否過高。
+   - 如果是的話：
+     - 暫時**增加機器規格**以解決問題。
+     - 繼續尋找根本原因。
+
+---
+
+## 📜 檢查日誌與錯誤
+
+1. **使用 Clickstack**：
+   - 前往 [https://watch.activepieces.com](https://watch.activepieces.com)。
+   - 在日誌中搜尋最近的錯誤。
+   - 憑證可在 [主運行手冊 (Master Playbook)](https://docs.google.com/document/d/15OwWnRwkhlx9l-EN5dXFoysw0OoxC0lVvnjbdbId4BE/edit?pli=1&tab=t.4lk480a2s8yh#heading=h.1qegnmb1w65k) 中找到。
+
+2. **檢查 Sentry**：
+   - 尋找分組後的錯誤（發生次數頻繁的錯誤）。
+   - 嘗試**重現錯誤**，並儘可能修復它。
+
+---
+
+## 🛠️ 使用 Checkly 進行偵錯
+
+1. **檢查 Checkly 日誌**：
+   - 觀看失敗檢查的**錄影檔**，以了解出了什麼問題。
+   - 如果問題是 **timeout (逾時)**，可能代表存在更大的效能問題。
+   - 如果是由於 UI 更改導致的 E2E 測試失敗，通常不具緊急性。
+     - 修復測試後，該問題就會消失。
+
+---
+
+## 🚨 何時該尋求協助？
+
+如果遇到以下情況，請立即尋求協助：
+- 流程 (Flows) 發生失敗。
+- 整個平台停機。
+- 出現大量資料遺失或損壞。
+- 您不確定問題的原因。
+- 您已經花了 **超過 5 分鐘** 但仍然不知道出了什麼問題。
+
+💡 **如何尋求協助**：
+- 使用 **Incident.io** 建立 **critical alert (關鍵警報)**。
+- 前往 **Slack 事件頻道**，將問題呈報給工程團隊。
+
+<Warning>
+  如果您不確定，**請尋求協助！** 謹慎一點總比事後後悔好。
+</Warning>
+
+---
+
+## 💡 實用小撇步
+
+1. **保持有條理**：
+   - 列出一份停機期間需遵循的步驟清單。
+   - 記錄下您所做的一切，以便日後參考。
+
+2. **溝通清晰**：
+   - 隨時向您的團隊和使用者更新進度。
+   - 在更新中使用簡單易懂的語言。
+
+3. **照顧好自己**：
+   - 如果您感到壓力，請稍作休息。喝杯咖啡 ☕，深呼吸，然後按部就班地解決問題。

@@ -1,4 +1,12 @@
-Found 664 files to translate.
+Found 658 files to translate.
 
---- Processing chunk 1 (1 files) ---
-[+] Translating: ./docs/handbook/engineering/playbooks/database-migration.mdx
+--- Processing chunk 1 (3 files) ---
+[+] Translating: ./docs/overview/welcome.mdx
+[+] Translating: ./docs/flows/passing-data.mdx
+[+] Translating: ./docs/flows/known-limits.mdx
+Found 658 files to translate.
+
+--- Processing chunk 1 (3 files) ---
+[+] Translating: ./docs/overview/welcome.mdx
+[+] Translating: ./docs/flows/passing-data.mdx
+[+] Translating: ./docs/flows/known-limits.mdx

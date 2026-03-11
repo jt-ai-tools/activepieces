@@ -1,0 +1,106 @@
+---
+title: "傳遞資料"
+icon: 'wand-sparkles'
+description: "在目前步驟中使用先前步驟的資料"
+---
+
+## 資料流 (Data flow)
+
+任何 Activepieces 流程都是一個垂直圖表，**以觸發步驟 (trigger step) 開始**，接著是**任意數量的動作步驟 (action steps)**。
+
+步驟垂直連接。資料從父步驟流向子步驟。子步驟可以存取父步驟的輸出資料。
+
+## 步驟範例
+<video width="450"
+  autoPlay
+  muted
+  loop
+  playsinline
+  src="/resources/passing-data-3steps.mp4"
+></video>
+
+此流程有 3 個步驟，它們存取資料的方式如下：
+
+- **步驟 1 (Step 1)** 是主要的資料產生者，供後續步驟使用。步驟 1 產生的資料將可在步驟 2 和 3 中存取。不過，某些觸發器（例如排程 Schedules）不會產生資料。
+
+- **步驟 2 (Step 2)** 可以存取步驟 1 產生的資料。執行後，此步驟也會產生資料供下一個（或多個）步驟使用。
+
+- **步驟 3 (Step 3)** 可以存取步驟 1 和 2 產生的資料，因為它們是其父步驟。此步驟可以產生資料，但由於它是流程中的最後一個步驟，因此無法被其他步驟使用。
+
+## 資料插入面板 (Data to Insert Panel)
+
+若要在目前步驟中使用先前步驟的資料，請將游標置於任何輸入框中，**資料插入 (Data to Insert)** 面板將會彈出。
+
+<video 
+  autoPlay
+  muted
+  loop
+  playsinline
+  src="/resources/passing-data-data-to-insert-panel.mp4"
+></video>
+
+此面板顯示可存取的步驟及其資料。您可以展開資料項目以查看其內容，並可以點擊項目將其插入目前設定的輸入框中。
+
+如果此面板中的項目右側有插入符號 (⌄)，表示您可以點擊該項目以展開其子屬性。您可以根據需要選擇父項目或其屬性。
+
+當您從此面板插入資料時，它會插入到輸入框中游標所在的位置。這意味著您可以在任何欄位中組合靜態文字和動態資料。
+
+<video 
+  autoPlay
+  muted
+  loop
+  playsinline
+  src="/resources/passing-data-main-insert-data-example.mp4"
+></video>
+
+我們通常建議您在插入項目之前先將其展開，以瞭解它們包含的資料類型，以及它們是否適合您正在填寫的輸入框。
+
+## 測試步驟以產生資料
+
+我們要求您在存取資料之前先測試步驟。這種方法可以防止您選擇錯誤的資料，並避免在發佈後破壞流程。
+
+如果步驟未經測試且您嘗試存取其資料，您將看到以下訊息：
+<img width="350" src="/resources/passing-data-test-step-first.png" alt="Test your automation step first" />
+
+要解決此問題，請前往該步驟並使用 **產生範例資料 (Generate Sample Data)** 面板進行測試。步驟使用不同的測試方法，以下是常見的幾種：
+
+- **載入資料 (Load Data)：** 某些觸發器允許您從連接的帳戶載入資料，而無需在該帳戶中執行任何操作。
+- **測試觸發器 (Test Trigger)：** 某些觸發器需要您前往連接的帳戶並觸發該動作，以便產生範例資料。
+- **發送資料 (Send Data)：** Webhook 需要您向 Webhook URL 發送範例請求以產生範例資料。
+- **測試動作 (Test Action)：** 動作步驟將允許您執行該動作以產生範例資料。
+
+請按照 **產生範例資料 (Generate Sample Data)** 面板中的說明操作，以瞭解應如何測試您的步驟。某些觸發器還允許您 **使用模擬資料 (Use Mock Data)**，這將從組件 (piece) 產生靜態範例資料。我們建議您測試步驟，而不是使用模擬資料。
+
+以下是使用 **載入資料 (Load Data)** 按鈕為觸發器產生範例資料的範例：
+
+<video 
+  autoPlay
+  muted
+  loop
+  playsinline
+  src="/resources/passing-data-load-data.mp4"
+></video>
+
+## 進階技巧
+
+### 切換到動態數值 (Dynamic Values)
+
+下拉選單和某些其他輸入類型不允許您選擇先前步驟的資料。如果您想繞過此限制並改用先前步驟的資料，請使用此按鈕將輸入切換為動態輸入：
+
+<video 
+  autoPlay
+  muted
+  loop
+  playsinline
+  src="/resources/passing-data-dynamic-value.mp4"
+></video>
+
+### 透過路徑存取資料
+
+如果您在 **資料插入 (Data to Insert)** 面板中找不到所需的資料，但仍想使用它，您可以改寫 JSON path。
+
+使用以下語法編寫 JSON path：
+
+`{{step_slug.path.to.property}}`
+
+`step_slug` 可透過將游標移至流程中的任何步驟來找到，它會顯示在步驟的右側。

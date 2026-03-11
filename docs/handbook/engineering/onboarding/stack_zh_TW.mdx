@@ -1,0 +1,51 @@
+---
+title: "技術棧與工具" 
+icon: "hammer"
+---
+
+## 語言
+
+Activepieces 使用 **TypeScript** 作為其唯一的語言。
+統一語言的原因是能夠將資料模型和功能拆分為套件，這些套件可以在其組件（worker / 前端 / 後端）之間共享。
+
+這使其能夠專注於學習更少的工具選項，並在所有套件中完善它們。
+
+## 前端
+
+- Web 框架/函式庫：[React](https://reactjs.org/)
+- 佈局/組件：[shadcn](https://shadcn.com/) / Tailwind
+
+## 後端
+
+- 框架：[Fastify](https://www.fastify.io/)
+- 資料庫：[PostgreSQL](https://www.postgresql.org/)
+- 任務隊列：[Redis](https://redis.io/)
+- 任務執行器：[BullMQ](https://github.com/taskforcesh/bullmq)
+
+## 測試
+
+- 單元與整合測試：[Vitest](https://vitest.dev/)
+- 端到端 (E2E) 測試：[Playwright](https://playwright.dev/)
+
+## 其他工具
+
+- 應用程式監控：[Sentry](https://sentry.io/welcome/)
+- CI/CD：[GitHub Actions](https://github.com/features/actions) / [Depot](https://depot.dev/) / [Kamal](https://kamal-deploy.org/)
+- 容器化：[Docker](https://www.docker.com/) 
+- 程式碼檢查工具 (Linter)：[ESLint](https://eslint.org/)
+- 日誌記錄：[OpenTelemetry](https://opentelemetry.io/) 
+- 建置：[Turbo](https://turbo.build/) 搭配 [Bun](https://bun.sh/)
+
+## 新增工具
+
+新增工具並非一個簡單的選擇。所謂簡單的選擇是指容易執行或撤銷，或者僅影響你自己的工作而不會影響他人。
+
+我們避免增加新東西，以提高設定的便利性，進而增加採用率。擁有更多依賴項意味著更多的變動組件和維護成本。
+
+如果你正在考慮使用新工具，請捫心自問：
+
+- 這個工具是開源的嗎？我們該如何提供給使用自管伺服器的客戶？
+- 它解決了什麼問題，為什麼我們現在需要它？
+- 我們是否可以使用現有的工具來替代？
+
+這些問題僅適用於每個人都需要的服務。如果這個工具只是能加速你個人的工作，我們不需要考慮得那麼深。

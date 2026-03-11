@@ -1,0 +1,71 @@
+---
+title: "發佈週期"
+icon: "clock"
+---
+
+本頁面說明程式碼如何從合併（Merge）進入生產環境（Production），以及每個步驟存在的原因。
+
+## 發佈流程
+
+```
+合併至 main ──→ 部署至 staging (stg.activepieces.com)
+                          │
+                  5 PM UTC: staging 凍結
+                          │
+              內容團隊在夜間使用凍結的 staging
+                          │
+                  9 AM UTC: 將 staging 推送至 production
+                          │
+                  同步：部署最新的 main → staging
+                          │
+                  週日：發佈每週版本 + Docker 映像檔
+```
+
+## 截止時間及其原因
+
+### Staging 凍結 — 5 PM UTC
+
+在 5 PM UTC 之後合併至 `main` 的程式碼**不會部署到 staging**。程式碼會進入 `main`，但 staging 會保持在截止前最後一次部署的版本。
+
+**原因**：內容團隊每天都依賴 staging 環境。如果我們在夜間持續部署，他們醒來時可能會發現環境已在不知情的情況下更改，甚至可能已經損壞。在 5 PM 進行凍結，能為他們提供至少 16 小時的穩定版本供其工作。
+
+### 推送至生產環境 — 9 AM UTC
+
+每天 9 AM UTC，排程的工作流（workflow）會比較 staging 與 production 的差異。如果兩者不一致，則會將 staging 上運行的確切映像檔部署到 production。
+
+**原因**：這是測試（soak process）的核心。在執行推送時，staging 版本已經上線至少 16 小時。內容團隊一直在積極使用它，這起到了實際驗證的作用。如果發生錯誤，我們能在其到達客戶手中之前及時發現。
+
+推送完成後，會執行同步部署，將 staging 更新至最新的 `main` 分支，重新開始循環。
+
+### 每週發佈 — 週日
+
+在週日 9 AM 的推送中，工作流還會發佈正式的自託管版本：包括 git 標籤（tag）、GitHub 發佈說明（release notes）以及 Docker Hub 上的多平台 Docker 映像檔。
+
+**原因**：自託管用戶需要穩定且可預測的發佈版本。每週一次的節奏讓我們有足夠的時間累積有意義的更改，同時保持較低的發佈成本。選擇週日是為了確保該發佈版本已經過雲端生產環境一整週的驗證。
+
+## 總結
+
+| 時間 | 發生什麼事 |
+|---|---|
+| 任何時間 (9 AM–5 PM UTC) | 合併至 `main` → 自動部署至 staging |
+| 任何時間 (5 PM–9 AM UTC) | 合併至 `main` → 程式碼僅存在於 `main`，staging 已凍結 |
+| 每天 9 AM UTC | Staging 推送至 production，然後 staging 同步至最新的 `main` |
+| 週日 9 AM UTC | 同上 + 發佈正式自託管版本 |
+
+## 特殊情況處理（Overrides）
+
+有時需要繞過此週期：
+
+- **熱修復 (Hotfix)**：合併至 `main`，然後手動觸發 `continuous-delivery.yml` 並選擇 `promote-to-production` 以跳過等待。
+- **緊急情況 (Emergency)**：使用 `emergency-cloud-deploy.yml` 直接部署到 production，完全繞過 staging。請謹慎使用。
+
+## 常見問題 (FAQ)
+
+**問：我在 6 PM UTC 合併了程式碼。何時會到達生產環境？**
+您的程式碼已進入 `main`，但 staging 已凍結。隔天 9 AM，目前的 staging（不包含您的更改）會推送至 production。接著 staging 會同步並部署您的更改。它將在後天的 9 AM 推送至 production — 總計約 39 小時。
+
+**問：我在 10 AM UTC 合併了程式碼。何時會到達生產環境？**
+它會立即部署到 staging。隔天 9 AM（約 23 小時後），它會推送至 production。
+
+**問：我可以在凍結期間部署到 staging 嗎？**
+可以，手動觸發 `continuous-delivery.yml` 並選擇 `deploy-staging` 即可。但請考慮到內容團隊可能正依賴於該凍結版本。

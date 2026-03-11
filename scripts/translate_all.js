@@ -5,7 +5,7 @@ const util = require('util');
 
 const execAsync = util.promisify(exec);
 const PROGRESS_FILE = path.join(__dirname, '..', 'PROGRESS.md');
-const CONCURRENCY_LIMIT = 1;
+const CONCURRENCY_LIMIT = 3;
 
 const PROMPT = `You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
 Rules:
@@ -22,8 +22,6 @@ async function translateFile(filePath) {
     // Read original content
     const content = fs.readFileSync(filePath, 'utf-8');
     
-    // Escape content for shell or pass via stdin
-    // We will write the prompt and content to a temporary file, then cat it to gemini
     const tempInFile = filePath + '.temp_in.txt';
     fs.writeFileSync(tempInFile, content);
 
@@ -32,8 +30,8 @@ async function translateFile(filePath) {
     
     try {
         console.log(`[+] Translating: ${filePath}`);
-        // Increased timeout to 5 minutes per file
-        const { stdout, stderr } = await execAsync(cmd, { maxBuffer: 1024 * 1024 * 50, timeout: 300000 }); 
+        // Increased timeout to 10 minutes per file
+        const { stdout } = await execAsync(cmd, { maxBuffer: 1024 * 1024 * 50, timeout: 600000 }); 
         
         if (!stdout || stdout.trim().length === 0) {
             console.error(`[X] Empty output for ${filePath}`);
@@ -42,7 +40,6 @@ async function translateFile(filePath) {
         }
         
         let translated = stdout.trim();
-        // Remove markdown wrapper if the model accidentally added it
         if (translated.startsWith('```markdown')) {
             translated = translated.replace(/^```markdown\n?/, '').replace(/\n```$/, '');
         }
@@ -50,7 +47,6 @@ async function translateFile(filePath) {
         fs.writeFileSync(outPath, translated);
         console.log(`[✓] Completed: ${outPath}`);
         
-        // Cleanup temp file
         if (fs.existsSync(tempInFile)) fs.unlinkSync(tempInFile);
         
         return { success: true, outPath };
@@ -75,7 +71,6 @@ async function updateProgress(originalPath, outPath) {
 async function commitAndPush() {
     console.log('[*] Committing progress...');
     try {
-        // Only add if there are changes
         const { stdout: status } = await execAsync('git status --porcelain');
         if (status.trim().length > 0) {
             await execAsync('git add . && git commit -m "docs: auto-translate batch of markdown files to Traditional Chinese" && git push');
@@ -98,11 +93,16 @@ async function main() {
     const pendingFiles = lines
         .filter(line => line.includes('| Pending |'))
         .map(line => line.split('|')[1].trim())
-        .slice(0, 2);
+        .slice(0, 20);
 
     console.log(`Found ${pendingFiles.length} files to translate.`);
 
-    for (let i = 0; i < pendingFiles.length; i += CONCURRENCY_LIMIT) {
+    // Heartbeat to prevent timeout
+    setInterval(() => {
+        console.log(`[Heartbeat] Still working... Current index: ${i}`);
+    }, 60000);
+
+    for (var i = 0; i < pendingFiles.length; i += CONCURRENCY_LIMIT) {
         const chunk = pendingFiles.slice(i, i + CONCURRENCY_LIMIT);
         console.log(`\n--- Processing chunk ${i / CONCURRENCY_LIMIT + 1} (${chunk.length} files) ---`);
         
@@ -119,8 +119,7 @@ async function main() {
 
         await Promise.all(promises);
 
-        // Commit every 10 files (reduced from 20)
-        if ((i + chunk.length) % 10 === 0 || (i + chunk.length) === pendingFiles.length) {
+        if ((i + chunk.length) % 15 === 0 || (i + chunk.length) === pendingFiles.length) {
             await commitAndPush();
         }
     }

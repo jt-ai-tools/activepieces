@@ -1,0 +1,54 @@
+---
+title: "技術限制"
+icon: "ban"
+description: "Activepieces 執行的技術限制"
+---
+
+
+### 執行限制
+
+- **流程執行時間 (Flow Execution Time)**  
+  最大值：**600 秒 (10 分鐘)**  
+  超過此限制的流程將被標記為逾時。
+
+- **記憶體使用量 (Memory Usage)**  
+  最大值：**1 GB RAM**  
+  (自我託管版本可透過 `AP_SANDBOX_MEMORY_LIMIT` 進行配置)
+
+<Note>
+記憶體使用量是針對執行流程的整個 Node.js 程序進行測量的。對於已載入 Piece 的熱啟動程序，大約有 300 MB 的額外開銷。
+</Note>
+
+<Tip>
+**備註 1：** 被 **Wait for Approval** 或 **Delay** 等步驟暫停的流程，**不**計入 600 秒的限制。
+</Tip>
+
+<Tip>
+**備註 2：** 若要處理較長的程序，請將其拆分為多個流程。  
+例如：  
+- 使用一個流程透過 **webhook** 呼叫另一個流程。  
+- 在不同的流程中處理較小的**批次項目**。
+</Tip>
+
+---
+
+### 檔案儲存限制
+
+<Info>
+來自 Action 或 Trigger 的檔案會儲存在資料庫或 S3 中，以支援某些步驟的重試機制。
+</Info>
+
+- **最大檔案大小**：**10 MB**  
+  (可透過 `AP_MAX_FILE_SIZE_MB` 配置，預設值：**25 MB**)
+
+- **流程執行日誌最大容量**：**25 MB**  
+  (可透過 `AP_MAX_FLOW_RUN_LOG_SIZE_MB` 配置，預設值：**25 MB**)  
+  > 這是單次流程執行中，所有步驟的所有輸入與輸出的總和大小。
+---
+
+### 鍵值 (Key / Value) 儲存限制
+
+某些 Piece 會使用內建的 Activepieces 鍵值儲存 (例如：**Store Piece**, **Queue Piece**)。
+
+- **最大鍵 (Key) 長度**：**128 個字元**  
+- **最大值 (Value) 大小**：**512 KB**
