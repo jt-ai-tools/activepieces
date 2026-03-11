@@ -304,11 +304,11 @@ Total files:      873
 | ./packages/pieces/community/mooninvoice/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/mooninvoice/README_zh_TW.md) |
 | ./packages/pieces/community/monday/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/monday/README_zh_TW.md) |
 | ./packages/pieces/community/visible/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/visible/README_zh_TW.md) |
-| ./packages/pieces/community/esignatures/README.md | Pending | |
-| ./packages/pieces/community/lokalise/README.md | Pending | |
-| ./packages/pieces/community/magicslides/README.md | Pending | |
-| ./packages/pieces/community/chain-aware/README.md | Pending | |
-| ./packages/pieces/community/truelayer/README.md | Pending | |
+| ./packages/pieces/community/esignatures/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/esignatures/README_zh_TW.md) |
+| ./packages/pieces/community/lokalise/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/lokalise/README_zh_TW.md) |
+| ./packages/pieces/community/magicslides/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/magicslides/README_zh_TW.md) |
+| ./packages/pieces/community/chain-aware/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/chain-aware/README_zh_TW.md) |
+| ./packages/pieces/community/truelayer/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/truelayer/README_zh_TW.md) |
 | ./packages/pieces/community/hackernews/README.md | Pending | |
 | ./packages/pieces/community/aminos/README.md | Pending | |
 | ./packages/pieces/community/woocommerce/README.md | Pending | |
