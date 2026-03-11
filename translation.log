@@ -148,3 +148,53 @@ Found 856 files to translate.
 [✓] Completed: ./docs/install/troubleshooting/reset-password_zh_TW.mdx
 [✓] Completed: ./docs/install/architecture/workers_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 13 (5 files) ---
+[+] Translating: ./docs/install/architecture/overview.mdx
+[+] Translating: ./docs/install/architecture/engine.mdx
+[+] Translating: ./docs/install/architecture/performance.mdx
+[+] Translating: ./docs/install/guides/setup-app-webhooks.mdx
+[+] Translating: ./docs/install/guides/setup-ssl.mdx
+[✓] Completed: ./docs/install/architecture/engine_zh_TW.mdx
+[✓] Completed: ./docs/install/guides/setup-ssl_zh_TW.mdx
+[✓] Completed: ./docs/install/architecture/performance_zh_TW.mdx
+[✓] Completed: ./docs/install/architecture/overview_zh_TW.mdx
+[✓] Completed: ./docs/install/guides/setup-app-webhooks_zh_TW.mdx
+
+--- Processing chunk 14 (5 files) ---
+[+] Translating: ./docs/install/guides/separate-workers.mdx
+[+] Translating: ./docs/install/guides/setup-s3.mdx
+[+] Translating: ./docs/install/guides/setup-opentelemetry.mdx
+[+] Translating: ./docs/endpoints/project-members/list.mdx
+[+] Translating: ./docs/endpoints/project-members/schema.mdx
+[✓] Completed: ./docs/endpoints/project-members/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/project-members/schema_zh_TW.mdx
+[✓] Completed: ./docs/install/guides/setup-s3_zh_TW.mdx
+[✓] Completed: ./docs/install/guides/separate-workers_zh_TW.mdx
+[✓] Completed: ./docs/install/guides/setup-opentelemetry_zh_TW.mdx
+
+--- Processing chunk 15 (5 files) ---
+[+] Translating: ./docs/endpoints/project-members/delete.mdx
+[+] Translating: ./docs/endpoints/overview.mdx
+[+] Translating: ./docs/endpoints/queue-metrics/metrics.mdx
+[+] Translating: ./docs/endpoints/project-releases/create.mdx
+[+] Translating: ./docs/endpoints/project-releases/schema.mdx
+[✓] Completed: ./docs/endpoints/project-members/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/queue-metrics/metrics_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/overview_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/project-releases/create_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/project-releases/schema_zh_TW.mdx
+
+--- Processing chunk 16 (5 files) ---
+[+] Translating: ./docs/endpoints/projects/list.mdx
+[+] Translating: ./docs/endpoints/projects/create.mdx
+[+] Translating: ./docs/endpoints/projects/update.mdx
+[+] Translating: ./docs/endpoints/projects/schema.mdx
+[+] Translating: ./docs/endpoints/projects/delete.mdx
+[✓] Completed: ./docs/endpoints/projects/update_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/projects/list_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/projects/delete_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/projects/create_zh_TW.mdx
+[✓] Completed: ./docs/endpoints/projects/schema_zh_TW.mdx
+[*] Committing progress...

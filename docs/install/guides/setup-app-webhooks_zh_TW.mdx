@@ -1,0 +1,33 @@
+---
+title: "如何設定應用程式 Webhooks"
+description: ""
+icon: 'webhook'
+---
+
+某些應用程式（如 Slack 和 Square）每個 OAuth2 應用程式僅支援一個 webhook。這意味著需要在其開發者後台進行手動配置，且無法自動化。
+
+## Slack
+
+**設定 Webhook 密鑰 (Secret)**
+
+1. 造訪 Slack OAuth 設定中的「Basic Information」區塊。
+2. 複製「Signing Secret」並儲存。
+3. 在您的 Activepieces 環境中設定以下環境變數：
+    ```
+    AP_APP_WEBHOOK_SECRETS={"@activepieces/piece-slack": {"webhookSecret": "SIGNING_SECRET"}}
+    ```
+4. 重啟您的應用程式實例。
+
+
+**設定 Webhook URL**
+
+1. 前往 Slack OAuth2 開發者平台中的「Event Subscription」設定。
+2. URL 格式應為：`https://YOUR_AP_INSTANCE/api/v1/app-events/slack`。
+3. 連接 Slack 時，請使用您的 OAuth2 憑據，或從管理主控台（在平台方案中）更新 OAuth2 應用程式詳情。
+4. 將以下事件新增至應用程式：
+    - `message.channels`
+    - `reaction_added`
+    - `message.im`
+    - `message.groups`
+    - `message.mpim`
+    - `app_mention`

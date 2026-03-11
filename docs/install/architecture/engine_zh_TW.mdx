@@ -1,0 +1,18 @@
+---
+title: "Engine" 
+icon: "brain"
+---
+
+Engine 檔案包含以下類型的操作：
+
+- **Extract Piece Metadata**: 在安裝新組件 (pieces) 時擷取元數據 (metadata)。
+- **Execute Step**: 執行單個測試步驟。
+- **Execute Flow**: 執行流程。
+- **Execute Property**: 執行動態下拉選單或動態屬性。
+- **Execute Trigger Hook**: 執行如 OnEnable、OnDisable 或擷取 payload 等操作。
+- **Execute Auth Validation**: 驗證連線的身份驗證。
+
+Engine 接收流程 JSON 與限定於此專案範圍的 engine token，並實作 piece framework 提供的 API，例如：
+- **Storage Service**: piece framework 的一個簡單鍵值 (key/value) 持久化儲存。
+- **File Service**: 協助將檔案儲存在本地或資料庫的工具，例如用於測試步驟。
+- **Fetch Metadata**: 擷取目前執行中專案的元數據 (metadata)。

@@ -1,0 +1,48 @@
+---
+title: '如何分離 Worker'
+description: ''
+icon: 'robot'
+---
+
+將 Worker 從主應用程式 (APP) 中分離的好處：
+
+- **可用性 (Availability)**：應用程式保持輕量級，允許 Worker 獨立進行擴充。
+- **安全性 (Security)**：Worker 無法直接存取 Redis 和資料庫，從而最大限度地減少安全漏洞發生時的影響。
+
+
+<Steps>
+  <Step title="建立 Worker Token">
+    要建立 Worker Token，請使用本地 CLI 命令產生 JWT，並使用與 App Server 相同的 `AP_JWT_SECRET` 對其進行簽名。請按照以下步驟操作：
+    1. 開啟終端機並導航到儲存庫的根目錄。
+    2. 執行命令：`npm run workers token`。
+    3. 出現提示時，輸入 JWT Secret（這應該與 App Server 使用的 `AP_JWT_SECRET` 相同）。
+    4. 產生的 Token 將顯示在終端機中，複製它並在下一步中使用。
+    ![Workers Token](../../resources/worker-token.png)
+  </Step>
+  <Step title="配置環境變數">
+    在 Worker 機器上的 `.env` 檔案中定義以下環境變數：
+    - 將 `AP_CONTAINER_TYPE` 設置為 `WORKER`
+    - 指定 `AP_FRONTEND_URL`
+    - 提供 `AP_WORKER_TOKEN`
+  </Step>
+  <Step title="配置持久化磁碟卷">
+    為 Worker 配置持久化磁碟卷 (Persistent Volume) 以快取 Flow 和 Piece。這非常重要，因為 Piece 和 Flow 在未快取時的首次執行速度非常慢。使用持久化磁碟卷可以顯著提高執行速度。
+    
+    將以下磁碟卷映射 (Volume Mapping) 新增到您的 Docker 配置中：
+    ```yaml
+    volumes:
+      - <your path>:/usr/src/app/cache
+    ```
+    注意：此設置僅適用於每個 Worker 掛載一個磁碟卷，它不能在多個 Worker 之間共享。
+  </Step>
+  <Step title="啟動 Worker 機器">
+    啟動 Worker 機器並為其提供產生的 Token。
+  </Step>
+  <Step title="驗證 Worker 運行">
+    驗證 Worker 在 Platform Admin Console 的 Infra -> Workers 下是否可見。
+    ![Workers Infrastructure](../../resources/workers.png)
+  </Step>
+  <Step title="配置 App 容器類型">
+    在 APP 機器上，將 `AP_CONTAINER_TYPE` 設置為 `APP`。
+  </Step>
+</Steps>

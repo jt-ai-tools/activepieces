@@ -1,0 +1,107 @@
+---
+title: "基準測試"
+icon: "chart-line"
+---
+
+## 效能
+
+平均而言，Activepieces (自託管) 在單個實例（包括 PostgreSQL 和 Redis）上每秒可以處理 95 次流程執行，且延遲低於 300 毫秒。\
+隨著實例資源的增加和/或增加更多實例，它可以進一步擴充。\
+\
+**5000** 次請求且並發數 (concurrency) 為 **25** 的結果：
+
+```
+This is ApacheBench, Version 2.3 <$Revision: 1913912 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient)
+Completed 500 requests
+Completed 1000 requests
+Completed 1500 requests
+Completed 2000 requests
+Completed 2500 requests
+Completed 3000 requests
+Completed 3500 requests
+Completed 4000 requests
+Completed 4500 requests
+Completed 5000 requests
+Finished 5000 requests
+
+
+Server Software:        
+Server Hostname:        localhost
+Server Port:            4200
+
+Document Path:          /api/v1/webhooks/GMtpNwDsy4mbJe3369yzy/sync
+Document Length:        16 bytes
+
+Concurrency Level:      25
+Time taken for tests:   52.087 seconds
+Complete requests:      5000
+Failed requests:        0
+Total transferred:      1375000 bytes
+HTML transferred:       80000 bytes
+Requests per second:    95.99 [#/sec] (mean)
+Time per request:       260.436 [ms] (mean)
+Time per request:       10.417 [ms] (mean, across all concurrent requests)
+Transfer rate:          25.78 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.0      0       1
+Processing:    32  260  23.8    254     756
+Waiting:       31  260  23.8    254     756
+Total:         32  260  23.8    254     756
+
+Percentage of the requests served within a certain time (ms)
+  50%    254
+  66%    261
+  75%    267
+  80%    272
+  90%    289
+  95%    306
+  98%    327
+  99%    337
+ 100%    756 (longest request)
+```
+
+#### 基準測試
+
+以下是重現此基準測試的方法：
+
+1. 使用以下環境變數執行帶有 PostgreSQL 和 Redis 的 Activepieces：
+
+```env
+AP_EXECUTION_MODE=SANDBOX_CODE_ONLY
+AP_FLOW_WORKER_CONCURRENCY=25
+```
+
+2. 建立一個包含 Catch Webhook 觸發器和 Webhook Return Response 動作的流程。
+   
+
+   ![簡單的 Webhook 流程](/resources/screenshots/simple-webhook-flow.png)
+3. 從 Webhook 觸發器取得 Webhook URL 並在末尾加上 `/sync`。
+4. 安裝基準測試工具，例如 [ab](https://httpd.apache.org/docs/2.4/programs/ab.html)：
+
+```bash
+sudo apt-get install apache2-utils
+```
+
+5. 執行基準測試：
+
+```bash
+ab -c 25 -n 5000 http://localhost:4200/api/v1/webhooks/GMtpNwDsy4mbJe3369yzy/sync
+```
+
+6. 檢查結果：
+
+用於獲得上述結果的實例規格：
+
+- 16GB RAM
+- AMD Ryzen 7 8845HS (8 cores, 16 threads)
+- Ubuntu 24.04 LTS
+
+<Tip>
+  這些基準測試是基於在 `SANDBOX_CODE_ONLY` 模式下執行 Activepieces。這**不**代表 Activepieces Cloud 的效能，Cloud 版本使用不同的沙箱機制來支援多租戶。欲瞭解更多資訊，請參閱 [沙箱機制](/install/architecture/workers_zh_TW#sandboxing)。
+</Tip>

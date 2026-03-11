@@ -81,26 +81,26 @@ Total files:      873
 | ./docs/install/troubleshooting/truncated-logs.mdx | Completed | [truncated-logs_zh_TW.mdx](./docs/install/troubleshooting/truncated-logs_zh_TW.mdx) |
 | ./docs/install/troubleshooting/bullboard.mdx | Completed | [bullboard_zh_TW.mdx](./docs/install/troubleshooting/bullboard_zh_TW.mdx) |
 | ./docs/install/architecture/workers.mdx | Completed | [workers_zh_TW.mdx](./docs/install/architecture/workers_zh_TW.mdx) |
-| ./docs/install/architecture/overview.mdx | Pending | |
-| ./docs/install/architecture/engine.mdx | Pending | |
-| ./docs/install/architecture/performance.mdx | Pending | |
-| ./docs/install/guides/setup-app-webhooks.mdx | Pending | |
-| ./docs/install/guides/setup-ssl.mdx | Pending | |
-| ./docs/install/guides/separate-workers.mdx | Pending | |
-| ./docs/install/guides/setup-s3.mdx | Pending | |
-| ./docs/install/guides/setup-opentelemetry.mdx | Pending | |
-| ./docs/endpoints/project-members/list.mdx | Pending | |
-| ./docs/endpoints/project-members/schema.mdx | Pending | |
-| ./docs/endpoints/project-members/delete.mdx | Pending | |
-| ./docs/endpoints/overview.mdx | Pending | |
-| ./docs/endpoints/queue-metrics/metrics.mdx | Pending | |
-| ./docs/endpoints/project-releases/create.mdx | Pending | |
-| ./docs/endpoints/project-releases/schema.mdx | Pending | |
-| ./docs/endpoints/projects/list.mdx | Pending | |
-| ./docs/endpoints/projects/create.mdx | Pending | |
-| ./docs/endpoints/projects/update.mdx | Pending | |
-| ./docs/endpoints/projects/schema.mdx | Pending | |
-| ./docs/endpoints/projects/delete.mdx | Pending | |
+| ./docs/install/architecture/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/install/architecture/overview_zh_TW.mdx) |
+| ./docs/install/architecture/engine.mdx | Completed | [engine_zh_TW.mdx](./docs/install/architecture/engine_zh_TW.mdx) |
+| ./docs/install/architecture/performance.mdx | Completed | [performance_zh_TW.mdx](./docs/install/architecture/performance_zh_TW.mdx) |
+| ./docs/install/guides/setup-app-webhooks.mdx | Completed | [setup-app-webhooks_zh_TW.mdx](./docs/install/guides/setup-app-webhooks_zh_TW.mdx) |
+| ./docs/install/guides/setup-ssl.mdx | Completed | [setup-ssl_zh_TW.mdx](./docs/install/guides/setup-ssl_zh_TW.mdx) |
+| ./docs/install/guides/separate-workers.mdx | Completed | [separate-workers_zh_TW.mdx](./docs/install/guides/separate-workers_zh_TW.mdx) |
+| ./docs/install/guides/setup-s3.mdx | Completed | [setup-s3_zh_TW.mdx](./docs/install/guides/setup-s3_zh_TW.mdx) |
+| ./docs/install/guides/setup-opentelemetry.mdx | Completed | [setup-opentelemetry_zh_TW.mdx](./docs/install/guides/setup-opentelemetry_zh_TW.mdx) |
+| ./docs/endpoints/project-members/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/project-members/list_zh_TW.mdx) |
+| ./docs/endpoints/project-members/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/project-members/schema_zh_TW.mdx) |
+| ./docs/endpoints/project-members/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/project-members/delete_zh_TW.mdx) |
+| ./docs/endpoints/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/endpoints/overview_zh_TW.mdx) |
+| ./docs/endpoints/queue-metrics/metrics.mdx | Completed | [metrics_zh_TW.mdx](./docs/endpoints/queue-metrics/metrics_zh_TW.mdx) |
+| ./docs/endpoints/project-releases/create.mdx | Completed | [create_zh_TW.mdx](./docs/endpoints/project-releases/create_zh_TW.mdx) |
+| ./docs/endpoints/project-releases/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/project-releases/schema_zh_TW.mdx) |
+| ./docs/endpoints/projects/list.mdx | Completed | [list_zh_TW.mdx](./docs/endpoints/projects/list_zh_TW.mdx) |
+| ./docs/endpoints/projects/create.mdx | Completed | [create_zh_TW.mdx](./docs/endpoints/projects/create_zh_TW.mdx) |
+| ./docs/endpoints/projects/update.mdx | Completed | [update_zh_TW.mdx](./docs/endpoints/projects/update_zh_TW.mdx) |
+| ./docs/endpoints/projects/schema.mdx | Completed | [schema_zh_TW.mdx](./docs/endpoints/projects/schema_zh_TW.mdx) |
+| ./docs/endpoints/projects/delete.mdx | Completed | [delete_zh_TW.mdx](./docs/endpoints/projects/delete_zh_TW.mdx) |
 | ./docs/endpoints/pieces/install.mdx | Pending | |
 | ./docs/endpoints/pieces/schema.mdx | Pending | |
 | ./docs/endpoints/connections/list.mdx | Pending | |

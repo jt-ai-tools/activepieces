@@ -1,0 +1,70 @@
+---
+title: "總覽"
+description: ""
+icon: "cube"
+---
+
+此頁面主要描述 Activepieces 的核心組件，並著重於工作流（workflow）的執行。
+
+## 組件
+
+![Architecture](/resources/architecture.png)
+
+**Activepieces:**
+
+- **App**: 核心應用程式，負責管理從 API 到排程任務的所有內容。
+- **Worker**: 輪詢新任務、從池中分配沙箱（Sandbox）、在沙箱內使用引擎（Engine）執行流程，並將結果傳回 App。
+- **Sandbox**: 隔離的執行環境，管理程序生命週期、資源限制，並透過 WebSocket 與引擎通訊。
+- **Engine**: 解析流程 JSON 並執行的 TypeScript 代碼。它被編譯成單個 JS 文件並在沙箱內運行。
+- **UI**: 使用 React 編寫的前端。
+
+**第三方服務**:
+- **Postgres**: Activepieces 的主要資料庫。
+- **Redis**: 用於驅動使用 [BullMQ](https://docs.bullmq.io/) 的隊列（Queue）。
+
+## 可靠性與可擴展性
+
+<Tip>
+Postgres 和 Redis 的可用性超出了本文件的範圍，因為許多雲端服務供應商已經實施了確保其可用性的最佳實踐。
+</Tip>
+
+- **Webhooks**:
+  所有 Webhooks 都會發送到 Activepieces App，App 會進行基本驗證並將其加入隊列。在發生流量突增時，Webhooks 會被加入隊列中。
+
+- **輪詢觸發器 (Polling Trigger)**:
+  所有循環任務都會加入 Redis。如果發生故障，漏掉的任務將再次執行。
+
+- **流程執行 (Flow Execution)**:
+  Worker 從隊列中輪詢任務。在發生流量突增時，流程執行仍會運作，但可能會根據突增的大小而有所延遲。
+
+要擴展 Activepieces，通常需要增加 Worker、App 或 Postgres 資料庫的副本（Replicas）。小型 Redis 實例通常就足夠了，因為它每秒可以處理數千個任務，很少成為瓶頸。
+
+## 程式庫結構
+
+
+該程式庫使用 Turbo 建構為單一程式庫 (monorepo)，並以 TypeScript 為主要語言。它分為多個套件（Packages）：
+
+```
+.
+├── packages
+│   ├── web
+│   ├── server
+│   │   ├── api
+│   │   ├── worker
+│   │   ├── engine
+│   │   ├── sandbox
+│   │   └── common
+│   ├── ee
+│   ├── pieces
+│   └── shared
+```
+
+- `web`: 此套件包含使用者介面，使用 React 框架實現。
+- `api`: 此套件包含使用 TypeScript 和 Fastify 框架編寫的核心應用程式。
+- `worker`: 此套件包含接收流程任務並使用引擎執行的邏輯。
+- `server-sandbox`: 此套件包含沙箱執行環境，包括程序隔離、池管理以及 Worker 與引擎之間的 WebSocket 通訊。
+- `common`: 此套件包含 Worker 和 App 之間的共享邏輯。
+- `engine`: 此套件包含沙箱內流程執行的邏輯。位於 `server/engine` 下。
+- `pieces`: 此套件包含第三方應用程式的觸發器（Triggers）和動作（Actions）實現。
+- `shared`: 此套件包含其他套件使用的共享資料模型和輔助函數（Helper functions）。
+- `ee`: 此套件包含僅在付費版本中提供的功能。

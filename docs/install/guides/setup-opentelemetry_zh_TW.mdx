@@ -1,0 +1,19 @@
+---
+title: "如何設定 OpenTelemetry"
+description: "配置 OpenTelemetry 以實現可觀測性與追蹤"
+icon: "chart-line"
+---
+
+Activepieces 支援標準 OpenTelemetry 環境變數與供應商特定的配置，用於可觀測性（observability）與追蹤（tracing）。
+
+## 環境變數
+
+| 變數 | 描述 | 預設值 | 範例 |
+|----------|-------------|---------------|---------|
+| `AP_OTEL_ENABLED` | 啟用 OpenTelemetry 追蹤 | `false` | `true` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP 匯出器端點 URL | 無 | `https://your-collector:4317/v1/traces` |
+| `OTEL_EXPORTER_OTLP_HEADERS` | OTLP 匯出器標頭（以逗號分隔的 key=value 鍵值對） | 無 | `Authorization=Bearer token` |
+
+<Note>
+必須同時設定 `AP_OTEL_ENABLED` 與 `OTEL_EXPORTER_OTLP_ENDPOINT` 才能啟用 OpenTelemetry。
+</Note>

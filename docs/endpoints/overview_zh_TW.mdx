@@ -1,0 +1,37 @@
+---
+title: "總覽"
+icon: "webhook"
+---
+
+<Tip>
+API keys 目前是在平台儀表板 (Platform Dashboard) 下產生的，用以管理多個專案，這僅適用於平台版 (Platform) 和企業版 (Enterprise)。
+請聯繫銷售團隊 @docs/resources/screenshots/cloud.activepieces.com_projects_er7zUIumSRjbOuqubZiye_flows_limit=10(laptop) (1).png:Zone.Identifier 以獲取更多資訊。 
+</Tip>
+
+### 身份驗證 (Authentication)：
+
+API 使用 "API keys" 來驗證請求。您可以在平台儀表板 (Platform Dashboard) 中查看並管理您的 API keys。
+
+建立 API key 後，您可以將其作為 Bearer token 放入 header 中。
+
+範例：
+`Authorization: Bearer {API_KEY}`
+
+### 分頁 (Pagination)
+
+所有端點都使用 seek 分頁。若要對結果進行分頁，您可以提供 `limit` 和 `cursor` 作為查詢參數 (query parameters)。
+
+API 回應將具有以下結構：
+```json
+{
+    "data": [],
+    "next": "string",
+    "previous": "string"
+}
+```
+
+- **`data`**：包含請求的結果或數據。
+
+- **`next`**：提供下一組結果的起始 cursor（如果可用）。
+
+- **`previous`**：提供前一組結果的起始 cursor（如果適用）。
