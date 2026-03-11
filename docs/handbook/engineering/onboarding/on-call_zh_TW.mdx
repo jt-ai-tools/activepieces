@@ -1,0 +1,64 @@
+---
+title: '值班 (On-Call)'
+icon: 'phone'
+---
+
+## 先決條件：
+- [設定 Incident IO](../playbooks/setup-incident-io_zh_TW)
+
+## 為什麼要值班？
+
+我們需要確保在同一時間**正好有一位**負責人作為使用者的主要聯絡窗口，並擔任問題的**第一回應者**。這也是一個了解產品和使用者，並從中獲得樂趣的好方法。
+
+<Tip>
+  值班時可以聽聽 [Queen - Under Pressure](https://www.youtube.com/watch?v=a01QQZyl-_I)，既有趣又充滿動力。
+</Tip>
+
+<Tip>
+  如果你在輪班期間感到倦怠 (burn out)，請隨時聯絡團隊，我們將協助你調整輪班或接手職責。
+</Tip>
+
+## 值班表 (On-Call Schedule)
+
+值班輪值透過 Incident.io 進行管理，每位工程師負責為期一週的輪班。你可以：
+- 在 [Incident.io On-Call Schedule](https://app.incident.io/activepieces/on-call/schedules) 查看目前的排班和即將到來的輪班。
+- 使用[此連結](https://calendar.google.com/calendar/r?cid=webcal://app.incident.io/api/schedule_feeds/cc024d13704b618cbec9e2c4b2415666dfc8b1efdc190659ebc5886dfe2a1e4b)將值班表加入你的 Google 日曆。
+
+<Warning>
+如果你在分配的輪班期間無法提供服務，請務必更新 Incident.io 中的值班表。這可確保警報路由到正確的人，並維持我們的事件回應覆蓋範圍。
+
+修改排班步驟：
+1. 前往 [Incident.io On-Call Schedule](https://app.incident.io/activepieces/on-call/schedules)
+2. 找到你的輪班時段
+3. 點擊 "Override schedule"（覆蓋排班）標記你無法值班的時間
+4. 與團隊協調以尋找該時段的代班人員
+</Warning>
+
+
+## 值班的職責
+
+值班的主要目標是分類 (triage) 問題並協助使用者。這並不是要修復問題或編寫缺失的功能。盡可能地「委派」是關鍵。
+
+你負責以下事項：
+
+* 盡快回應 Slack 訊息，請參閱[客戶支援指南](/handbook/customer-support/overview_zh_TW)。
+
+* 檢查 [community.activepieces.com](https://community.activepieces.com) 以了解任何新問題或現有問題。
+
+* 監控你的 Incident.io 通知，並在收到傳呼 (paged) 時迅速回應。
+
+<Tip>
+  **友善提示 #1**：如果你不確定該怎麼做，請務必向上呈報給團隊。
+</Tip>
+
+## 如何收到通知 (Paged)？
+
+監控並回應來自以下管道的事件：
+
+#### Slack 火焰表情符號 (🔥)
+當客戶在 Slack 中回報問題且有人反應 🔥 時，系統會自動向你發送通知，並建立專屬的事件頻道。
+  
+#### 自動化警報
+注意以下來源的通知：
+  - Digital Ocean 關於 CPU、Memory 或 Disk 故障的通知 
+  - Checkly 關於 e2e 測試失敗或網站停機的通知

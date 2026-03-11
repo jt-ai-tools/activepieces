@@ -1,0 +1,98 @@
+---
+title: "資料庫遷移"
+description: "在 Activepieces 中建立資料庫遷移的指南"
+icon: "database"
+---
+
+Activepieces 在 Node.js 中使用 TypeORM 作為資料庫驅動程式。我們在平台的不同版本中支援兩種類型的資料庫。
+
+資料庫遷移檔案包含了遷移執行（up 方法）與回滾執行（down 方法）的內容。
+
+<Tip>
+在此閱讀更多關於 TypeORM 遷移的資訊：
+https://orkhan.gitbook.io/typeorm/docs/migrations
+</Tip>
+
+## 資料庫支援
+
+- PostgreSQL
+- PGlite
+
+<Tip>
+**為什麼我們需要 PGlite？**
+我們支援 PGlite 以簡化開發和自我託管。它對以下情況特別有幫助：
+
+- 想要快速設定的 Piece 開發者
+- 使用管理 Docker 映像檔但不支持 Docker Compose 平台的自我託管使用者。
+
+PGlite 是一個嵌入式執行的輕量級 PostgreSQL 實作，因此遷移與 PostgreSQL 相容。
+</Tip>
+
+## 版本
+
+- **企業版與雲端版 (Enterprise & Cloud Edition)**（必須使用 PostgreSQL）
+- **社群版 (Community Edition)**（可以使用 PostgreSQL 或 PGlite）
+
+### 如何產生
+
+<Steps>
+  <Step title="設定 AP_DB_TYPE">
+    在先執行過 Activepieces 以確保具有最新狀態後，將 `AP_DB_TYPE` 環境變數設定為 `POSTGRES`。
+  </Step>
+
+  <Step title="產生遷移">
+    執行遷移產生指令：
+    ```bash
+    npx turbo run db-migration --filter=api -- --name=<MIGRATION_NAME>
+    ```
+    將 `<MIGRATION_NAME>` 替換為該遷移的描述性名稱。
+  </Step>
+
+  <Step title="檢查遷移檔案">
+    該指令將在 `packages/server/api/src/app/database/migration/postgres/` 中產生一個新的遷移檔案。
+    
+    檢查產生的檔案並將其註冊到 `postgres-connection.ts` 中。
+  </Step>
+</Steps>
+
+## PGlite 相容性
+
+雖然 PGlite 大部分與 PostgreSQL 相容，但仍不支援某些功能。當使用 `CONCURRENTLY` 進行索引操作等功能時，你需要針對 PGlite 進行條件式處理：
+
+```typescript
+import { AppSystemProp } from '@activepieces/server-common'
+import { MigrationInterface, QueryRunner } from 'typeorm'
+import { DatabaseType, system } from '../../../helper/system/system'
+
+const databaseType = system.get(AppSystemProp.DB_TYPE)
+const isPGlite = databaseType === DatabaseType.PGLITE
+
+export class AddMyIndex1234567890 implements MigrationInterface {
+    name = 'AddMyIndex1234567890'
+    transaction = false // Required when using CONCURRENTLY
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        if (isPGlite) {
+            await queryRunner.query(`CREATE INDEX "idx_name" ON "table" ("column")`)
+        } else {
+            await queryRunner.query(`CREATE INDEX CONCURRENTLY "idx_name" ON "table" ("column")`)
+        }
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        if (isPGlite) {
+            await queryRunner.query(`DROP INDEX "idx_name"`)
+        } else {
+            await queryRunner.query(`DROP INDEX CONCURRENTLY "idx_name"`)
+        }
+    }
+}
+```
+
+<Warning>
+`CREATE INDEX CONCURRENTLY` 與 `DROP INDEX CONCURRENTLY` 在 PGlite 中不被支援，因為 PGlite 是單一使用者/連線的資料庫。在使用這些操作時，請務必加入 PGlite 的檢查。
+</Warning>
+
+<Tip>
+務必透過執行 up 和 down 來測試你的遷移，以確保它們如預期運作。
+</Tip>

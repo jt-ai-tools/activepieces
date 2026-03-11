@@ -5,7 +5,7 @@ const util = require('util');
 
 const execAsync = util.promisify(exec);
 const PROGRESS_FILE = path.join(__dirname, '..', 'PROGRESS.md');
-const CONCURRENCY_LIMIT = 5;
+const CONCURRENCY_LIMIT = 1;
 
 const PROMPT = `You are an expert technical translator. Translate the following markdown file to Traditional Chinese (Taiwan).
 Rules:
@@ -27,11 +27,19 @@ async function translateFile(filePath) {
     const tempInFile = filePath + '.temp_in.txt';
     fs.writeFileSync(tempInFile, content);
 
-    const cmd = `cat "${tempInFile}" | gemini -p "${PROMPT.replace(/"/g, '\\"')}" --output-format text 2>/dev/null`;
+    const geminiPath = '/Users/JamesTzeng/.nvm/versions/node/v22.21.1/bin/gemini';
+    const cmd = `cat "${tempInFile}" | ${geminiPath} -p "${PROMPT.replace(/"/g, '\\"')}" --output-format text --yolo 2>/dev/null`;
     
     try {
         console.log(`[+] Translating: ${filePath}`);
-        const { stdout } = await execAsync(cmd, { maxBuffer: 1024 * 1024 * 10 }); // 10MB buffer
+        // Increased timeout to 5 minutes per file
+        const { stdout, stderr } = await execAsync(cmd, { maxBuffer: 1024 * 1024 * 50, timeout: 300000 }); 
+        
+        if (!stdout || stdout.trim().length === 0) {
+            console.error(`[X] Empty output for ${filePath}`);
+            if (fs.existsSync(tempInFile)) fs.unlinkSync(tempInFile);
+            return { success: false, error: 'Empty output' };
+        }
         
         let translated = stdout.trim();
         // Remove markdown wrapper if the model accidentally added it
@@ -67,8 +75,14 @@ async function updateProgress(originalPath, outPath) {
 async function commitAndPush() {
     console.log('[*] Committing progress...');
     try {
-        await execAsync('git add . && git commit -m "docs: auto-translate batch of markdown files to Traditional Chinese" && git push');
-        console.log('[✓] Pushed to remote.');
+        // Only add if there are changes
+        const { stdout: status } = await execAsync('git status --porcelain');
+        if (status.trim().length > 0) {
+            await execAsync('git add . && git commit -m "docs: auto-translate batch of markdown files to Traditional Chinese" && git push');
+            console.log('[✓] Pushed to remote.');
+        } else {
+            console.log('[~] No changes to commit.');
+        }
     } catch (err) {
         console.error('[!] Commit/push failed:', err.message);
     }
@@ -83,7 +97,8 @@ async function main() {
     const lines = fs.readFileSync(PROGRESS_FILE, 'utf-8').split('\n');
     const pendingFiles = lines
         .filter(line => line.includes('| Pending |'))
-        .map(line => line.split('|')[1].trim());
+        .map(line => line.split('|')[1].trim())
+        .slice(0, 2);
 
     console.log(`Found ${pendingFiles.length} files to translate.`);
 
@@ -92,16 +107,20 @@ async function main() {
         console.log(`\n--- Processing chunk ${i / CONCURRENCY_LIMIT + 1} (${chunk.length} files) ---`);
         
         const promises = chunk.map(async (filePath) => {
-            const res = await translateFile(filePath);
-            if (res.success) {
-                await updateProgress(filePath, res.outPath);
+            try {
+                const res = await translateFile(filePath);
+                if (res.success) {
+                    await updateProgress(filePath, res.outPath);
+                }
+            } catch (e) {
+                console.error(`[X] Task failed for ${filePath}:`, e.message);
             }
         });
 
         await Promise.all(promises);
 
-        // Commit every 20 files
-        if ((i + chunk.length) % 20 === 0 || (i + chunk.length) === pendingFiles.length) {
+        // Commit every 10 files (reduced from 20)
+        if ((i + chunk.length) % 10 === 0 || (i + chunk.length) === pendingFiles.length) {
             await commitAndPush();
         }
     }
@@ -109,4 +128,6 @@ async function main() {
     console.log('\n🎉 All translations completed!');
 }
 
-main().catch(console.error);
+main().catch(err => {
+    console.error('Fatal error in main:', err);
+});

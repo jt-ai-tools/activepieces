@@ -211,10 +211,10 @@ Total files:      873
 | ./docs/handbook/engineering/playbooks/e2e-tests.mdx | Completed | [e2e-tests_zh_TW.mdx](./docs/handbook/engineering/playbooks/e2e-tests_zh_TW.mdx) |
 | ./docs/handbook/engineering/playbooks/infrastructure.mdx | Completed | [infrastructure_zh_TW.mdx](./docs/handbook/engineering/playbooks/infrastructure_zh_TW.mdx) |
 | ./docs/handbook/engineering/playbooks/releases.mdx | Completed | [releases_zh_TW.mdx](./docs/handbook/engineering/playbooks/releases_zh_TW.mdx) |
-| ./docs/handbook/engineering/playbooks/database-migration.mdx | Pending | |
+| ./docs/handbook/engineering/playbooks/database-migration.mdx | Completed | [database-migration_zh_TW.mdx](./docs/handbook/engineering/playbooks/database-migration_zh_TW.mdx) |
 | ./docs/handbook/engineering/playbooks/run-ee.mdx | Completed | [run-ee_zh_TW.mdx](./docs/handbook/engineering/playbooks/run-ee_zh_TW.mdx) |
 | ./docs/handbook/engineering/onboarding/how-we-work.mdx | Completed | [how-we-work_zh_TW.mdx](./docs/handbook/engineering/onboarding/how-we-work_zh_TW.mdx) |
-| ./docs/handbook/engineering/onboarding/on-call.mdx | Pending | |
+| ./docs/handbook/engineering/onboarding/on-call.mdx | Completed | [on-call_zh_TW.mdx](./docs/handbook/engineering/onboarding/on-call_zh_TW.mdx) |
 | ./docs/handbook/engineering/onboarding/onboarding-check-list.mdx | Pending | |
 | ./docs/handbook/engineering/onboarding/release-cycle.mdx | Pending | |
 | ./docs/handbook/engineering/onboarding/stack.mdx | Pending | |
