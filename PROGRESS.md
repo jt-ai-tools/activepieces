@@ -289,21 +289,21 @@ Total files:      873
 | ./packages/pieces/community/moxie-crm/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/moxie-crm/README_zh_TW.md) |
 | ./packages/pieces/community/contentful/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/contentful/README_zh_TW.md) |
 | ./packages/pieces/community/twin-labs/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/twin-labs/README_zh_TW.md) |
-| ./packages/pieces/community/microsoft-power-bi/README.md | Pending | |
-| ./packages/pieces/community/fliqr-ai/README.md | Pending | |
-| ./packages/pieces/community/dust/README.md | Pending | |
-| ./packages/pieces/community/leexi/README.md | Pending | |
-| ./packages/pieces/community/openmic-ai/README.md | Pending | |
-| ./packages/pieces/community/oncehub/README.md | Pending | |
-| ./packages/pieces/community/google-docs/README.md | Pending | |
-| ./packages/pieces/community/webflow/README.md | Pending | |
-| ./packages/pieces/community/omnihr/README.md | Pending | |
-| ./packages/pieces/community/twitter/README.md | Pending | |
-| ./packages/pieces/community/baserow/README.md | Pending | |
-| ./packages/pieces/community/fountain/README.md | Pending | |
-| ./packages/pieces/community/mooninvoice/README.md | Pending | |
-| ./packages/pieces/community/monday/README.md | Pending | |
-| ./packages/pieces/community/visible/README.md | Pending | |
+| ./packages/pieces/community/microsoft-power-bi/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/microsoft-power-bi/README_zh_TW.md) |
+| ./packages/pieces/community/fliqr-ai/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/fliqr-ai/README_zh_TW.md) |
+| ./packages/pieces/community/dust/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/dust/README_zh_TW.md) |
+| ./packages/pieces/community/leexi/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/leexi/README_zh_TW.md) |
+| ./packages/pieces/community/openmic-ai/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/openmic-ai/README_zh_TW.md) |
+| ./packages/pieces/community/oncehub/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/oncehub/README_zh_TW.md) |
+| ./packages/pieces/community/google-docs/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/google-docs/README_zh_TW.md) |
+| ./packages/pieces/community/webflow/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/webflow/README_zh_TW.md) |
+| ./packages/pieces/community/omnihr/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/omnihr/README_zh_TW.md) |
+| ./packages/pieces/community/twitter/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/twitter/README_zh_TW.md) |
+| ./packages/pieces/community/baserow/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/baserow/README_zh_TW.md) |
+| ./packages/pieces/community/fountain/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/fountain/README_zh_TW.md) |
+| ./packages/pieces/community/mooninvoice/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/mooninvoice/README_zh_TW.md) |
+| ./packages/pieces/community/monday/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/monday/README_zh_TW.md) |
+| ./packages/pieces/community/visible/README.md | Completed | [README_zh_TW.md](./packages/pieces/community/visible/README_zh_TW.md) |
 | ./packages/pieces/community/esignatures/README.md | Pending | |
 | ./packages/pieces/community/lokalise/README.md | Pending | |
 | ./packages/pieces/community/magicslides/README.md | Pending | |
