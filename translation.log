@@ -448,3 +448,37 @@ Found 856 files to translate.
 [✓] Completed: ./docs/handbook/product/interface-design_zh_TW.mdx
 [✓] Completed: ./docs/handbook/hiring/hiring_zh_TW.mdx
 [*] Committing progress...
+[✓] Pushed to remote.
+
+--- Processing chunk 37 (5 files) ---
+[+] Translating: ./docs/handbook/hiring/levels.mdx
+[+] Translating: ./docs/handbook/hiring/team.mdx
+[+] Translating: ./docs/handbook/hiring/compensation.mdx
+[+] Translating: ./docs/handbook/engineering/overview.mdx
+[+] Translating: ./docs/handbook/engineering/playbooks/product-announcement.mdx
+[✓] Completed: ./docs/handbook/engineering/overview_zh_TW.mdx
+[✓] Completed: ./docs/handbook/hiring/team_zh_TW.mdx
+[✓] Completed: ./docs/handbook/hiring/levels_zh_TW.mdx
+[✓] Completed: ./docs/handbook/engineering/playbooks/product-announcement_zh_TW.mdx
+[✓] Completed: ./docs/handbook/hiring/compensation_zh_TW.mdx
+
+--- Processing chunk 38 (5 files) ---
+[+] Translating: ./docs/handbook/engineering/playbooks/setup-incident-io.mdx
+[+] Translating: ./docs/handbook/engineering/playbooks/frontend-best-practices.mdx
+[+] Translating: ./docs/handbook/engineering/playbooks/e2e-tests.mdx
+[+] Translating: ./docs/handbook/engineering/playbooks/infrastructure.mdx
+[+] Translating: ./docs/handbook/engineering/playbooks/releases.mdx
+[✓] Completed: ./docs/handbook/engineering/playbooks/setup-incident-io_zh_TW.mdx
+[✓] Completed: ./docs/handbook/engineering/playbooks/infrastructure_zh_TW.mdx
+[✓] Completed: ./docs/handbook/engineering/playbooks/releases_zh_TW.mdx
+[✓] Completed: ./docs/handbook/engineering/playbooks/frontend-best-practices_zh_TW.mdx
+[✓] Completed: ./docs/handbook/engineering/playbooks/e2e-tests_zh_TW.mdx
+
+--- Processing chunk 39 (5 files) ---
+[+] Translating: ./docs/handbook/engineering/playbooks/database-migration.mdx
+[+] Translating: ./docs/handbook/engineering/playbooks/run-ee.mdx
+[+] Translating: ./docs/handbook/engineering/onboarding/how-we-work.mdx
+[+] Translating: ./docs/handbook/engineering/onboarding/on-call.mdx
+[+] Translating: ./docs/handbook/engineering/onboarding/onboarding-check-list.mdx
+[✓] Completed: ./docs/handbook/engineering/playbooks/run-ee_zh_TW.mdx
+[✓] Completed: ./docs/handbook/engineering/onboarding/how-we-work_zh_TW.mdx

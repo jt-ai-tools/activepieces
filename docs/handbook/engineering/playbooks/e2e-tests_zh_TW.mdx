@@ -1,0 +1,440 @@
+---
+title: "E2E 測試"
+icon: 'clipboard-list'
+---
+
+## 概覽
+
+我們的 e2e 測試套件使用 Playwright 來確保應用程式中的關鍵使用者工作流程能正常運作。測試採用 Page Object Model 模式組織，以保持測試程式碼的乾淨、可重用且易於維護。本指南概述了編寫 e2e 測試的結構、慣例和最佳實踐。
+
+## 專案結構
+
+```
+packages/tests-e2e/
+├── scenarios/           # 測試檔案 (*.spec.ts)
+├── pages/              # Page Object Models
+│   ├── base.ts         # 基礎頁面類別
+│   ├── index.ts        # 頁面導出
+│   ├── authentication.page.ts
+│   ├── builder.page.ts
+│   ├── flows.page.ts
+│   └── agent.page.ts
+├── helper/             # 工具與配置
+│   └── config.ts       # 環境配置
+├── playwright.config.ts # Playwright 配置
+└── project.json        # Nx 專案配置
+```
+
+本指南提供了編寫遵循程式碼庫既定模式的 e2e 測試全面指南。內容涵蓋 Page Object Model 結構、測試組織、配置管理以及維護可靠 e2e 測試的最佳實踐。
+
+## Page Object Model 模式
+
+### 基礎頁面結構
+
+所有頁面物件都繼承 `BasePage` 類別，並遵循一致的結構：
+
+```typescript
+export class YourPage extends BasePage {
+  url = `${configUtils.getConfig().instanceUrl}/your-path`;
+
+  getters = {
+    // 回傳頁面元素的定位器 (locator) 函式
+    elementName: (page: Page) => page.getByRole('button', { name: 'Button Text' }),
+  };
+
+  actions = {
+    // 執行使用者互動的動作函式
+    performAction: async (page: Page, params: { param1: string }) => {
+      // 實作內容
+    },
+  };
+}
+```
+
+### Page Object 指南
+
+#### ❌ 不要這樣做
+```typescript
+// 在測試檔案中直接選取元素
+test('should create flow', async ({ page }) => {
+  await page.getByRole('button', { name: 'Create Flow' }).click();
+  await page.getByText('From scratch').click();
+  // 測試邏輯與元素選取混雜在一起
+});
+```
+
+#### ✅ 這樣做
+```typescript
+// flows.page.ts
+export class FlowsPage extends BasePage {
+  getters = {
+    createFlowButton: (page: Page) => page.getByRole('button', { name: 'Create Flow' }),
+    fromScratchButton: (page: Page) => page.getByText('From scratch'),
+  };
+
+  actions = {
+    newFlowFromScratch: async (page: Page) => {
+      await this.getters.createFlowButton(page).click();
+      await this.getters.fromScratchButton(page).click();
+    },
+  };
+}
+
+// integration.spec.ts
+test('should create flow', async ({ page }) => {
+  await flowsPage.actions.newFlowFromScratch(page);
+  // 乾淨的測試邏輯，專注於行為
+});
+```
+
+## 測試組織
+
+### 測試檔案結構
+
+測試檔案應按功能或工作流程組織：
+
+```typescript
+import { test, expect } from '@playwright/test';
+import { 
+  AuthenticationPage, 
+  FlowsPage, 
+  BuilderPage 
+} from '../pages';
+import { configUtils } from '../helper/config';
+
+test.describe('Feature Name', () => {
+  let authenticationPage: AuthenticationPage;
+  let flowsPage: FlowsPage;
+  let builderPage: BuilderPage;
+
+  test.beforeEach(async () => {
+    // 初始化頁面物件
+    authenticationPage = new AuthenticationPage();
+    flowsPage = new FlowsPage();
+    builderPage = new BuilderPage();
+  });
+
+  test('should perform specific workflow', async ({ page }) => {
+    // 測試實作
+  });
+});
+```
+
+### 測試命名慣例
+
+- 使用描述性的測試名稱，解釋預期行為
+- 遵循模式：`should [action] [expected result]` (應 [執行動作] [得到預期結果])
+- 在相關時包含上下文
+
+```typescript
+// 良好的測試名稱
+test('should send Slack message via flow', async ({ page }) => {});
+test('should handle webhook with dynamic parameters', async ({ page }) => {});
+test('should authenticate user with valid credentials', async ({ page }) => {});
+
+// 避免模糊的名稱
+test('should work', async ({ page }) => {});
+test('test flow', async ({ page }) => {});
+```
+
+## 配置管理
+
+### 環境配置
+
+使用集中式的 config 工具來處理不同環境：
+
+```typescript
+// helper/config.ts
+export const configUtils = {
+  getConfig: (): Config => {
+    return process.env.E2E_INSTANCE_URL ? prodConfig : localConfig;
+  },
+};
+
+// 在頁面中使用
+export class AuthenticationPage extends BasePage {
+  url = `${configUtils.getConfig().instanceUrl}/sign-in`;
+}
+```
+
+### 環境變數
+
+CI/CD 所需的環境變數：
+- `E2E_INSTANCE_URL`: 目標應用程式 URL
+- `E2E_EMAIL`: 測試使用者電子郵件
+- `E2E_PASSWORD`: 測試使用者密碼
+
+## 編寫有效的測試
+
+### 測試結構
+
+遵循此模式編寫全面的測試：
+
+```typescript
+test('should complete user workflow', async ({ page }) => {
+  // 1. 設定測試資料與逾時
+  test.setTimeout(120000);
+  const config = configUtils.getConfig();
+
+  // 2. 身分驗證 (如果需要)
+  await authenticationPage.actions.signIn(page, {
+    email: config.email,
+    password: config.password
+  });
+
+  // 3. 導覽至相關頁面
+  await flowsPage.actions.navigate(page);
+
+  // 4. 清理現有資料 (如果需要)
+  await flowsPage.actions.cleanupExistingFlows(page);
+
+  // 5. 執行主要工作流程
+  await flowsPage.actions.newFlowFromScratch(page);
+  await builderPage.actions.waitFor(page);
+  await builderPage.actions.selectInitialTrigger(page, {
+    piece: 'Schedule',
+    trigger: 'Every Hour'
+  });
+
+  // 6. 加入斷言與驗證
+  await builderPage.actions.testFlowAndWaitForSuccess(page);
+  
+  // 7. 清理 (如果需要)
+  await builderPage.actions.exitRun(page);
+});
+```
+
+### 等待策略
+
+使用適當的等待策略，而非固定的等待時間：
+
+```typescript
+// 良好 - 等待特定條件
+await page.waitForURL('**/flows/**');
+await page.waitForSelector('.react-flow__nodes', { state: 'visible' });
+await page.waitForFunction(() => {
+  const element = document.querySelector('.target-element');
+  return element && element.textContent?.includes('Expected Text');
+}, { timeout: 10000 });
+
+// 避免 - 固定等待時間
+await page.waitForTimeout(5000);
+```
+
+### 錯誤處理
+
+實作適當的錯誤處理與清理：
+
+```typescript
+test('should handle errors gracefully', async ({ page }) => {
+  try {
+    await flowsPage.actions.navigate(page);
+    // 測試邏輯
+  } catch (error) {
+    // 記錄錯誤詳情
+    console.error('Test failed:', error);
+    // 擷取螢幕截圖以便除錯
+    await page.screenshot({ path: 'error-screenshot.png' });
+    throw error;
+  } finally {
+    // 清理資源
+    await flowsPage.actions.cleanupExistingFlows(page);
+  }
+});
+```
+
+## 最佳實踐
+
+### 元素選取
+
+優先使用語義化定位器，而非 CSS 選擇器：
+
+```typescript
+// 良好 - 語義化定位器
+getters = {
+  createButton: (page: Page) => page.getByRole('button', { name: 'Create Flow' }),
+  emailField: (page: Page) => page.getByPlaceholder('email@example.com'),
+  searchInput: (page: Page) => page.getByRole('textbox', { name: 'Search' }),
+};
+
+// 避免 - 脆弱的 CSS 選擇器
+getters = {
+  createButton: (page: Page) => page.locator('button.btn-primary'),
+  emailField: (page: Page) => page.locator('input[type="email"]'),
+};
+```
+
+### 測試資料管理
+
+使用動態測試資料以避免衝突：
+
+```typescript
+// 良好 - 動態測試資料
+const runVersion = Math.floor(Math.random() * 100000);
+const uniqueFlowName = `Test Flow ${Date.now()}`;
+
+// 避免 - 靜態測試資料
+const flowName = 'Test Flow';
+```
+
+### 斷言
+
+使用能驗證業務邏輯的有意義斷言：
+
+```typescript
+// 良好 - 業務邏輯斷言
+await builderPage.actions.testFlowAndWaitForSuccess(page);
+const response = await apiRequest.get(urlWithParams);
+const body = await response.json();
+expect(body.targetRunVersion).toBe(runVersion.toString());
+
+// 避免 - 實作細節斷言
+expect(await page.locator('.success-message').isVisible()).toBe(true);
+```
+
+## 執行測試
+
+### 本地開發與使用 Checkly 除錯
+
+我們使用 [Checkly](https://checklyhq.com/) 來執行和除錯 E2E 測試。Checkly 為每次測試執行提供錄影，使除錯失敗變得容易。
+
+```bash
+# 使用 Checkly 執行測試 (包含錄影報告)
+npx turbo run test-checkly --filter=tests-e2e
+```
+
+- 測試結果 (包含錄影) 可在 Checkly 儀表板中查看。
+- 您可以透過檢視 Checkly 提供的錄影和日誌來除錯失敗的測試。
+
+### 部署測試
+
+手動部署很少需要，但您可以使用以下命令觸發：
+
+```bash
+npx turbo run deploy-checkly --filter=tests-e2e
+```
+
+<Info>
+在 CI 管道中成功執行測試後，測試會自動部署到 Checkly。
+</Info>
+
+## 除錯測試
+
+### 1. Checkly 錄影與報告
+
+使用 Checkly 執行測試時，每次測試執行都會被記錄並生成詳細報告。這是除錯失敗最快的方法：
+
+- **錄影**：觀看任何測試執行的確切瀏覽器階段。
+- **逐步日誌**：查看每個測試步驟的詳細日誌和螢幕截圖。
+- **存取**：打開 Checkly 儀表板並導覽至相關測試執行以查看錄影和報告。
+
+### 2. VSCode 擴充功能
+
+為了獲得最佳的本地除錯體驗，請安裝 **Playwright Test for VSCode** 擴充功能：
+
+1. 打開 VSCode 擴充功能 (Ctrl+Shift+X)
+2. 搜尋 "Playwright Test for VSCode"
+3. 安裝由 Microsoft 提供的擴充功能
+
+**優點：**
+- 直接在 VSCode 中使用斷點除錯測試
+- 逐步執行測試
+- 在測試總管 (Test Explorer) 中查看測試結果和追蹤 (traces)
+- Playwright API 的自動補全
+- 整合的測試執行器
+
+### 3. 除錯提示
+
+1. **使用 Checkly 儀表板**：檢視失敗測試的錄影和日誌。
+2. **使用 VSCode 擴充功能**：直接在測試檔案中設置斷點。
+3. **逐步執行**：在除錯模式下使用 F10 (跳過) 和 F11 (進入)。
+4. **檢查元素**：使用 `await page.pause()` 暫停執行並檢查頁面。
+5. **控制台日誌**：加入 `console.log()` 陳述式來追蹤執行流程。
+6. **手動螢幕截圖**：在關鍵點擷取螢幕截圖以進行視覺化除錯。
+
+```typescript
+test('should debug workflow', async ({ page }) => {
+  await page.goto('/flows');
+  
+  // 暫停執行以進行手動檢查
+  await page.pause();
+  
+  // 擷取螢幕截圖以便除錯
+  await page.screenshot({ path: 'debug-screenshot.png' });
+  
+  // 繼續測試邏輯
+  await flowsPage.actions.newFlowFromScratch(page);
+});
+```
+
+## 常見模式
+
+### 身分驗證流程
+
+```typescript
+test('should authenticate user', async ({ page }) => {
+  const config = configUtils.getConfig();
+  
+  await authenticationPage.actions.signIn(page, {
+    email: config.email,
+    password: config.password
+  });
+
+  await agentPage.actions.waitFor(page);
+});
+```
+
+### 流程建立與測試
+
+```typescript
+test('should create and test flow', async ({ page }) => {
+  await flowsPage.actions.navigate(page);
+  await flowsPage.actions.cleanupExistingFlows(page);
+  await flowsPage.actions.newFlowFromScratch(page);
+  
+  await builderPage.actions.waitFor(page);
+  await builderPage.actions.selectInitialTrigger(page, {
+    piece: 'Schedule',
+    trigger: 'Every Hour'
+  });
+  
+  await builderPage.actions.testFlowAndWaitForSuccess(page);
+});
+```
+
+### API 整合測試
+
+```typescript
+test('should handle webhook integration', async ({ page }) => {
+  const apiRequest = await page.context().request;
+  const response = await apiRequest.get(urlWithParams);
+  const body = await response.json();
+  
+  expect(body.targetRunVersion).toBe(expectedValue);
+});
+```
+
+## 維護指南
+
+### 更新選擇器
+
+當 UI 發生變更時：
+1. 更新 Page Object 的 getters 以使用新的選擇器
+2. 在本地測試變更
+3. 如有必要，更新相關測試
+4. 在合併前確保所有測試皆通過
+
+### 加入新測試
+
+1. 建立或更新相關的 Page Object
+2. 在適當的 spec 檔案中編寫測試場景
+3. 遵循既定的模式和慣例
+4. 加入適當的錯誤處理與清理
+5. 提交前在本地進行測試
+
+### 效能考量
+
+- 保持測試重點突出，避免不必要的步驟
+- 使用適當的逾時時間 (不要太短，也不要太長)
+- 清理測試資料以避免衝突
+- 在同一個 describe 區塊中對相關測試進行分組

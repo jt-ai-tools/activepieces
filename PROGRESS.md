@@ -201,19 +201,19 @@ Total files:      873
 | ./docs/handbook/team.mdx | Completed | [team_zh_TW.mdx](./docs/handbook/team_zh_TW.mdx) |
 | ./docs/handbook/people/time.mdx | Completed | [time_zh_TW.mdx](./docs/handbook/people/time_zh_TW.mdx) |
 | ./docs/handbook/hiring/hiring.mdx | Completed | [hiring_zh_TW.mdx](./docs/handbook/hiring/hiring_zh_TW.mdx) |
-| ./docs/handbook/hiring/levels.mdx | Pending | |
-| ./docs/handbook/hiring/team.mdx | Pending | |
-| ./docs/handbook/hiring/compensation.mdx | Pending | |
-| ./docs/handbook/engineering/overview.mdx | Pending | |
-| ./docs/handbook/engineering/playbooks/product-announcement.mdx | Pending | |
-| ./docs/handbook/engineering/playbooks/setup-incident-io.mdx | Pending | |
-| ./docs/handbook/engineering/playbooks/frontend-best-practices.mdx | Pending | |
-| ./docs/handbook/engineering/playbooks/e2e-tests.mdx | Pending | |
-| ./docs/handbook/engineering/playbooks/infrastructure.mdx | Pending | |
-| ./docs/handbook/engineering/playbooks/releases.mdx | Pending | |
+| ./docs/handbook/hiring/levels.mdx | Completed | [levels_zh_TW.mdx](./docs/handbook/hiring/levels_zh_TW.mdx) |
+| ./docs/handbook/hiring/team.mdx | Completed | [team_zh_TW.mdx](./docs/handbook/hiring/team_zh_TW.mdx) |
+| ./docs/handbook/hiring/compensation.mdx | Completed | [compensation_zh_TW.mdx](./docs/handbook/hiring/compensation_zh_TW.mdx) |
+| ./docs/handbook/engineering/overview.mdx | Completed | [overview_zh_TW.mdx](./docs/handbook/engineering/overview_zh_TW.mdx) |
+| ./docs/handbook/engineering/playbooks/product-announcement.mdx | Completed | [product-announcement_zh_TW.mdx](./docs/handbook/engineering/playbooks/product-announcement_zh_TW.mdx) |
+| ./docs/handbook/engineering/playbooks/setup-incident-io.mdx | Completed | [setup-incident-io_zh_TW.mdx](./docs/handbook/engineering/playbooks/setup-incident-io_zh_TW.mdx) |
+| ./docs/handbook/engineering/playbooks/frontend-best-practices.mdx | Completed | [frontend-best-practices_zh_TW.mdx](./docs/handbook/engineering/playbooks/frontend-best-practices_zh_TW.mdx) |
+| ./docs/handbook/engineering/playbooks/e2e-tests.mdx | Completed | [e2e-tests_zh_TW.mdx](./docs/handbook/engineering/playbooks/e2e-tests_zh_TW.mdx) |
+| ./docs/handbook/engineering/playbooks/infrastructure.mdx | Completed | [infrastructure_zh_TW.mdx](./docs/handbook/engineering/playbooks/infrastructure_zh_TW.mdx) |
+| ./docs/handbook/engineering/playbooks/releases.mdx | Completed | [releases_zh_TW.mdx](./docs/handbook/engineering/playbooks/releases_zh_TW.mdx) |
 | ./docs/handbook/engineering/playbooks/database-migration.mdx | Pending | |
-| ./docs/handbook/engineering/playbooks/run-ee.mdx | Pending | |
-| ./docs/handbook/engineering/onboarding/how-we-work.mdx | Pending | |
+| ./docs/handbook/engineering/playbooks/run-ee.mdx | Completed | [run-ee_zh_TW.mdx](./docs/handbook/engineering/playbooks/run-ee_zh_TW.mdx) |
+| ./docs/handbook/engineering/onboarding/how-we-work.mdx | Completed | [how-we-work_zh_TW.mdx](./docs/handbook/engineering/onboarding/how-we-work_zh_TW.mdx) |
 | ./docs/handbook/engineering/onboarding/on-call.mdx | Pending | |
 | ./docs/handbook/engineering/onboarding/onboarding-check-list.mdx | Pending | |
 | ./docs/handbook/engineering/onboarding/release-cycle.mdx | Pending | |

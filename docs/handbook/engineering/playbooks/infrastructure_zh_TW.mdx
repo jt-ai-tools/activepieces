@@ -1,0 +1,34 @@
+---
+title: "雲端基礎設施"
+icon: "server"
+---
+
+<Warning>
+  這些 playbook 是不公開的，請向您的團隊申請存取權限。
+</Warning>
+
+我們的基礎設施堆疊包含多個關鍵組件，用於有效監控、部署和管理我們的服務。
+
+## 託管服務提供商 (Hosting Providers)
+
+我們使用兩個主要的託管服務提供商：
+
+- **DigitalOcean**：託管我們的資料庫，包括 Redis 和 PostgreSQL。
+- **Hetzner**：提供運行我們服務的機器。
+
+## 環境 (Environments)
+
+| 環境 | 網域 | Kamal 設定 |
+|---|---|---|
+| Staging | `stg.activepieces.com` | `mrsk/stg` |
+| Production | `cloud.activepieces.com` | `mrsk/prod` |
+
+Staging 環境會接收所有合併到 `main` 的變更，並在每天上午 9 點 (UTC) 部署到 Production。請參閱 [Releases & Deployment](/handbook/engineering/playbooks/releases_zh_TW) playbook 以了解完整流程。
+
+## 可觀測性：日誌與遙測 (Observability: Logs & Telemetry)
+
+我們使用 **HyperDX** 從所有服務中收集日誌和遙測資料。
+
+## 使用 Kamal 進行部署
+
+我們使用 **Kamal** 作為部署工具，將我們的 Docker 容器以零停機時間部署到 Staging 和 Production 環境。Kamal 設定位於 devops 機器上的 `mrsk/stg` 和 `mrsk/prod` 目錄下。

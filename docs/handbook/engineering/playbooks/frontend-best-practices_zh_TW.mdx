@@ -1,0 +1,253 @@
+---
+title: "前端最佳實踐"
+icon: 'lightbulb'
+---
+
+## 概覽
+
+我們的前端程式碼庫規模龐大且持續增長，有多位開發者參與其中。針對資料擷取 (data fetching) 和狀態管理 (state management) 等關鍵領域建立一致的規則，將使程式碼更容易理解、重構和測試。這也能幫助新進成員快速理解並採用既有的模式。
+
+## 使用 React Query 進行資料擷取
+
+### Hook 組織方式
+
+所有 `useMutation` 和 `useQuery` hook 應按領域/功能 (domain/feature) 分組存放在單一位置：`features/lib/feature-hooks.ts`。絕不要直接從組件主體調用資料擷取 hook。
+
+**優點：**
+- 更容易進行重構與測試
+- 簡化測試時的 Mocking
+- 讓組件更乾淨，專注於 UI 邏輯
+- 減少 `.tsx` 檔案中的雜訊
+
+#### ❌ 不要這樣做
+```tsx
+// UserProfile.tsx
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { updateUser, getUser } from '../api/users';
+
+function UserProfile({ userId }) {
+  const { data: user } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: () => getUser(userId)
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: updateUser,
+    onSuccess: () => {
+      // refetch logic here
+    }
+  });
+
+  return (
+    <div>
+      {/* UI logic */}
+    </div>
+  );
+}
+```
+
+#### ✅ 應該這樣做
+```tsx
+// features/users/lib/user-hooks.ts
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { updateUser, getUser } from '../api/users';
+import { userKeys } from './user-keys';
+
+export function useUser(userId: string) {
+  return useQuery({
+    queryKey: userKeys.detail(userId),
+    queryFn: () => getUser(userId)
+  });
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    }
+  });
+}
+
+// UserProfile.tsx
+import { useUser, useUpdateUser } from '../lib/user-hooks';
+
+function UserProfile({ userId }) {
+  const { data: user } = useUser(userId);
+  const updateUserMutation = useUpdateUser();
+
+  return (
+    <div>
+      {/* Clean UI logic only */}
+    </div>
+  );
+}
+```
+
+### Query Keys 管理
+
+Query keys 應為特定查詢的唯一識別碼。避免使用布林值、空字串或不一致的模式。
+
+**最佳實踐：** 將所有 query keys 集中在一個位置（在 hook 檔案內），以便於管理和重構。
+
+```tsx
+// features/users/lib/user-hooks.ts
+export const userKeys = {
+  all: ['users'] as const,
+  lists: () => [...userKeys.all, 'list'] as const,
+  list: (filters: string) => [...userKeys.lists(), { filters }] as const,
+  details: () => [...userKeys.all, 'detail'] as const,
+  detail: (id: string) => [...userKeys.details(), id] as const,
+  preferences: (id: string) => [...userKeys.detail(id), 'preferences'] as const,
+};
+
+// Usage examples:
+// userKeys.all          // ['users']
+// userKeys.list('active') // ['users', 'list', { filters: 'active' }]
+// userKeys.detail('123')  // ['users', 'detail', '123']
+```
+
+**效益：**
+- 易於重新命名 key 與重構
+- 在整個應用程式中保持一致的 key 結構
+- 更好的查詢專一性 (query specificity) 控制
+- 集中化的 key 管理
+
+### Refetch vs Query Invalidation
+
+偏好在組件之間使用 `invalidateQueries`，而不是傳遞 `refetch` 函式。這種方法更具維護性且更容易理解。
+
+#### ❌ 不要這樣做
+```tsx
+function UserList() {
+  const { data: users, refetch } = useUsers();
+  
+  return (
+    <div>
+      <UserForm onSuccess={refetch} />
+      <EditUserModal onSuccess={refetch} />
+      {/* Passing refetch everywhere */}
+    </div>
+  );
+}
+```
+
+#### ✅ 應該這樣做 
+```tsx
+// In your mutation hooks
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    }
+  });
+}
+
+// Components don't need to handle refetching
+function UserList() {
+  const { data: users } = useUsers();
+  
+  return (
+    <div>
+      <UserForm /> {/* Handles its own invalidation */}
+      <EditUserModal /> {/* Handles its own invalidation */}
+    </div>
+  );
+}
+```
+
+## 對話框狀態管理 (Dialog State Management)
+
+使用集中式的 store 或 context 來在單一位置管理所有對話框 (dialog) 狀態。這消除了在不同組件之間傳遞區域狀態的需求，並提供了對對話框控制的全局訪問。
+
+### 實作範例
+
+```tsx
+// stores/dialog-store.ts
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+
+interface DialogState {
+  createUser: boolean;
+  editUser: boolean;
+  deleteConfirmation: boolean;
+  // Add more dialogs as needed
+}
+
+interface DialogStore {
+  dialogs: DialogState;
+  setDialog: (dialog: keyof DialogState, isOpen: boolean) => void;
+}
+
+export const useDialogStore = create<DialogStore>()(
+  immer((set) => ({
+    dialogs: {
+      createUser: false,
+      editUser: false,
+      deleteConfirmation: false,
+    },
+    setDialog: (dialog, isOpen) =>
+      set((state) => {
+        state.dialogs[dialog] = isOpen;
+      }),
+  }))
+);
+
+// Usage in components
+function UserManagement() {
+  const { dialogs, setDialog } = useDialogStore();
+
+  return (
+    <div>
+      <button onClick={() => setDialog('createUser', true)}>
+        Create User
+      </button>
+      
+      <CreateUserDialog 
+        open={dialogs.createUser}
+        onClose={() => setDialog('createUser', false)}
+      />
+      
+      <EditUserDialog 
+        open={dialogs.editUser}
+        onClose={() => setDialog('editUser', false)}
+      />
+    </div>
+  );
+}
+
+// Any component can control dialogs - no provider needed
+function Sidebar() {
+  const setDialog = useDialogStore((state) => state.setDialog);
+
+  return (
+    <button onClick={() => setDialog('d', true)}>
+      Quick Create User
+    </button>
+  );
+}
+
+// You can also use selectors for better performance
+function UserDialog() {
+  const isOpen = useDialogStore((state) => state.dialogs.createUser);
+  const setDialog = useDialogStore((state) => state.setDialog);
+
+  return (
+    <CreateUserDialog 
+      open={isOpen}
+      onClose={() => setDialog('createUser', false)}
+    />
+  );
+}
+```
+**效益：**
+- 集中化的對話框狀態管理
+- 無需層層傳遞 (Prop drilling) 對話框狀態
+- 易於從應用程式的任何位置開啟/關閉對話框
+- 在整個應用程式中保持一致的對話框行為
+- 簡化組件邏輯

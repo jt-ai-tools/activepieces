@@ -1,0 +1,67 @@
+---
+title: '發佈與部署'
+icon: 'flask'
+---
+
+所有變更在進入生產環境 (production) 之前都會先經過預備環境 (staging)。沒有發佈分支 — 所有內容都合併到 `main`。
+
+## 運作方式
+
+`continuous-delivery.yml` 工作流負責處理所有流程：
+
+1. **合併至 `main`** — 自動建構 Docker 映像檔並部署到 **預備環境 (staging)** (`stg.activepieces.com`)。
+2. **預備環境凍結 (5 PM UTC)** — 5 PM UTC 之後合併到 `main` 的內容會被接受，但**不會部署**到預備環境。內容團隊會在夜間使用凍結的預備環境。
+3. **每日晉升 (9 AM UTC)** — 定期執行的任務會比較預備環境與生產環境。如果兩者不同，預備環境會晉升到生產環境。晉升後，會執行追趕部署 (catch-up deploy) 將預備環境更新至最新的 `main`。
+4. **每週發佈 (週日)** — 晉升後，工作流會發佈 GitHub release、建立 git tag，並建構官方多平台 Docker 映像檔 (`activepieces/activepieces:X.Y.Z` + `latest`)。
+
+## 環境
+
+| 環境 | 網址 | 用途 |
+|---|---|---|
+| 預備環境 (Staging) | `stg.activepieces.com` | 內部測試、內容團隊日常使用 |
+| 生產環境 (Production) | `cloud.activepieces.com` | 線上客戶 |
+
+## 熱修復 (Hotfix) 工作流
+
+- **普通熱修復**：將修復合併至 `main` → 部署到預備環境 → 手動觸發 `continuous-delivery.yml` 並選擇動作 `promote-to-production`。
+- **緊急情況**：使用 `emergency-cloud-deploy.yml` (手動調度) 來繞過預備環境，直接部署到生產環境。
+
+## 自託管版本發佈
+
+要從任何分支發佈自託管版本：
+
+1. 前往 Actions → **Release Self-Hosted** → Run workflow。
+2. 選擇分支並輸入發佈標籤 (例如：`0.79.2` 或 `0.79.2-hotfix.1`)。
+3. 工作流會建構多平台映像檔 (amd64 + arm64) 並推送到 Docker Hub 和 GHCR。
+
+## GitHub Actions 工作流
+
+我們有三個工作流。若要手動執行其中任何一個，請前往儲存庫的 **Actions** 分頁，選擇工作流，然後點擊 **Run workflow**。
+
+### `continuous-delivery.yml`
+
+主工作流。它有三種觸發路徑：
+
+| 觸發方式 | 發生什麼事 |
+|---|---|
+| **推送到 `main`** | 建構 Docker 映像檔並部署到預備環境。如果在凍結窗口期間 (5 PM – 9 AM UTC) 推送，會自動跳過。 |
+| **定期執行 (每日 9 AM UTC)** | 比較預備環境與生產環境版本。如果不同，則將預備環境晉升至生產環境 (需要透過 `production` GitHub 環境進行審核批准)。晉升後，觸發追趕部署將預備環境更新至最新的 `main`。週日時也會執行每週發佈 (git tag、GitHub release、官方 Docker 映像檔)。 |
+| **手動調度 (Manual dispatch)** | 提供包含三個選項的下拉選單 (見下文)。 |
+
+#### 手動調度選項
+
+- **`deploy-staging`** — 重新部署最新的 `main` 到預備環境。在基礎設施變更後，或當您確定安全並想覆蓋凍結窗口時使用。
+- **`promote-to-production`** — 立即將預備環境目前的內容晉升到生產環境。這是熱修復路徑 — 將修復合併到 `main`，等待其部署到預備環境，然後觸發此操作以將其推送到生產環境，而無需等待下一個 9 AM 週期。
+- **`weekly-release`** — 手動觸發每週自託管發佈 (git tag、發佈 GitHub release 說明、建構多平台 Docker 映像檔)。通常這會在週日自動執行，但如果週日執行被跳過或您需要進行非週期性發佈時，可以使用此選項。
+
+### `emergency-cloud-deploy.yml`
+
+緊急救援 (Break-glass) 工作流。僅限手動調度，無選項 — 它會從目前的 `main` 分支建構並**直接部署到生產環境**，完全繞過預備環境。僅用於不容許預備環境過渡期的關鍵事件。
+
+### `release-self-hosted.yml`
+
+僅限手動調度。會提示輸入**發佈標籤** (例如：`0.79.2` 或 `0.79.2-hotfix.1`)。建構多平台映像檔 (amd64 + arm64)，推送到 Docker Hub 和 GHCR，並建立 git tag。可以從任何分支執行 — 對於修補舊版本非常有用。
+
+## 變更日誌 (Changelog)
+
+在每次每週發佈之前，確保 GitHub release 草稿具有準確的說明。PR 應正確標記標籤，以便自動產生的變更日誌能對其進行正確分類。

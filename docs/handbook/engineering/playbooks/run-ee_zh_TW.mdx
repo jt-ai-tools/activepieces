@@ -1,0 +1,50 @@
+---
+title: "執行企業版"
+icon: "building"
+---
+
+企業版需要 Postgres 與 Redis 實例才能運行，並且需要授權金鑰 (license key) 才能啟用。
+
+<Steps>
+<Step title="執行開發容器 (Dev Container)">
+
+請按照[這裡](/build-pieces/misc/dev-container_zh_TW)的說明執行開發容器。
+</Step>
+
+<Step title="在 `server/api/.env` 中新增以下環境變數">
+
+在 `server/api/.env` 中貼上以下環境變數：
+
+```bash
+## 這些變數的設定是為了與 .devcontainer/docker-compose.yml 檔案對齊
+AP_DB_TYPE=POSTGRES
+AP_DEV_PIECES="your_piece_name"
+AP_ENVIRONMENT="dev"
+AP_EDITION=ee
+AP_EXECUTION_MODE=UNSANDBOXED
+AP_FRONTEND_URL="http://localhost:4200"
+AP_WEBHOOK_URL="http://localhost:3000"
+AP_PIECES_SOURCE='FILE'
+AP_PIECES_SYNC_MODE='NONE'
+AP_LOG_LEVEL=debug
+AP_LOG_PRETTY=true
+AP_REDIS_HOST="redis"
+AP_REDIS_PORT="6379"
+AP_TRIGGER_DEFAULT_POLL_INTERVAL=1
+AP_CACHE_PATH=/workspace/cache
+AP_POSTGRES_DATABASE=activepieces
+AP_POSTGRES_HOST=db
+AP_POSTGRES_PORT=5432
+AP_POSTGRES_USERNAME=postgres
+AP_POSTGRES_PASSWORD=A79Vm5D4p2VQHOp2gd5
+AP_ENCRYPTION_KEY=427a130d9ffab21dc07bcd549fcf0966
+AP_JWT_SECRET=secret
+```
+
+</Step>
+<Step title="啟用您的授權金鑰">
+    登入後，前往 **Platform Admin -> Setup -> License Keys** 來啟用授權金鑰。
+    ![Activation License Key](/resources/screenshots/activation-license-key-settings.png)
+</Step>
+
+</Steps>
