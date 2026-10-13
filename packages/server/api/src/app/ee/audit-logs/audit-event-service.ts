@@ -1,16 +1,12 @@
-import { rejectedPromiseHandler } from '@activepieces/server-common'
-import {
-    ApplicationEvent,
-
-    Cursor,
-    isNil,
-    SeekPage } from '@activepieces/shared'
+import { Cursor, isNil, SeekPage } from '@activepieces/core-utils'
+import { ApplicationEvent } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { In } from 'typeorm'
 import { repoFactory } from '../../core/db/repo-factory'
 import { applicationEvents } from '../../helper/application-events'
 import { buildPaginator } from '../../helper/pagination/build-paginator'
 import { paginationHelper } from '../../helper/pagination/pagination-utils'
+import { rejectedPromiseHandler } from '../../helper/promise-handler'
 import { AuditEventEntity } from './audit-event-entity'
 
 export const auditLogRepo = repoFactory(AuditEventEntity)
@@ -26,13 +22,13 @@ export const auditLogService = (log: FastifyBaseLogger) => ({
             },
         })
     },
-    async list({ platformId, cursorRequest, limit, userId, action, projectId, createdBefore, createdAfter }: ListParams): Promise<SeekPage<ApplicationEvent>> {
+    async list({ platformId, cursorRequest, limit, userId, action, projectId, createdBefore, createdAfter, order }: ListParams): Promise<SeekPage<ApplicationEvent>> {
         const decodedCursor = paginationHelper.decodeCursor(cursorRequest)
         const paginator = buildPaginator({
             entity: AuditEventEntity,
             query: {
                 limit,
-                order: 'DESC',
+                order: order ?? 'DESC',
                 afterCursor: decodedCursor.nextCursor,
                 beforeCursor: decodedCursor.previousCursor,
             },
@@ -79,4 +75,5 @@ type ListParams = {
     projectId?: string[]
     createdBefore?: string
     createdAfter?: string
+    order?: 'ASC' | 'DESC'
 }

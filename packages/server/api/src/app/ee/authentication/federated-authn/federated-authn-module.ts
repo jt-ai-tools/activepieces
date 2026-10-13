@@ -1,13 +1,14 @@
-import { AppSystemProp, networkUtils, securityAccess } from '@activepieces/server-common'
-import {
-    ApplicationEventName,
-
-    ClaimTokenRequest,
-    ThirdPartyAuthnProviderEnum } from '@activepieces/shared'
+import { isNil } from '@activepieces/core-utils'
+import { ApplicationEventName, ClaimTokenRequest, SignUpMethod, TelemetryEventName, ThirdPartyAuthnProviderEnum } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { securityAccess } from '../../../core/security/authorization/fastify-security'
 import { applicationEvents } from '../../../helper/application-events'
+import { networkUtils } from '../../../helper/network-utils'
+import { rejectedPromiseHandler } from '../../../helper/promise-handler'
 import { system } from '../../../helper/system/system'
+import { AppSystemProp } from '../../../helper/system/system-props'
+import { telemetry } from '../../../helper/telemetry.utils'
 import { platformUtils } from '../../../platform/platform.utils'
 import { federatedAuthnService } from './federated-authn-service'
 
@@ -27,21 +28,42 @@ const federatedAuthnController: FastifyPluginAsyncZod = async (app) => {
 
     app.post('/claim', ClaimTokenRequestSchema, async (req) => {
         const platformId = await platformUtils.getPlatformIdForRequest(req)
-        const response = await federatedAuthnService(req.log).claim({
+        const { response, signedUp } = await federatedAuthnService(req.log).claim({
             platformId: platformId ?? undefined,
             code: req.body.code,
         })
-        applicationEvents(req.log).sendUserEvent({
-            platformId: response.platformId!,
-            userId: response.id,
-            projectId: response.projectId,
-            ip: networkUtils.extractClientRealIp(req, system.get(AppSystemProp.CLIENT_REAL_IP_HEADER)),
-        }, {
-            action: ApplicationEventName.USER_SIGNED_UP,
-            data: {
-                source: 'sso',
-            },
-        })
+        if (signedUp && !isNil(response.platformId)) {
+            applicationEvents(req.log).sendUserEvent({
+                platformId: response.platformId,
+                userId: response.id,
+                projectId: response.projectId ?? undefined,
+                ip: networkUtils.extractClientRealIp(req, system.get(AppSystemProp.CLIENT_REAL_IP_HEADER)),
+            }, {
+                action: ApplicationEventName.USER_SIGNED_UP,
+                data: {
+                    source: 'sso',
+                },
+            })
+            rejectedPromiseHandler(telemetry(req.log).identifySignUp({
+                userId: response.id,
+                platformId: response.platformId,
+                method: SignUpMethod.GOOGLE,
+                attribution: req.body.attribution,
+            }), req.log)
+        }
+        else if (!isNil(response.platformId)) {
+            rejectedPromiseHandler(telemetry(req.log).trackUser({
+                userId: response.id,
+                platformId: response.platformId,
+                event: {
+                    name: TelemetryEventName.SIGNED_IN,
+                    payload: {
+                        userId: response.id,
+                        platformId: response.platformId,
+                    },
+                },
+            }), req.log)
+        }
         return response
     })
 }

@@ -1,16 +1,26 @@
 import { Property, TriggerStrategy, createTrigger } from '@activepieces/pieces-framework';
 import { slackAuth } from '../auth';
+import { getTeamId, SlackAuthValue } from '../common/auth-helpers';
 import { ViewSubmissionPayload } from '../common/types';
+import { interactivitySetupInfo } from '../common/props';
+import { newModalInteractionTriggerOutputSchema } from '../output-schemas';
 
 export const newModalInteractionTrigger = createTrigger({
     auth: slackAuth,
     name: 'new-modal-interaction',
+    classification: 'READ',
     displayName: 'New Modal Interaction',
     description: 'Triggers when a user interacts with a modal.',
+    aiMetadata: {
+        description:
+            'Fires when a user interacts with a Slack modal view, either submitting it (view_submission) or closing it (view_closed) depending on the selected interaction type. The event payload is the Slack interaction payload (with the auth token stripped), including the submitted view, its state values, and the acting user.',
+    },
     props: {
+        info: interactivitySetupInfo,
         interactionType: Property.StaticDropdown({
             displayName: 'Interaction Type',
-            description: 'Select the type of modal interaction to trigger on.',
+            description:
+                'Submit fires on send, Close fires when the modal is dismissed.',
             required: true,
             defaultValue: 'view_submission',
             options: {
@@ -24,9 +34,9 @@ export const newModalInteractionTrigger = createTrigger({
     },
     type: TriggerStrategy.APP_WEBHOOK,
     sampleData: undefined,
+    outputSchema: newModalInteractionTriggerOutputSchema,
     onEnable: async (context) => {
-        // Older OAuth2 has team_id, newer has team.id
-        const teamId = context.auth.data['team_id'] ?? context.auth.data['team']['id'];
+        const teamId = await getTeamId(context.auth as SlackAuthValue);
         context.app.createListeners({
             events: [context.propsValue.interactionType as string],
             identifierValue: teamId,

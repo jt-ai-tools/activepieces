@@ -1,6 +1,6 @@
 import deepEqual from 'deep-equal';
 import { t } from 'i18next';
-import { Check, ChevronsUpDown, RefreshCcw, X } from 'lucide-react';
+import { Check, ChevronsUpDown, RefreshCcw, Trash2, X } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 
 import { SelectUtilButton } from '@/components/custom/select-util-button';
@@ -40,6 +40,8 @@ type SearchableSelectProps<T> = {
   showRefresh?: boolean;
   onClose?: () => void;
   triggerClassName?: string;
+  /**Widens the popover past the trigger, for compact or inline triggers */
+  contentWidth?: string;
   valuesRendering?: (value: unknown) => React.ReactNode;
   openState?: {
     open: boolean;
@@ -51,6 +53,7 @@ type SearchableSelectProps<T> = {
     value: T;
     label: string;
   }[];
+  onOptionDelete?: (value: T) => void;
 };
 
 const useOpenState = (openStateInitializer?: {
@@ -78,17 +81,19 @@ export const SearchableSelect = <T,>({
   showRefresh,
   onClose,
   triggerClassName,
+  contentWidth,
   valuesRendering,
   openState: openStateInitializer,
   refreshOnSearch,
   cachedOptions = [],
+  onOptionDelete,
 }: SearchableSelectProps<T>) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { open, setOpen } = useOpenState(openStateInitializer);
   const triggerWidth = `${triggerRef.current?.clientWidth ?? 0}px`;
   const selectedOption =
-    [...cachedOptions, ...options].find((option) =>
+    [...options, ...cachedOptions].find((option) =>
       deepEqual(option.value, value),
     ) ?? undefined;
   const filterOptionsIndices = options
@@ -124,21 +129,18 @@ export const SearchableSelect = <T,>({
     const option = options[optionIndex];
     onChange(option.value);
   };
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      onClose?.();
+    }
+    if (refreshOnSearch && searchTerm.length > 0) {
+      refreshOnSearch('');
+      setSearchTerm('');
+    }
+    setOpen(nextOpen);
+  };
   return (
-    <Popover
-      modal={true}
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose?.();
-        }
-        if (refreshOnSearch && searchTerm.length > 0) {
-          refreshOnSearch('');
-          setSearchTerm('');
-        }
-        setOpen(open);
-      }}
-    >
+    <Popover modal={true} open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
         asChild
         className={cn({
@@ -161,7 +163,7 @@ export const SearchableSelect = <T,>({
             aria-expanded={open}
             className={cn('w-full justify-between', triggerClassName)}
             onClick={(e) => {
-              setOpen(!open);
+              handleOpenChange(!open);
               e.preventDefault();
             }}
           >
@@ -203,9 +205,15 @@ export const SearchableSelect = <T,>({
         </div>
       </PopoverTrigger>
       <PopoverContent
+        onPointerDownOutside={(e) => {
+          const target = e.detail.originalEvent.target;
+          if (target instanceof Node && triggerRef.current?.contains(target)) {
+            e.preventDefault();
+          }
+        }}
         style={{
-          maxWidth: triggerWidth,
-          minWidth: triggerWidth,
+          maxWidth: contentWidth ?? triggerWidth,
+          minWidth: contentWidth ?? triggerWidth,
         }}
         className="min-w-full w-full p-0"
       >
@@ -245,7 +253,10 @@ export const SearchableSelect = <T,>({
                           setOpen(false);
                           onSelect(currentValue);
                         }}
-                        className="flex gap-2 flex-col items-start"
+                        className={cn(
+                          'flex gap-2 flex-col items-start',
+                          onOptionDelete && 'group/option',
+                        )}
                       >
                         <div className="flex gap-2 items-center justify-between w-full">
                           {option.label === '' ? (
@@ -253,16 +264,41 @@ export const SearchableSelect = <T,>({
                           ) : valuesRendering ? (
                             valuesRendering(option.value)
                           ) : (
-                            option.label
+                            <span className="truncate">{option.label}</span>
                           )}
-                          <Check
-                            className={cn('shrink-0 w-4 h-4', {
-                              hidden: selectedOption?.value !== option.value,
-                            })}
-                          />
+                          <div className="relative shrink-0 w-4 h-4">
+                            {onOptionDelete && (
+                              <button
+                                type="button"
+                                className={cn(
+                                  'absolute inset-0 flex items-center justify-center text-gray-11 hover:text-danger-11',
+                                  'opacity-0 group-hover/option:opacity-100',
+                                )}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  onOptionDelete(option.value);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <Check
+                              className={cn(
+                                'absolute inset-0 w-4 h-4',
+                                selectedOption?.value !== option.value
+                                  ? 'opacity-0'
+                                  : cn(
+                                      'opacity-100',
+                                      onOptionDelete &&
+                                        'group-hover/option:opacity-0',
+                                    ),
+                              )}
+                            />
+                          </div>
                         </div>
                         {option.description && (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-gray-11">
                             {option.description}
                           </div>
                         )}

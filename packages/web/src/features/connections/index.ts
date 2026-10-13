@@ -1,7 +1,8 @@
 export { appConnectionsApi } from './api/app-connections';
-export { AssignConnectionToProjectsControl } from './components/assign-global-connection-to-projects';
+export { ProjectSelector } from '../projects/components/projects-selector';
 export { EditGlobalConnectionDialog } from './components/edit-global-connection-dialog';
 export { RenameConnectionDialog } from './components/rename-connection-dialog';
+export { RevalidateConnectionButton } from './components/revalidate-connection-button';
 export {
   appConnectionsMutations,
   appConnectionsQueries,

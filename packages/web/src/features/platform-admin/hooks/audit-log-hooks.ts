@@ -5,20 +5,25 @@ import {
   CURSOR_QUERY_PARAM,
   LIMIT_QUERY_PARAM,
 } from '@/components/custom/data-table';
+import { platformHooks } from '@/hooks/platform-hooks';
 
 import { auditEventsApi } from '../api/audit-events-api';
 
 export const auditLogKeys = {
+  root: ['audit-logs'] as const,
   all: (searchParams: string) => ['audit-logs', searchParams] as const,
+  oldest: ['audit-logs', 'oldest'] as const,
 };
 
 export const auditLogQueries = {
   useAuditLogs: () => {
     const [searchParams] = useSearchParams();
+    const { platform } = platformHooks.useCurrentPlatform();
     return useQuery({
       queryKey: auditLogKeys.all(searchParams.toString()),
       staleTime: 0,
       gcTime: 0,
+      enabled: platform.plan.auditLogEnabled,
       queryFn: async () => {
         const cursor = searchParams.get(CURSOR_QUERY_PARAM);
         const limit = searchParams.get(LIMIT_QUERY_PARAM);
@@ -34,6 +39,16 @@ export const auditLogQueries = {
           createdBefore: searchParams.get('createdBefore') ?? undefined,
           createdAfter: searchParams.get('createdAfter') ?? undefined,
         });
+      },
+    });
+  },
+  useOldestEventCreated: () => {
+    return useQuery({
+      queryKey: auditLogKeys.oldest,
+      staleTime: 0,
+      queryFn: async () => {
+        const page = await auditEventsApi.list({ order: 'ASC', limit: 1 });
+        return page.data[0]?.created ?? null;
       },
     });
   },

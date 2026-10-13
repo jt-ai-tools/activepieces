@@ -1,29 +1,13 @@
-import {
-    ActivepiecesError,
-    ApEdition,
-    apId,
-    assertNotNullOrUndefined,
-    Cursor,
-    ErrorCode,
-    isNil,
-    PlatformId,
-    PlatformRole,
-    ProjectId,
-    ProjectType,
-    SeekPage,
-    spreadIfDefined,
-    User,
-    UserId,
-    UserIdentity,
-    UserStatus,
-    UserWithBadges,
-    UserWithMetaInformation,
-} from '@activepieces/shared'
+import { ActivepiecesError, apId, assertNotNullOrUndefined, Cursor, ErrorCode, isNil, PlatformId, ProjectId, SeekPage, spreadIfDefined, UserId } from '@activepieces/core-utils'
+import { ApEdition, PlatformRole, ProjectType, User, UserIdentity, UserStatus, UserWithMetaInformation } from '@activepieces/shared'
 import dayjs from 'dayjs'
 import { FastifyBaseLogger } from 'fastify'
-import { In } from 'typeorm'
-import { userIdentityService } from '../authentication/user-identity/user-identity-service'
+import { nanoid } from 'nanoid'
+import { EntityManager, In, IsNull } from 'typeorm'
+import { userIdentityRepository, userIdentityService } from '../authentication/user-identity/user-identity-service'
 import { repoFactory } from '../core/db/repo-factory'
+import { transaction } from '../core/db/transaction'
+import { platformPlanService } from '../ee/platform/platform-plan/platform-plan.service'
 import { platformProjectService } from '../ee/projects/platform-project-service'
 import { projectMemberRepo } from '../ee/projects/project-role/project-role.service'
 import { buildPaginator } from '../helper/pagination/build-paginator'
@@ -49,7 +33,7 @@ export const userService = (log: FastifyBaseLogger) => ({
         }
         return userRepo().save(user)
     },
-    async getOrCreateWithProject({ identity, platformId }: GetOrCreateWithProjectParams): Promise<User> {
+    async getOrCreateWithProject({ identity, platformId }: GetOrCreateWithProjectParams): Promise<GetOrCreateWithProjectResult> {
         const user = await this.getOneByIdentityAndPlatform({
             identityId: identity.id,
             platformId,
@@ -61,15 +45,18 @@ export const userService = (log: FastifyBaseLogger) => ({
                 platformRole: PlatformRole.MEMBER,
             })
 
-            await projectService(log).create({
-                displayName: identity.firstName + '\'s Project',
-                ownerId: newUser.id,
-                platformId,
-                type: ProjectType.PERSONAL,
-            })
-            return newUser
+            const platform = await platformService(log).getOneOrThrow(platformId)
+            if (platform.autoCreatePersonalProjects) {
+                await projectService(log).create({
+                    displayName: identity.firstName + '\'s Project',
+                    ownerId: newUser.id,
+                    platformId,
+                    type: ProjectType.PERSONAL,
+                })
+            }
+            return { user: newUser, created: true }
         }
-        return user
+        return { user, created: false }
     },
     async updateLastActiveDate({ id }: UpdateLastActiveDateParams): Promise<void> {
         await userRepo().update({ id }, { lastActiveDate: dayjs().toISOString() })
@@ -98,7 +85,7 @@ export const userService = (log: FastifyBaseLogger) => ({
             })
         }
 
-        await userRepo().update({
+        const applyUpdate = (entityManager?: EntityManager): Promise<unknown> => userRepo(entityManager).update({
             id,
             platformId,
         }, {
@@ -107,10 +94,28 @@ export const userService = (log: FastifyBaseLogger) => ({
             ...spreadIfDefined('externalId', externalId),
         })
 
+        const isReactivation = user.status === UserStatus.INACTIVE && status === UserStatus.ACTIVE
+        if (isReactivation) {
+            const reactivatingPlatformId = user.platformId
+            await transaction(async (entityManager) => {
+                await platformPlanService(log).checkUsersExceededLimit({ platformId: reactivatingPlatformId, entityManager })
+                await applyUpdate(entityManager)
+            })
+        }
+        else {
+            await applyUpdate()
+        }
+
         return this.getMetaInformation({ id })
     },
     async getUsersByIdentityId({ identityId }: GetUsersByIdentityIdParams): Promise<Pick<User, 'id' | 'platformId'>[]> {
         return userRepo().find({ where: { identityId } }).then((users) => users.map((user) => ({ id: user.id, platformId: user.platformId })))
+    },
+    async countByPlatformId(platformId: string): Promise<number> {
+        return userRepo().countBy({ platformId })
+    },
+    async countActiveByPlatformId({ platformId, entityManager }: CountActiveByPlatformIdParams): Promise<number> {
+        return userRepo(entityManager).countBy({ platformId, status: UserStatus.ACTIVE })
     },
     async list({ platformId, externalId, cursorRequest, limit }: ListParams): Promise<SeekPage<UserWithMetaInformation>> {
         const decodedCursor = paginationHelper.decodeCursor(cursorRequest)
@@ -130,14 +135,11 @@ export const userService = (log: FastifyBaseLogger) => ({
         const usersWithMetaInformation = await Promise.all(data.map(this.getMetaInformation))
         return paginationHelper.createPage<UserWithMetaInformation>(usersWithMetaInformation, cursor)
     },
-    async getOneByIdentityIdOnly({ identityId }: GetOneByIdentityIdOnlyParams): Promise<User | null> {
-        return userRepo().findOneBy({ identityId })
-    },
     async getByIdentityId({ identityId }: GetByIdentityId): Promise<UserSchema[]> {
         return userRepo().find({ where: { identityId } })
     },
     async getOneByIdentityAndPlatform({ identityId, platformId }: GetOneByIdentityIdParams): Promise<User | null> {
-        return userRepo().findOneBy({ identityId, platformId })
+        return userRepo().findOneBy({ identityId, platformId: isNil(platformId) ? IsNull() : platformId })
     },
     async get({ id }: IdParams): Promise<User | null> {
         return userRepo().findOneBy({ id })
@@ -155,32 +157,55 @@ export const userService = (log: FastifyBaseLogger) => ({
     async getOneOrFail({ id }: IdParams): Promise<User> {
         return userRepo().findOneOrFail({ where: { id } })
     },
-    async getOneByIdAndPlatformIdOrThrow({ id, platformId }: GetOneByIdAndPlatformIdParams): Promise<UserWithBadges> {
-        const user = await userRepo().findOne({ where: { id, platformId }, relations: { badges: true } })
+    async getOneByIdAndPlatformIdOrThrow({ id, platformId }: GetOneByIdAndPlatformIdParams): Promise<UserWithMetaInformation> {
+        const user = await userRepo().findOne({ where: { id, platformId } })
         if (isNil(user)) {
             throw new ActivepiecesError({
                 code: ErrorCode.ENTITY_NOT_FOUND,
                 params: { entityType: 'user', entityId: id },
             })
         }
-        const meta = await this.getMetaInformation({ id })
-        return {
-            ...meta,
-            badges: user.badges.map((badge) => ({
-                name: badge.name,
-                created: badge.created,
-            })),
-        }
+        return this.getMetaInformation({ id })
     },
     async delete({ id, platformId }: DeleteParams): Promise<void> {
-
+        await assertNotPlatformOwner({ id, platformId, log })
+        const user = await userRepo().findOneBy({ id, platformId })
+        if (isNil(user)) {
+            return
+        }
         await platformProjectService(log).deletePersonalProjectForUser({
             userId: id,
             platformId,
         })
-        await userRepo().delete({
+        await transaction(async (entityManager) => {
+            await userRepo(entityManager).delete({
+                id,
+                platformId,
+            })
+            await deleteIdentityIfOrphaned({ identityId: user.identityId, entityManager })
+        })
+    },
+    async removeFromPlatform({ id, platformId }: DeleteParams): Promise<void> {
+        await assertNotPlatformOwner({ id, platformId, log })
+        const user = await this.getOneOrFail({ id })
+        await platformProjectService(log).deletePersonalProjectForUser({
+            userId: id,
+            platformId,
+        })
+        await userRepo().update({
             id,
             platformId,
+        }, {
+            platformId: null,
+        })
+        await userIdentityRepository().update(user.identityId, {
+            tokenVersion: nanoid(),
+        })
+        await userIdentityRepository().update({
+            id: user.identityId,
+            lastLoggedInPlatformId: platformId,
+        }, {
+            lastLoggedInPlatformId: null,
         })
     },
 
@@ -236,6 +261,48 @@ export const userService = (log: FastifyBaseLogger) => ({
     },
 })
 
+export function mapToUserWithMetaInformation(user: (User & { identity?: UserIdentity }) | null): UserWithMetaInformation | null {
+    if (isNil(user)) {
+        return null
+    }
+    const identity = user.identity
+    if (isNil(identity)) {
+        return null
+    }
+    return {
+        id: user.id,
+        email: identity.email,
+        firstName: identity.firstName,
+        lastName: identity.lastName,
+        platformId: user.platformId,
+        platformRole: user.platformRole,
+        status: user.status,
+        externalId: user.externalId,
+        created: user.created,
+        updated: user.updated,
+        lastActiveDate: user.lastActiveDate,
+        imageUrl: identity.imageUrl,
+    }
+}
+
+async function assertNotPlatformOwner({ id, platformId, log }: DeleteParams & { log: FastifyBaseLogger }): Promise<void> {
+    const platform = await platformService(log).getOneOrThrow(platformId)
+    if (platform.ownerId === id) {
+        throw new ActivepiecesError({
+            code: ErrorCode.VALIDATION,
+            params: {
+                message: 'Platform owner cannot be deleted',
+            },
+        })
+    }
+}
+
+async function deleteIdentityIfOrphaned({ identityId, entityManager }: { identityId: string, entityManager: EntityManager }): Promise<void> {
+    const identityStillReferenced = await userRepo(entityManager).existsBy({ identityId })
+    if (!identityStillReferenced) {
+        await userIdentityRepository(entityManager).delete({ id: identityId })
+    }
+}
 
 async function getUsersForProject(platformId: PlatformId, projectId: string): Promise<UserId[]> {
     const platformAdmins = await userRepo().find({ where: { platformId, platformRole: PlatformRole.ADMIN } }).then((users) => users.map((user) => user.id))
@@ -273,10 +340,6 @@ type ListParams = {
     limit?: number
 }
 
-type GetOneByIdentityIdOnlyParams = {
-    identityId: string
-}
-
 type GetByIdentityId = {
     identityId: string
 }
@@ -284,7 +347,7 @@ type GetByIdentityId = {
 
 type GetOneByIdentityIdParams = {
     identityId: string
-    platformId: PlatformId
+    platformId: PlatformId | null
 }
 
 type UpdateParams = {
@@ -306,6 +369,11 @@ type GetUsersByIdentityIdParams = {
     identityId: string
 }
 
+type CountActiveByPlatformIdParams = {
+    platformId: string
+    entityManager?: EntityManager
+}
+
 type NewUser = Omit<User, 'created' | 'updated'>
 
 type GetByPlatformAndExternalIdParams = {
@@ -325,4 +393,9 @@ type UpdatePlatformIdParams = {
 type GetOrCreateWithProjectParams = {
     identity: UserIdentity
     platformId: string
+}
+
+type GetOrCreateWithProjectResult = {
+    user: User
+    created: boolean
 }

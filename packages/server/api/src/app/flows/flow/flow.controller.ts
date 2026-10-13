@@ -1,36 +1,17 @@
-import { ProjectResourceType, securityAccess } from '@activepieces/server-common'
-import { ActivepiecesError, ApId, ApplicationEventName,
-    CountFlowsRequest,
-    CreateFlowRequest,
-    ErrorCode,
-    FlowOperationRequest,
-    FlowOperationType,
-    FlowStatus,
-    flowStructureUtil,
-    FlowTrigger,
-    GetFlowQueryParamsRequest,
-    GetFlowTemplateRequestQuery,
-    GitPushOperationType,
-    isNil,
-    ListFlowsRequest,
-    Permission,
-    PlatformUsageMetric,
-    PopulatedFlow,
-    PrincipalType,
-    SeekPage,
-    SERVICE_KEY_SECURITY_OPENAPI,
-    SharedTemplate,
-} from '@activepieces/shared'
-import dayjs from 'dayjs'
+import { ApId, Permission, SeekPage, UserId } from '@activepieces/core-utils'
+import { CountFlowsRequest, CreateFlowRequest, FlowOperationRequest, FlowOperationType, FlowStatus, flowStructureUtil, FlowTrigger, GetFlowQueryParamsRequest, GetFlowTemplateRequestQuery, GitPushOperationType, ListFlowsRequest, PopulatedFlow, PrincipalType, SERVICE_KEY_SECURITY_OPENAPI, SharedTemplate } from '@activepieces/shared'
+import { FastifyRequest } from 'fastify'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { StatusCodes } from 'http-status-codes'
 import { z } from 'zod'
-import { authenticationUtils } from '../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/authorization'
+import { ProjectResourceType } from '../../core/security/authorization/common'
+import { securityAccess } from '../../core/security/authorization/fastify-security'
 import { assertUserHasPermissionToFlow } from '../../ee/authentication/project-role/rbac-middleware'
 import { platformPlanService } from '../../ee/platform/platform-plan/platform-plan.service'
+import { projectLimitsService } from '../../ee/projects/project-plan/project-plan.service'
 import { gitRepoService } from '../../ee/projects/project-release/git-sync/git-sync.service'
-import { applicationEvents } from '../../helper/application-events'
+import { networkUtils } from '../../helper/network-utils'
 import { userService } from '../../user/user-service'
 import { migrateFlowVersionTemplate } from '../flow-version/migrations'
 import { FlowEntity } from './flow.entity'
@@ -44,15 +25,10 @@ export const flowController: FastifyPluginAsyncZod = async (app) => {
         const newFlow = await flowService(request.log).create({
             projectId: request.projectId,
             request: request.body,
-            ownerId: request.principal.type === PrincipalType.SERVICE ? undefined : request.principal.id,
+            ownerId: actorUserId(request),
             templateId: request.body.templateId,
-        })
-
-        applicationEvents(request.log).sendUserEvent(request, {
-            action: ApplicationEventName.FLOW_CREATED,
-            data: {
-                flow: newFlow,
-            },
+            ip: networkUtils.clientIp(request),
+            externalId: request.body.externalId,
         })
 
         return reply.status(StatusCodes.CREATED).send(newFlow)
@@ -96,7 +72,6 @@ export const flowController: FastifyPluginAsyncZod = async (app) => {
             }
         },
     }, async (request) => {
-        const userId = await authenticationUtils(request.log).extractUserIdFromRequest(request)
         await assertUserHasPermissionToFlow(request.principal, request.projectId, request.body.type, request.log)
 
         const flow = await flowService(request.log).getOnePopulatedOrThrow({
@@ -104,36 +79,30 @@ export const flowController: FastifyPluginAsyncZod = async (app) => {
             projectId: request.projectId,
         })
 
-        const turnOnFlow = request.body.type === FlowOperationType.CHANGE_STATUS && request.body.request.status === FlowStatus.ENABLED
+        const turnOnFlow = request.body.type === FlowOperationType.CHANGE_STATUS && request.body.request.status === FlowStatus.ENABLED && flow.status === FlowStatus.DISABLED
         const publishDisabledFlow = request.body.type === FlowOperationType.LOCK_AND_PUBLISH && flow.status === FlowStatus.DISABLED
         if (turnOnFlow || publishDisabledFlow) {
-            await platformPlanService(request.log).checkActiveFlowsExceededLimit(
-                request.principal.platform.id,
-                PlatformUsageMetric.ACTIVE_FLOWS,
-            )
+            await platformPlanService(request.log).checkActiveFlowsExceededLimit(request.principal.platform.id)
+            await projectLimitsService(request.log).checkActiveFlowsExceededLimit({
+                projectId: request.projectId,
+            })
         }
-        await assertThatFlowIsNotBeingUsed(flow, userId)
-        const updatedFlow = await flowService(request.log).update({
+        return flowService(request.log).update({
             id: request.params.id,
-            userId: request.principal.type === PrincipalType.SERVICE ? null : userId,
+            userId: actorUserId(request),
             platformId: request.principal.platform.id,
             projectId: request.projectId,
             operation: cleanOperation(request.body),
+            previousFlow: flow,
+            ip: networkUtils.clientIp(request),
         })
-        applicationEvents(request.log).sendUserEvent(request, {
-            action: ApplicationEventName.FLOW_UPDATED,
-            data: {
-                request: request.body,
-                flowVersion: flow.version,
-            },
-        })
-        return updatedFlow
     })
 
     app.get('/', ListFlowsRequestOptions, async (request) => {
         return flowService(request.log).list({
             projectIds: [request.projectId],
             folderId: request.query.folderId,
+            folderIds: request.query.folderIds,
             cursorRequest: request.query.cursor ?? null,
             limit: request.query.limit ?? DEFAULT_PAGE_SIZE,
             status: request.query.status,
@@ -142,6 +111,8 @@ export const flowController: FastifyPluginAsyncZod = async (app) => {
             externalIds: request.query.externalIds,
             connectionExternalIds: request.query.connectionExternalIds,
             agentExternalIds: request.query.agentExternalIds,
+            sortBy: request.query.sortBy,
+            order: request.query.order,
         })
     })
 
@@ -174,6 +145,7 @@ export const flowController: FastifyPluginAsyncZod = async (app) => {
         const flow = await flowService(request.log).getOnePopulatedOrThrow({
             id: request.params.id,
             projectId: request.projectId,
+            includeDeleting: true,
         })
         await gitRepoService(request.log).onDeleted({
             type: GitPushOperationType.DELETE_FLOW,
@@ -186,16 +158,16 @@ export const flowController: FastifyPluginAsyncZod = async (app) => {
         await flowService(request.log).delete({
             id: request.params.id,
             projectId: request.projectId,
-        })
-        applicationEvents(request.log).sendUserEvent(request, {
-            action: ApplicationEventName.FLOW_DELETED,
-            data: {
-                flow,
-                flowVersion: flow.version,
-            },
+            previousFlow: flow,
+            userId: actorUserId(request),
+            ip: networkUtils.clientIp(request),
         })
         return reply.status(StatusCodes.NO_CONTENT).send()
     })
+}
+
+function actorUserId(request: FastifyRequest): UserId | undefined {
+    return request.principal.type === PrincipalType.USER ? request.principal.id : undefined
 }
 
 function cleanOperation(operation: FlowOperationRequest): FlowOperationRequest {
@@ -205,57 +177,25 @@ function cleanOperation(operation: FlowOperationRequest): FlowOperationRequest {
             sampleDataInputFileId: undefined,
             lastTestDate: undefined,
         }
-        const trigger = flowStructureUtil.transferStep(operation.request.trigger, (step) => {
-            return {
-                ...step,
-                settings: {
-                    ...step.settings,
-                    sampleData: {
-                        ...step.settings.sampleData,
-                        ...clearSampleData,
-                    },
+        const trigger = flowStructureUtil.transferStep(operation.request.trigger, (step) => ({
+            ...step,
+            settings: {
+                ...step.settings,
+                sampleData: {
+                    ...step.settings.sampleData,
+                    ...clearSampleData,
                 },
-            }
-        }) as FlowTrigger
+            },
+        })) as FlowTrigger
         return {
             ...operation,
             request: {
                 ...operation.request,
-                trigger: {
-                    ...trigger,
-                    settings: {
-                        ...trigger.settings,
-                        sampleData: {
-                            ...trigger.settings.sampleData,
-                            ...clearSampleData,
-                        },
-                    },
-                },
+                trigger,
             },
         }
     }
     return operation
-}
-
-async function assertThatFlowIsNotBeingUsed(
-    flow: PopulatedFlow,
-    userId: string,
-): Promise<void> {
-    const currentTime = dayjs()
-    if (
-        !isNil(flow.version.updatedBy) &&
-        flow.version.updatedBy !== userId &&
-        currentTime.diff(dayjs(flow.version.updated), 'minute') <= 1
-    ) {
-        throw new ActivepiecesError({
-            code: ErrorCode.FLOW_IN_USE,
-            params: {
-                flowVersionId: flow.version.id,
-                message:
-                    'Flow is being used by another user in the last minute. Please try again later.',
-            },
-        })
-    }
 }
 
 const CreateFlowRequestOptions = {
@@ -377,5 +317,3 @@ const DeleteFlowRequestOptions = {
         },
     },
 }
-
-

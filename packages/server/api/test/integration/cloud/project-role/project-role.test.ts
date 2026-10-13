@@ -1,5 +1,5 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import { PlatformRole, PrincipalType, ProjectRole, UpdateProjectRoleRequestBody } from '@activepieces/shared'
+import { ProjectRole } from '@activepieces/core-utils'
+import { PlatformRole, PrincipalType, UpdateProjectRoleRequestBody } from '@activepieces/shared'
 import { faker } from '@faker-js/faker'
 import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
@@ -7,6 +7,7 @@ import { generateMockToken } from '../../../helpers/auth'
 import { db } from '../../../helpers/db'
 import { createMockProjectRole, mockAndSaveBasicSetup, mockBasicUser } from '../../../helpers/mocks'
 import { createTestContext } from '../../../helpers/test-context'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -52,7 +53,7 @@ describe('Project Role API', () => {
 
             const response = await app?.inject({
                 method: 'POST',
-                url: '/v1/project-roles',
+                url: '/api/v1/project-roles',
                 body: projectRole,
                 headers: { authorization: `Bearer ${testToken}` },
             })
@@ -85,7 +86,7 @@ describe('Project Role API', () => {
 
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/project-roles',
+                url: '/api/v1/project-roles',
                 headers: { authorization: `Bearer ${testToken}` },
             })
 
@@ -106,6 +107,50 @@ describe('Project Role API', () => {
             }
 
             const response = await ctx.post(`/v1/project-roles/${projectRole.id}`, request as unknown as Record<string, unknown>)
+            expect(response?.statusCode).toBe(StatusCodes.OK)
+        })
+
+        it('should refuse a rename onto a name another role already holds', async () => {
+            const ctx = await createTestContext(app!)
+
+            const taken = createMockProjectRole({ platformId: ctx.platform.id })
+            const renamed = createMockProjectRole({ platformId: ctx.platform.id })
+            await db.save('project_role', taken)
+            await db.save('project_role', renamed)
+
+            const request: UpdateProjectRoleRequestBody = { name: taken.name }
+            const response = await ctx.post(`/v1/project-roles/${renamed.id}`, request as unknown as Record<string, unknown>)
+
+            expect(response?.statusCode).toBe(StatusCodes.CONFLICT)
+            const stillThere = await db.findOneBy('project_role', { id: renamed.id }) as ProjectRole | null
+            expect(stillThere?.name).toBe(renamed.name)
+        })
+
+        it('should refuse a rename that differs from a taken name only by case', async () => {
+            const ctx = await createTestContext(app!)
+
+            const taken = createMockProjectRole({ platformId: ctx.platform.id, name: 'Manager' })
+            const renamed = createMockProjectRole({ platformId: ctx.platform.id, name: 'Engineer' })
+            await db.save('project_role', taken)
+            await db.save('project_role', renamed)
+
+            const request: UpdateProjectRoleRequestBody = { name: 'MANAGER' }
+            const response = await ctx.post(`/v1/project-roles/${renamed.id}`, request as unknown as Record<string, unknown>)
+
+            expect(response?.statusCode).toBe(StatusCodes.CONFLICT)
+            const stillThere = await db.findOneBy('project_role', { id: renamed.id }) as ProjectRole | null
+            expect(stillThere?.name).toBe(renamed.name)
+        })
+
+        it('should allow saving a role under the name it already has', async () => {
+            const ctx = await createTestContext(app!)
+
+            const projectRole = createMockProjectRole({ platformId: ctx.platform.id })
+            await db.save('project_role', projectRole)
+
+            const request: UpdateProjectRoleRequestBody = { name: projectRole.name, permissions: ['read'] }
+            const response = await ctx.post(`/v1/project-roles/${projectRole.id}`, request as unknown as Record<string, unknown>)
+
             expect(response?.statusCode).toBe(StatusCodes.OK)
         })
 
@@ -133,7 +178,7 @@ describe('Project Role API', () => {
 
             const response = await app?.inject({
                 method: 'POST',
-                url: `/v1/project-roles/${projectRole.id}`,
+                url: `/api/v1/project-roles/${projectRole.id}`,
                 body: request,
                 headers: { authorization: `Bearer ${testToken}` },
             })
@@ -172,7 +217,7 @@ describe('Project Role API', () => {
 
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/project-roles/${projectRole.id}`,
+                url: `/api/v1/project-roles/${projectRole.id}`,
                 headers: { authorization: `Bearer ${testToken}` },
             })
 
@@ -182,7 +227,7 @@ describe('Project Role API', () => {
         it('should fail to delete a project role if project role does not exist', async () => {
             const ctx = await createTestContext(app!)
 
-            const response = await ctx.delete(`/v1/project-roles/${faker.lorem.word()}`)
+            const response = await ctx.delete(`/v1/project-roles/${faker.string.uuid()}`)
             expect(response?.statusCode).toBe(StatusCodes.NOT_FOUND)
         })
     })

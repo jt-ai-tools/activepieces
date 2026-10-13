@@ -1,7 +1,7 @@
-import { OAuth2PropertyValue, Property, TriggerStrategy, createTrigger } from '@activepieces/pieces-framework';
-import { getTaskListsDropdown } from '../common';
+import { OAuth2PropertyValue, Property, TriggerStrategy, WebhookHandshakeStrategy, createTrigger } from '@activepieces/pieces-framework';
+import { getTaskListsDropdown, createTodoClient } from '../common';
 import { microsoftToDoAuth } from '../auth';
-import { Client } from '@microsoft/microsoft-graph-client';
+import { taskCompletedOutputSchema } from '../output-schemas';
 import dayjs from 'dayjs';
 import { TodoTask } from '@microsoft/microsoft-graph-types';
 
@@ -18,8 +18,12 @@ interface WebhookNotification {
 export const taskCompletedTrigger = createTrigger({
     auth: microsoftToDoAuth,
     name: 'task_completed',
+    classification: 'READ',
     displayName: 'Task Completed',
     description: 'Triggers when a task is completed in a specific list.',
+    aiMetadata: {
+        description: 'Fires when a task in the selected Microsoft To Do task list is marked completed. Backed by a Microsoft Graph change-notification webhook on the list; each event represents one task whose status became completed.',
+    },
     props: {
         task_list_id: Property.Dropdown({
    auth: microsoftToDoAuth,
@@ -36,7 +40,19 @@ export const taskCompletedTrigger = createTrigger({
             },
         }),
     },
+    outputSchema: taskCompletedOutputSchema,
     type: TriggerStrategy.WEBHOOK,
+    handshakeConfiguration: {
+        strategy: WebhookHandshakeStrategy.QUERY_PRESENT,
+        paramName: 'validationToken',
+    },
+    async onHandshake(context) {
+        return {
+            status: 200,
+            body: context.payload.queryParams['validationToken'],
+            headers: { 'Content-Type': 'text/plain' },
+        };
+    },
     sampleData: {
         '@odata.etag': 'W/"vVwdQvxCiE6779iYhchMrAAGgwrltg=="',
         importance: 'normal',
@@ -47,9 +63,7 @@ export const taskCompletedTrigger = createTrigger({
 
     async onEnable(context) {
         try {
-            const client = Client.initWithMiddleware({
-                authProvider: { getAccessToken: () => Promise.resolve(context.auth.access_token) },
-            });
+            const client = createTodoClient(context.auth);
 
             const clientState = Math.random().toString(36).substring(7);
             const expirationDateTime = dayjs().add(2, 'days').toISOString();
@@ -73,9 +87,7 @@ export const taskCompletedTrigger = createTrigger({
         try {
             const subscriptionId = await context.store.get('subscriptionId') as string | null;
             if (subscriptionId) {
-                const client = Client.initWithMiddleware({
-                    authProvider: { getAccessToken: () => Promise.resolve(context.auth.access_token) },
-                });
+                const client = createTodoClient(context.auth);
                 await client.api(`/subscriptions/${subscriptionId}`).delete();
                 await context.store.delete('subscriptionId');
                 await context.store.delete('clientState');
@@ -89,9 +101,7 @@ export const taskCompletedTrigger = createTrigger({
         try {
             const subscriptionId = await context.store.get('subscriptionId') as string | null;
             if (subscriptionId) {
-                const client = Client.initWithMiddleware({
-                    authProvider: { getAccessToken: () => Promise.resolve(context.auth.access_token) },
-                });
+                const client = createTodoClient(context.auth);
                 await client.api(`/subscriptions/${subscriptionId}`).patch({
                     expirationDateTime: dayjs().add(2, 'days').toISOString(),
                 });
@@ -114,10 +124,8 @@ export const taskCompletedTrigger = createTrigger({
 
         const completedTasks: TodoTask[] = [];
 
-        const client = Client.initWithMiddleware({
-            authProvider: { getAccessToken: () => Promise.resolve(context.auth.access_token) },
-        });
-        
+        const client = createTodoClient(context.auth);
+
         for (const notification of payload.value) {
             const taskId = notification.resourceData?.id;
             if (!taskId) continue;

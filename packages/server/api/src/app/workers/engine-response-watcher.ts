@@ -1,4 +1,4 @@
-import { apId } from '@activepieces/shared'
+import { apId } from '@activepieces/core-utils'
 import { FastifyBaseLogger } from 'fastify'
 import { pubsub } from '../helper/pubsub'
 
@@ -57,6 +57,13 @@ export const engineResponseWatcher = (log: FastifyBaseLogger) => ({
 
             listeners.set(requestId, responseHandler)
         })
+    },
+
+    async publish(webserverId: string, requestId: string, response: unknown): Promise<void> {
+        await pubsub.publish(
+            `engine-run:sync:${webserverId}`,
+            JSON.stringify({ requestId, response }),
+        )
     },
 
     async shutdown(): Promise<void> {

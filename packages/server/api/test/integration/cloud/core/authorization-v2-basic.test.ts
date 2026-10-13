@@ -1,21 +1,16 @@
 
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import { AuthorizationRouteSecurity, AuthorizationType, RouteKind } from '@activepieces/server-common'
-import {
-    ActivepiecesError,
-    apId,
-    ErrorCode,
-    PlatformRole,
-    Principal,
-    PrincipalType,
-} from '@activepieces/shared'
+import { ActivepiecesError, apId, ErrorCode } from '@activepieces/core-utils'
+import { PlatformRole, Principal, PrincipalType } from '@activepieces/shared'
 import { FastifyBaseLogger, FastifyInstance } from 'fastify'
+import { AuthorizationRouteSecurity } from '../../../../src/app/core/security/authorization/authorization'
+import { AuthorizationType, RouteKind } from '../../../../src/app/core/security/authorization/common'
 import { authorizeOrThrow } from '../../../../src/app/core/security/v2/authz/authorize'
 import {
     mockAndSaveBasicSetup,
     mockAndSaveBasicSetupWithApiKey,
     mockBasicUser,
 } from '../../../helpers/mocks'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 let mockLog: FastifyBaseLogger

@@ -1,4 +1,4 @@
-import { createAction, Property } from '@activepieces/pieces-framework';
+import { createAction, Property, ApFile } from '@activepieces/pieces-framework';
 import {
   GenerateContentConfig,
   GoogleGenAI,
@@ -6,14 +6,26 @@ import {
   ThinkingConfig,
   ThinkingLevel,
 } from '@google/genai';
+import mime from 'mime-types';
 import { vertexAiAuth, GoogleVertexAIAuthValue } from '../auth';
 import { getVertexAIModelOptions, getVertexAILocationOptions } from '../common';
+
+interface FileItem {
+  file: ApFile;
+}
 
 export const generateContent = createAction({
   auth: vertexAiAuth,
   name: 'generate_content',
+  classification: 'READ',
   displayName: 'Generate Content',
   description: 'Call a Gemini model on Vertex AI to generate a text response.',
+  audience: 'both',
+  aiMetadata: {
+    description:
+      'Sends a prompt (with optional system instruction) to a Gemini model on Google Vertex AI and returns the generated text. Multimodal: you can attach files, public image URLs, or a YouTube video URL for the model to analyze alongside the prompt. Use for free-form text generation, summarization, extraction, or analysis of supplied media. Requires a Vertex AI service-account credential and a region/model selection. Not idempotent — each call is a fresh generation and output varies (especially with non-zero temperature).',
+    idempotent: false,
+  },
   props: {
     location: Property.Dropdown({
       displayName: 'Location',
@@ -47,6 +59,22 @@ export const generateContent = createAction({
       displayName: 'User Message',
       description: 'The prompt to send to the model.',
       required: true,
+    }),
+    files: Property.Array({
+      displayName: 'Files',
+      required: false,
+      description: 'Optional files to include in the prompt (images, PDFs, text, audio, video)',
+      properties: {
+        file: Property.File({
+          displayName: 'File',
+          required: true,
+        })
+      }
+    }),
+    youtubeUrl: Property.ShortText({
+      displayName: 'YouTube URL',
+      required: false,
+      description: 'Optional public YouTube video URL for the AI to use as a reference.',
     }),
     imageUrls: Property.Array({
       displayName: 'Image URLs',
@@ -98,6 +126,8 @@ export const generateContent = createAction({
       model,
       systemMessage,
       userMessage,
+      files,
+      youtubeUrl,
       imageUrls,
       temperature,
       maxOutputTokens,
@@ -124,6 +154,20 @@ export const generateContent = createAction({
     });
 
     const parts: Part[] = [{ text: userMessage }];
+
+    if (files && files.length > 0) {
+      for (const item of files as FileItem[]) {
+        if (item.file && item.file.data) {
+          const base64Data = Buffer.from(item.file.data).toString('base64');
+          const mimeType = mime.lookup(item.file.extension || '') || 'application/octet-stream';
+          parts.push({ inlineData: { data: base64Data, mimeType } });
+        }
+      }
+    }
+
+    if (youtubeUrl) {
+      parts.push({ fileData: { fileUri: youtubeUrl, mimeType: 'video/mp4' } });
+    }
 
     for (const imageUrl of (imageUrls as string[] | undefined) ?? []) {
       try {
@@ -178,6 +222,16 @@ export const generateContent = createAction({
       contents: [{ role: 'user', parts }],
       config,
     });
+
+    const candidate = response.candidates?.[0];
+    if (candidate) {
+      const finishReason = candidate.finishReason;
+      if (finishReason !== 'STOP') {
+        if (finishReason === 'MAX_TOKENS') {
+          throw new Error(`Generation stopped due to token limit. Consider removing the max output tokens or shortening your prompt.`);
+        }
+      }
+    }
 
     return {
       text: response.text,

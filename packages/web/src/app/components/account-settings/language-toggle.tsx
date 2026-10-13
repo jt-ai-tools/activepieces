@@ -59,8 +59,8 @@ export const LanguageToggle = () => {
             variant="outline"
             role="combobox"
             className={cn(
-              'w-full justify-between h-9 font-normal',
-              !selectedLanguage && 'text-muted-foreground',
+              'w-full justify-between font-normal',
+              !selectedLanguage && 'text-gray-11',
             )}
             disabled={isPending}
           >
@@ -78,7 +78,7 @@ export const LanguageToggle = () => {
           <Command>
             <CommandInput
               placeholder={i18n.t('Search language...')}
-              className="h-9 text-sm"
+              className="h-8 text-sm"
             />
             <CommandList>
               <ScrollArea className="h-[200px] w-[300px]">
@@ -113,7 +113,7 @@ export const LanguageToggle = () => {
       {showCommunity && (
         <div className="pt-1">
           <Link
-            className="text-xs text-primary hover:underline font-medium"
+            className="text-xs text-accent-11 hover:underline font-medium"
             rel="noopener noreferrer"
             target="_blank"
             to="https://www.activepieces.com/docs/about/i18n"
@@ -125,5 +125,3 @@ export const LanguageToggle = () => {
     </div>
   );
 };
-
-export default LanguageToggle;

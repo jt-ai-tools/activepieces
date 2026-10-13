@@ -1,4 +1,6 @@
+import { ProjectId } from '@activepieces/core-utils'
 import { FlowVersion, FlowVersionState, FlowVersionTemplate } from '@activepieces/shared'
+import { FastifyBaseLogger } from 'fastify'
 import { migrateBranchToRouter } from './migrate-v0-branch-to-router'
 import { migrateConnectionIds } from './migrate-v1-connection-ids'
 import { migrateV10AiPiecesProviderId } from './migrate-v10-ai-pieces-provider-id'
@@ -9,7 +11,17 @@ import { migrateV14AgentProviderModel } from './migrate-v14-agent-provider-model
 import { migrateV15AgentProviderModel } from './migrate-v15-agent-provider-model'
 import { migrateV16AgentPieceToolNames } from './migrate-v16-agent-piece-tool-names'
 import { migrateV17AddLastUpdatedDate } from './migrate-v17-add-last-updated-date'
+import { migrateV18TablesFieldIds } from './migrate-v18-tables-find-records-field-ids'
+import { migrateV19StripPieceVersionWildcards } from './migrate-v19-strip-piece-version-wildcards'
 import { migrateAgentPieceV2 } from './migrate-v2-agent-piece'
+import { migrateV20GoogleModelPrefix } from './migrate-v20-google-model-prefix'
+import { migrateV21StepOutputNesting } from './migrate-v21-step-output-nesting'
+import { migrateV22AgentStepToThinClient } from './migrate-v22-agent-step-to-thin-client'
+import { migrateV23UpgradePieceVersions } from './migrate-v23-upgrade-piece-versions'
+import { migrateV24OpenaiPieceVersion } from './migrate-v24-openai-piece-version'
+import { migrateV25HttpPieceVersion } from './migrate-v25-http-piece-version'
+import { migrateV26AiPieceCostBilling } from './migrate-v26-ai-piece-cost-billing'
+import { migrateV27OracleDatabasePieceVersion } from './migrate-v27-oracle-database-piece-version'
 import { migrateAgentPieceV3 } from './migrate-v3-agent-piece'
 import { migrateAgentPieceV4 } from './migrate-v4-agent-piece'
 import { migrateHttpToWebhookV5 } from './migrate-v5-http-to-webhook'
@@ -18,9 +30,15 @@ import { moveAgentsToFlowVerion } from './migrate-v7-agents-to-flow-version'
 import { cleanUpAgentTools } from './migrate-v8-agent-tools'
 import { migrateV9AiPieces } from './migrate-v9-ai-pieces'
 
+export type MigrationContext = {
+    log: FastifyBaseLogger
+    projectId?: ProjectId
+    platformId?: string
+}
+
 export type Migration = {
     targetSchemaVersion: string | undefined
-    migrate: (flowVersion: FlowVersion) => Promise<FlowVersion>
+    migrate: (flowVersion: FlowVersion, context?: MigrationContext) => Promise<FlowVersion>
 }
 
 const migrations: Migration[] = [
@@ -42,13 +60,23 @@ const migrations: Migration[] = [
     migrateV15AgentProviderModel,
     migrateV16AgentPieceToolNames,
     migrateV17AddLastUpdatedDate,
+    migrateV18TablesFieldIds,
+    migrateV19StripPieceVersionWildcards,
+    migrateV20GoogleModelPrefix,
+    migrateV21StepOutputNesting,
+    migrateV22AgentStepToThinClient,
+    migrateV23UpgradePieceVersions,
+    migrateV24OpenaiPieceVersion,
+    migrateV25HttpPieceVersion,
+    migrateV26AiPieceCostBilling,
+    migrateV27OracleDatabasePieceVersion,
 ] as const
 
 export const flowMigrations = {
-    apply: async (flowVersion: FlowVersion): Promise<FlowVersion> => {
+    apply: async (flowVersion: FlowVersion, context?: MigrationContext): Promise<FlowVersion> => {
         for (const migration of migrations) {
             if (flowVersion.schemaVersion === migration.targetSchemaVersion) {
-                flowVersion = await migration.migrate(flowVersion)
+                flowVersion = await migration.migrate(flowVersion, context)
             }
         }
         return flowVersion

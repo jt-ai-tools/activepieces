@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { templateUtils } from '@/features/flows';
 import { templatesApi } from '@/features/templates';
+import { AdminControl, adminControl } from '@/lib/admin-control';
 import { api } from '@/lib/api';
 
 const UpdateFlowTemplateSchema = z.object({
@@ -124,9 +125,8 @@ export const UpdateTemplateDialog = ({
               name="displayName"
               render={({ field }) => (
                 <FormItem className="grid space-y-2">
-                  <Label htmlFor="name">
-                    {t('Name')}{' '}
-                    <span className="text-destructive-300">{'*'}</span>
+                  <Label htmlFor="name" showRequiredIndicator>
+                    {t('Name')}
                   </Label>
                   <Input
                     {...field}
@@ -231,6 +231,7 @@ export const UpdateTemplateDialog = ({
             {t('Cancel')}
           </Button>
           <Button
+            {...adminControl(AdminControl.TEMPLATES_EDIT_SUBMIT)}
             disabled={isPending}
             loading={isPending}
             onClick={(e) => {

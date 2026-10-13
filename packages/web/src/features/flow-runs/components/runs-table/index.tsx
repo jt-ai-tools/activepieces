@@ -1,10 +1,11 @@
+import { Permission } from '@activepieces/core-utils';
 import {
   FlowRetryStrategy,
   FlowRun,
   FlowRunStatus,
+  FlowRunWithRetryError,
   isFailedState,
   isFlowRunStateTerminal,
-  Permission,
 } from '@activepieces/shared';
 import { useQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
@@ -16,9 +17,11 @@ import {
   History,
   X,
   Archive,
+  SearchIcon,
 } from 'lucide-react';
-import { useMemo, useCallback, useState } from 'react';
+import { useEffect, useMemo, useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import {
   BulkAction,
@@ -27,6 +30,7 @@ import {
   DataTable,
   DataTableFilters,
 } from '@/components/custom/data-table';
+import { getDefaultRange } from '@/components/custom/date-time-picker-range';
 import { MessageTooltip } from '@/components/custom/message-tooltip';
 import { PermissionNeededTooltip } from '@/components/custom/permission-needed-tooltip';
 import { Button } from '@/components/ui/button';
@@ -37,19 +41,28 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { flowRunsApi } from '@/features/flow-runs/api/flow-runs-api';
-import { flowRunMutations } from '@/features/flow-runs/hooks/flow-run-hooks';
+import {
+  DEFAULT_DATE_PRESET,
+  flowRunMutations,
+} from '@/features/flow-runs/hooks/flow-run-hooks';
 import { flowRunUtils } from '@/features/flow-runs/utils/flow-run-utils';
 import { flowHooks } from '@/features/flows/hooks/flow-hooks';
-import { useAuthorization } from '@/hooks/authorization-hooks';
+import {
+  useAuthorization,
+  useIsPlatformAdmin,
+} from '@/hooks/authorization-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
 import { formatUtils } from '@/lib/format-utils';
 import { useNewWindow } from '@/lib/navigation-utils';
 
 import { runsTableColumns } from './columns';
+import { FailedRetryRunsDialog } from './failed-retry-runs-dialog';
+import { FailedStepDialog } from './failed-step-dialog';
 import {
   RetriedRunsSnackbar,
   RUN_IDS_QUERY_PARAM,
 } from './retried-runs-snackbar';
+import { RunsStatusChart } from './runs-status-chart';
 
 type SelectedRow = {
   id: string;
@@ -63,8 +76,35 @@ export const RunsTable = () => {
 
   const projectId = authenticationSession.getProjectId()!;
   const [retriedRunsIds, setRetriedRunsIds] = useState<string[]>([]);
-  const { data, isLoading, refetch } = useQuery({
+  const [failedRetryRuns, setFailedRetryRuns] = useState<
+    Required<FlowRunWithRetryError>[]
+  >([]);
+  const [failedRetryDialogOpen, setFailedRetryDialogOpen] = useState(false);
+  const [errorDialogRun, setErrorDialogRun] = useState<FlowRun | null>(null);
+
+  const [hasSeededDefaultRange, setHasSeededDefaultRange] = useState(() =>
+    searchParams.has('createdAfter'),
+  );
+  useEffect(() => {
+    if (hasSeededDefaultRange) return;
+    const range = getDefaultRange(DEFAULT_DATE_PRESET);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (!next.has('createdAfter')) {
+          next.set('createdAfter', range.from.toISOString());
+          next.set('createdBefore', range.to.toISOString());
+        }
+        return next;
+      },
+      { replace: true },
+    );
+    setHasSeededDefaultRange(true);
+  }, [hasSeededDefaultRange, setSearchParams]);
+
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['flow-run-table', searchParams.toString(), projectId],
+    enabled: hasSeededDefaultRange,
     staleTime: 0,
     gcTime: 0,
     queryFn: () => {
@@ -73,6 +113,8 @@ export const RunsTable = () => {
       const cursor = searchParams.get(CURSOR_QUERY_PARAM);
       const flowRunIds = searchParams.getAll(RUN_IDS_QUERY_PARAM);
       const failedStepName = searchParams.get('failedStepName') || undefined;
+      const failedStepMessage =
+        searchParams.get('failedStepMessage') || undefined;
       const limit = searchParams.get(LIMIT_QUERY_PARAM)
         ? parseInt(searchParams.get(LIMIT_QUERY_PARAM)!)
         : 10;
@@ -91,6 +133,7 @@ export const RunsTable = () => {
         createdAfter: createdAfter ?? undefined,
         createdBefore: createdBefore ?? undefined,
         failedStepName,
+        failedStepMessage,
         flowRunIds,
       });
     },
@@ -106,7 +149,9 @@ export const RunsTable = () => {
       return runningRuns?.length ? 15 * 1000 : false;
     },
   });
-
+  const navigate = useNavigate();
+  const isPlatformAdmin = useIsPlatformAdmin();
+  const canViewInternalError = isPlatformAdmin;
   const columns = runsTableColumns({
     data,
     selectedRows,
@@ -115,9 +160,14 @@ export const RunsTable = () => {
     setSelectedAll,
     excludedRows,
     setExcludedRows,
+    canViewInternalError,
+    onViewError: setErrorDialogRun,
+    onViewRun: (run) =>
+      navigate(
+        authenticationSession.appendProjectRoutePrefix(`/runs/${run.id}`),
+      ),
   });
 
-  const navigate = useNavigate();
   const { data: flowsData, isFetching: isFetchingFlows } = flowHooks.useFlows({
     limit: 1000,
     cursor: undefined,
@@ -127,47 +177,56 @@ export const RunsTable = () => {
   const { checkAccess } = useAuthorization();
   const userHasPermissionToRetryRun = checkAccess(Permission.WRITE_RUN);
 
-  const filters: DataTableFilters<keyof FlowRun>[] = useMemo(
-    () => [
-      {
-        type: 'select',
-        title: t('Flow name'),
-        accessorKey: 'flowId',
-        options:
-          flows?.map((flow) => ({
-            label: flow.version.displayName,
-            value: flow.id,
-          })) || [],
-        icon: CheckIcon,
-      },
-      {
-        type: 'select',
-        title: t('Status'),
-        accessorKey: 'status',
-        options: Object.values(FlowRunStatus).map((status) => {
-          return {
-            label: formatUtils.convertEnumToHumanReadable(status),
-            value: status,
-            icon: flowRunUtils.getStatusIcon(status).Icon,
-          };
-        }),
-        icon: CheckIcon,
-      },
-      {
-        type: 'date',
-        title: t('Created'),
-        accessorKey: 'created',
-        icon: CheckIcon,
-        defaultPresetName: '7days',
-      },
-      {
-        type: 'checkbox',
-        title: t('Show archived'),
-        accessorKey: 'archivedAt',
-      },
-    ],
-    [flows],
-  );
+  const filters: DataTableFilters<keyof FlowRun | 'failedStepMessage'>[] =
+    useMemo(
+      () => [
+        {
+          type: 'select',
+          title: t('Flow name'),
+          accessorKey: 'flowId',
+          options:
+            flows?.map((flow) => ({
+              label: flow.version.displayName,
+              value: flow.id,
+            })) || [],
+          icon: CheckIcon,
+        },
+        {
+          type: 'select',
+          title: t('Status'),
+          accessorKey: 'status',
+          options: Object.values(FlowRunStatus).map((status) => {
+            return {
+              label:
+                flowRunUtils.getStatusLabelOverride(status) ??
+                formatUtils.convertEnumToHumanReadable(status),
+              value: status,
+              icon: flowRunUtils.getStatusIcon(status).Icon,
+            };
+          }),
+          icon: CheckIcon,
+        },
+        {
+          type: 'input',
+          title: t('Error message'),
+          accessorKey: 'failedStepMessage',
+          icon: SearchIcon,
+        },
+        {
+          type: 'date',
+          title: t('Created'),
+          accessorKey: 'created',
+          icon: CheckIcon,
+          defaultPresetName: DEFAULT_DATE_PRESET,
+        },
+        {
+          type: 'checkbox',
+          title: t('Show archived'),
+          accessorKey: 'archivedAt',
+        },
+      ],
+      [flows],
+    );
 
   const retryRuns = flowRunMutations.useBulkRetryRuns({
     onSuccess: (runs) => {
@@ -182,6 +241,21 @@ export const RunsTable = () => {
           [LIMIT_QUERY_PARAM]: runsIds.length.toString(),
         });
       }
+    },
+    onPartialFailure: (failedRuns) => {
+      setFailedRetryRuns(failedRuns);
+      toast.error(
+        t('{count} run(s) failed to retry', { count: failedRuns.length }),
+        {
+          action: {
+            label: t('More'),
+            onClick: () => setFailedRetryDialogOpen(true),
+          },
+          duration: 15000,
+          closeButton: true,
+          dismissible: true,
+        },
+      );
     },
   });
 
@@ -232,6 +306,8 @@ export const RunsTable = () => {
                       searchParams.get('createdBefore') || undefined,
                     failedStepName:
                       searchParams.get('failedStepName') || undefined,
+                    failedStepMessage:
+                      searchParams.get('failedStepMessage') || undefined,
                   });
                   resetSelection();
                   setSelectedRows([]);
@@ -389,6 +465,9 @@ export const RunsTable = () => {
                               searchParams.get('createdBefore') || undefined,
                             failedStepName:
                               searchParams.get('failedStepName') || undefined,
+                            failedStepMessage:
+                              searchParams.get('failedStepMessage') ||
+                              undefined,
                           });
                           resetSelection();
                           setSelectedRows([]);
@@ -430,6 +509,9 @@ export const RunsTable = () => {
                                 searchParams.get('createdBefore') || undefined,
                               failedStepName:
                                 searchParams.get('failedStepName') || undefined,
+                              failedStepMessage:
+                                searchParams.get('failedStepMessage') ||
+                                undefined,
                             });
                             resetSelection();
                             setSelectedRows([]);
@@ -487,6 +569,7 @@ export const RunsTable = () => {
             key="retried-runs-filter"
             variant="outline"
             onClick={() => {
+              setSearchParams({});
               navigate(authenticationSession.appendProjectRoutePrefix(`/runs`));
             }}
           >
@@ -509,15 +592,31 @@ export const RunsTable = () => {
         columns={columns}
         page={data}
         isLoading={isLoading || isFetchingFlows}
+        isError={isError}
+        errorStateEntity={t('runs')}
+        onRetry={refetch}
         filters={customFilters.length > 0 ? [] : filters}
         bulkActions={bulkActions}
         onRowClick={(row, newWindow) => handleRowClick(row, newWindow)}
         customFilters={customFilters}
+        toolbarButtons={[<RunsStatusChart key="status-chart" />]}
         hidePagination={retriedRunsInQueryParams.length > 0}
       />
       <RetriedRunsSnackbar
         retriedRunsIds={retriedRunsIds}
         clearRetriedRuns={() => setRetriedRunsIds([])}
+      />
+      <FailedRetryRunsDialog
+        open={failedRetryDialogOpen}
+        onOpenChange={setFailedRetryDialogOpen}
+        failedRuns={failedRetryRuns}
+      />
+      <FailedStepDialog
+        run={errorDialogRun}
+        open={errorDialogRun !== null}
+        onOpenChange={(open) => {
+          if (!open) setErrorDialogRun(null);
+        }}
       />
     </div>
   );

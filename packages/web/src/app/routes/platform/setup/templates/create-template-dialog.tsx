@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { templateUtils } from '@/features/flows';
 import { templatesApi } from '@/features/templates';
 import { userHooks } from '@/hooks/user-hooks';
+import { AdminControl, adminControl } from '@/lib/admin-control';
 import { api } from '@/lib/api';
 
 import { Textarea } from '../../../../../components/ui/textarea';
@@ -132,9 +133,8 @@ export const CreateTemplateDialog = ({
               name="displayName"
               render={({ field }) => (
                 <FormItem className="grid space-y-2">
-                  <Label htmlFor="name">
-                    {t('Name')}{' '}
-                    <span className="text-destructive-300">{'*'}</span>
+                  <Label htmlFor="name" showRequiredIndicator>
+                    {t('Name')}
                   </Label>
                   <Input
                     {...field}
@@ -200,9 +200,8 @@ export const CreateTemplateDialog = ({
               name="template"
               render={({ field }) => (
                 <FormItem className="grid space-y-2">
-                  <Label htmlFor="template">
+                  <Label htmlFor="template" showRequiredIndicator>
                     {t('Template')}
-                    <span className="text-destructive-300">{' *'} </span>
                   </Label>
                   <Input
                     type="file"
@@ -243,6 +242,7 @@ export const CreateTemplateDialog = ({
             {t('Cancel')}
           </Button>
           <Button
+            {...adminControl(AdminControl.TEMPLATES_NEW_SUBMIT)}
             disabled={isPending}
             loading={isPending}
             onClick={(e) => {

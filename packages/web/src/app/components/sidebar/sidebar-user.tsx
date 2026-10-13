@@ -1,12 +1,11 @@
-import { isNil, Permission } from '@activepieces/shared';
+import { isNil } from '@activepieces/core-utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { ChevronsUpDown, LogOut, UserCogIcon, UserPlus } from 'lucide-react';
+import { ChevronsUpDown, LogOut, UserCogIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { UserAvatar } from '@/components/custom/user-avatar';
 import { useEmbedding } from '@/components/providers/embed-provider';
-import { useTelemetry } from '@/components/providers/telemetry-provider';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,27 +21,20 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar-shadcn';
-import { InviteUserDialog } from '@/features/members';
-import { useAuthorization } from '@/hooks/authorization-hooks';
 import { userHooks } from '@/hooks/user-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
 import { cn } from '@/lib/utils';
 
-import AccountSettingsDialog from '../account-settings';
+import { AccountSettingsDialog } from '../account-settings';
 import { HelpAndFeedback } from '../help-and-feedback';
 
 export function SidebarUser() {
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
-  const [inviteUserOpen, setInviteUserOpen] = useState(false);
   const { embedState } = useEmbedding();
-  const { state } = useSidebar();
   const { data: user } = userHooks.useCurrentUser();
   const queryClient = useQueryClient();
-  const { reset } = useTelemetry();
-  const { checkAccess } = useAuthorization();
-  const canInviteUsers = checkAccess(Permission.WRITE_INVITATION);
+  const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
-
   if (!user || embedState.isEmbedded) {
     return null;
   }
@@ -50,7 +42,6 @@ export function SidebarUser() {
   const handleLogout = () => {
     userHooks.invalidateCurrentUser(queryClient);
     authenticationSession.logOut();
-    reset();
   };
 
   return (
@@ -58,8 +49,8 @@ export function SidebarUser() {
       <SidebarMenuItem>
         <DropdownMenu modal>
           <DropdownMenuTrigger asChild className="w-full">
-            <SidebarMenuButton className="h-10! pl-1! group-data-[collapsible=icon]:h-10! group-data-[collapsible=icon]:pl-1!">
-              <div className="size-6 shrink-0 overflow-hidden flex items-center justify-center rounded-full">
+            <SidebarMenuButton className="h-10! pl-2! group-data-[collapsible=icon]:h-10! group-data-[collapsible=icon]:pl-2!">
+              <div className="size-[22px] shrink-0 overflow-hidden flex items-center justify-center rounded-full">
                 <UserAvatar
                   className={cn('size-full object-cover', {
                     'scale-150': isNil(user.imageUrl),
@@ -67,7 +58,7 @@ export function SidebarUser() {
                   name={user.firstName + ' ' + user.lastName}
                   email={user.email}
                   imageUrl={user.imageUrl}
-                  size={24}
+                  size={22}
                   disableTooltip={true}
                 />
               </div>
@@ -115,12 +106,7 @@ export function SidebarUser() {
                 <UserCogIcon className="w-4 h-4 mr-2" />
                 {t('Account Settings')}
               </DropdownMenuItem>
-              {canInviteUsers && (
-                <DropdownMenuItem onClick={() => setInviteUserOpen(true)}>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {t('Invite User')}
-                </DropdownMenuItem>
-              )}
+
               <HelpAndFeedback />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -136,7 +122,6 @@ export function SidebarUser() {
         open={accountSettingsOpen}
         onClose={() => setAccountSettingsOpen(false)}
       />
-      <InviteUserDialog open={inviteUserOpen} setOpen={setInviteUserOpen} />
     </SidebarMenu>
   );
 }

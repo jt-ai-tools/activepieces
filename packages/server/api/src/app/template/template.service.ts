@@ -1,4 +1,5 @@
-import { ActivepiecesError, apId, CreateTemplateRequestBody, ErrorCode, FlowVersionTemplate, isNil, ListTemplatesRequestQuery, SeekPage, spreadIfDefined, Template, TemplateStatus, TemplateType, UpdateTemplateRequestBody } from '@activepieces/shared'
+import { ActivepiecesError, apId, ErrorCode, isNil, SeekPage, spreadIfDefined } from '@activepieces/core-utils'
+import { CreateTemplateRequestBody, FlowVersionTemplate, ListTemplatesRequestQuery, Template, TemplateStatus, TemplateType, UpdateTemplateRequestBody } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { ArrayContains, ArrayOverlap, Equal, IsNull } from 'typeorm'
 import { repoFactory } from '../core/db/repo-factory'
@@ -77,7 +78,7 @@ export const templateService = (log: FastifyBaseLogger) => ({
         if (!isNil(params.flows) && params.flows.length > 0) {
             const preparedTemplate = await templateValidator.validateAndPrepare({
                 flows: params.flows,
-                platformId: undefined,
+                platformId: template.platformId ?? undefined,
                 log,
             })
             sanatizedFlows = preparedTemplate.flows
@@ -103,7 +104,7 @@ export const templateService = (log: FastifyBaseLogger) => ({
                 return templateRepo().findOneByOrFail({ id })
             }
             case TemplateType.CUSTOM: {
-                return platformTemplateService().update({ id, params })
+                return platformTemplateService().update({ id, params, flows: sanatizedFlows, pieces })
             }
         }
     },

@@ -1,4 +1,4 @@
-import type { Label as LabelPrimitive } from 'radix-ui';
+import { t } from 'i18next';
 import { Slot } from 'radix-ui';
 import * as React from 'react';
 import {
@@ -11,7 +11,7 @@ import {
   type FieldValues,
 } from 'react-hook-form';
 
-import { Label } from '@/components/ui/label';
+import { Label, type LabelProps } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const Form = FormProvider;
@@ -74,17 +74,14 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function FormLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+function FormLabel({ className, ...props }: LabelProps) {
   const { error, formItemId } = useFormField();
 
   return (
     <Label
       data-slot="form-label"
       data-error={!!error}
-      className={cn('data-[error=true]:text-destructive', className)}
+      className={cn('data-[error=true]:text-danger-11', className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -117,7 +114,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
     <p
       data-slot="form-description"
       id={formDescriptionId}
-      className={cn('text-sm text-muted-foreground', className)}
+      className={cn('text-sm text-gray-11', className)}
       {...props}
     />
   );
@@ -134,7 +131,7 @@ function FormError({
       data-slot="form-error"
       id={formMessageId}
       className={cn(
-        'text-sm font-medium text-destructive wrap-break-word',
+        'text-sm font-medium text-danger-11 wrap-break-word',
         className,
       )}
       {...props}
@@ -146,7 +143,7 @@ function FormError({
 
 function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId } = useFormField();
-  const body = error ? String(error?.message ?? '') : props.children;
+  const body = error ? t(String(error?.message ?? '')) : props.children;
 
   if (!body) {
     return null;

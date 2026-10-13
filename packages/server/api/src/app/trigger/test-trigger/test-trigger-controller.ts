@@ -1,6 +1,7 @@
-import { ProjectResourceType, securityAccess } from '@activepieces/server-common'
 import { CancelTestTriggerRequestBody, PrincipalType, TestTriggerRequestBody } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
+import { ProjectResourceType } from '../../core/security/authorization/common'
+import { securityAccess } from '../../core/security/authorization/fastify-security'
 import { testTriggerService } from '../../trigger/test-trigger/test-trigger-service'
 
 export const testTriggerController: FastifyPluginAsyncZod = async (app) => {
@@ -8,9 +9,9 @@ export const testTriggerController: FastifyPluginAsyncZod = async (app) => {
         const { flowId, flowVersionId, testStrategy } = req.body
 
         const logWithContext = req.log.child({
-            flowId,
-            flowVersionId,
-            projectId: req.projectId,
+            flow: { id: flowId },
+            flowVersion: { id: flowVersionId },
+            project: { id: req.projectId },
             testStrategy,
         })
         return testTriggerService(logWithContext).test({

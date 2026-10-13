@@ -1,13 +1,20 @@
 import { microsoftSharePointAuth } from '../auth';
 import { createAction, Property } from '@activepieces/pieces-framework';
+import { getGraphBaseUrl } from '../common/microsoft-cloud';
 import { microsoftSharePointCommon } from '../common';
 import { Client } from '@microsoft/microsoft-graph-client';
 
 export const getSiteInformationAction = createAction({
   auth: microsoftSharePointAuth,
   name: 'microsoft_sharepoint_get_site_information',
+  classification: 'READ',
   displayName: 'Get Site Information',
   description: 'Fetch metadata of a SharePoint site (site ID, title, URL, description, etc.).',
+  audience: 'both',
+  aiMetadata: {
+    description: 'Fetches metadata for a single SharePoint site by its site ID (title, URL, description, and similar properties), with optional field selection. Use to inspect or confirm site details once you have its ID. Read-only and idempotent.',
+    idempotent: true,
+  },
   props: {
     siteId: microsoftSharePointCommon.siteId,
     select: Property.ShortText({
@@ -19,10 +26,12 @@ export const getSiteInformationAction = createAction({
   async run(context) {
     const { siteId, select } = context.propsValue;
 
+    const cloud = context.auth.props?.['cloud'] as string | undefined;
     const client = Client.initWithMiddleware({
       authProvider: {
         getAccessToken: () => Promise.resolve(context.auth.access_token),
       },
+      baseUrl: getGraphBaseUrl(cloud),
     });
 
     const request = client.api(`/sites/${siteId}`);

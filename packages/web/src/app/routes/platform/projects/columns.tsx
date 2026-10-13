@@ -1,9 +1,8 @@
+import { isNil } from '@activepieces/core-utils';
 import {
-  isNil,
   PlatformWithoutSensitiveData,
   ProjectWithLimits,
   ProjectType,
-  AppConnectionWithoutSensitiveData,
 } from '@activepieces/shared';
 import { ColumnDef } from '@tanstack/react-table';
 import { t } from 'i18next';
@@ -74,7 +73,7 @@ export const projectsTableColumns = ({
             <span className="font-medium">
               {row.original.analytics.activeUsers}
             </span>
-            <span className="text-muted-foreground">
+            <span className="text-gray-11">
               {` / ${row.original.analytics.totalUsers}`}
             </span>
           </div>
@@ -98,7 +97,7 @@ export const projectsTableColumns = ({
             <span className="font-medium">
               {row.original.analytics.activeFlows}
             </span>
-            <span className="text-muted-foreground">
+            <span className="text-gray-11">
               {` / ${row.original.analytics.totalFlows}`}
             </span>
           </div>

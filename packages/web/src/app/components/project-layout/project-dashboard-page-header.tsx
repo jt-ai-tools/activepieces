@@ -1,7 +1,6 @@
+import { isNil, Permission } from '@activepieces/core-utils';
 import {
   ApFlagId,
-  isNil,
-  Permission,
   PlatformRole,
   ProjectType,
   UserStatus,
@@ -24,12 +23,12 @@ import {
 } from '@/components/ui/tooltip';
 import { InviteUserDialog, projectMembersHooks } from '@/features/members';
 import { getProjectName, projectCollectionUtils } from '@/features/projects';
+import { ApProjectDisplay } from '@/features/projects/components/ap-project-display';
 import { useAuthorization } from '@/hooks/authorization-hooks';
 import { flagsHooks } from '@/hooks/flags-hooks';
 import { platformHooks } from '@/hooks/platform-hooks';
 import { userHooks } from '@/hooks/user-hooks';
 
-import { ApProjectDisplay } from '../ap-project-display';
 import { ProjectSettingsDialog } from '../project-settings';
 
 export const ProjectDashboardPageHeader = ({
@@ -71,9 +70,13 @@ export const ProjectDashboardPageHeader = ({
     !isNil(activeProjectMembers) &&
     project.type === ProjectType.TEAM;
 
+  const userCanInviteToProject =
+    userHasPermissionToInviteUser &&
+    project.type === ProjectType.TEAM &&
+    platform.plan.projectRolesEnabled;
+  const userCanInviteToPlatform = user?.platformRole === PlatformRole.ADMIN;
   const showInviteUserButton =
-    userHasPermissionToInviteUser && project.type === ProjectType.TEAM;
-
+    userCanInviteToProject || userCanInviteToPlatform;
   const isProjectPage = location.pathname.includes('/projects/');
 
   const hasGeneralSettings =
@@ -177,17 +180,13 @@ export const ProjectDashboardPageHeader = ({
         title={titleContent}
         description={description}
         rightContent={rightContent}
-        showSidebarToggle={true}
-        className="min-w-full px-3"
+        className="min-w-full"
       />
       <InviteUserDialog open={inviteOpen} setOpen={setInviteOpen} />
       <ProjectSettingsDialog
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         initialTab={settingsInitialTab}
-        initialValues={{
-          projectName: project?.displayName,
-        }}
       />
     </>
   );

@@ -26,11 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  projectReleaseMutations,
-  gitSyncHooks,
-} from '@/features/project-releases';
-import { platformHooks } from '@/hooks/platform-hooks';
+import { projectReleaseMutations } from '@/features/project-releases';
 import { authenticationSession } from '@/lib/authentication-session';
 
 import { OperationChange } from './operation-change';
@@ -72,11 +68,6 @@ const CreateReleaseDialogContent = ({
   const isThereAnyChanges =
     (plan?.flows && plan?.flows.length > 0) ||
     (plan?.tables && plan?.tables.length > 0);
-  const { platform } = platformHooks.useCurrentPlatform();
-  const { gitSync } = gitSyncHooks.useGitSync(
-    authenticationSession.getProjectId()!,
-    platform.plan.environmentsEnabled,
-  );
 
   const { mutate: applyChanges, isPending } =
     projectReleaseMutations.useApplyRelease({
@@ -122,7 +113,7 @@ const CreateReleaseDialogContent = ({
               placeholder={t('Meeting Summary Flow')}
             />
             {form.formState.errors.name && (
-              <p className="text-sm text-destructive">
+              <p className="text-sm text-danger-11">
                 {form.formState.errors.name.message}
               </p>
             )}
@@ -137,7 +128,7 @@ const CreateReleaseDialogContent = ({
               placeholder={t('Added new features and fixed bugs')}
             />
             {form.formState.errors.description && (
-              <p className="text-sm text-destructive">
+              <p className="text-sm text-danger-11">
                 {form.formState.errors.description.message}
               </p>
             )}
@@ -180,12 +171,12 @@ const CreateReleaseDialogContent = ({
           {plan?.connections && plan?.connections.length > 0 && (
             <div className="space-y-2">
               <div className="flex flex-col gap-2">
-                <div className="flex flex-col justify -center gap-1 py-2 border-b">
+                <div className="flex flex-col gap-1 py-2 border-b">
                   <Label className="text-sm font-medium">
                     {t('Connections Changes')} ({plan?.connections?.length || 0}
                     )
                   </Label>
-                  <div className="flex items-center text-sm text-muted-foreground">
+                  <div className="flex items-center text-sm text-gray-11">
                     <span className="flex items-center gap-2">
                       {t(
                         'New connections are placeholders and need to be reconnected again',
@@ -194,7 +185,7 @@ const CreateReleaseDialogContent = ({
                   </div>
                 </div>
                 <ScrollArea viewPortClassName="max-h-[10vh]">
-                  {plan?.connections.map((connection, index) => (
+                  {plan?.connections.map((connection) => (
                     <div
                       key={connection.connectionState.externalId}
                       className="flex items-center gap-2 text-sm py-1"
@@ -217,8 +208,8 @@ const CreateReleaseDialogContent = ({
                       {connection.type ===
                         ConnectionOperationType.CREATE_CONNECTION && (
                         <div className="flex items-center gap-2">
-                          <Plus className="w-4 h-4 shrink-0 text-success" />
-                          <span className="text-success">
+                          <Plus className="w-4 h-4 shrink-0 text-success-11" />
+                          <span className="text-success-11">
                             {connection.connectionState.displayName}
                           </span>
                         </div>
@@ -233,13 +224,13 @@ const CreateReleaseDialogContent = ({
           {plan?.tables && plan?.tables.length > 0 && (
             <div className="space-y-2">
               <div className="flex flex-col gap-2">
-                <div className="flex flex-col justify -center gap-1 py-2 border-b">
+                <div className="flex flex-col gap-1 py-2 border-b">
                   <Label className="text-sm font-medium">
                     {t('Tables Changes')} ({plan?.tables?.length || 0})
                   </Label>
                 </div>
                 <ScrollArea viewPortClassName="max-h-[10vh]">
-                  {plan?.tables.map((table, index) => (
+                  {plan?.tables.map((table) => (
                     <div
                       key={table.tableState.externalId}
                       className="flex items-center gap-2 text-sm py-1"
@@ -254,16 +245,16 @@ const CreateReleaseDialogContent = ({
                       )}
                       {table.type === TableOperationType.CREATE_TABLE && (
                         <div className="flex items-center gap-2">
-                          <Plus className="w-4 h-4 shrink-0 text-success" />
-                          <span className="text-success">
+                          <Plus className="w-4 h-4 shrink-0 text-success-11" />
+                          <span className="text-success-11">
                             {table.tableState.name}
                           </span>
                         </div>
                       )}
                       {table.type === TableOperationType.DELETE_TABLE && (
                         <div className="flex items-center gap-2">
-                          <TrashIcon className="w-4 h-4 shrink-0 text-destructive" />
-                          <span className="text-destructive">
+                          <TrashIcon className="w-4 h-4 shrink-0 text-danger-11" />
+                          <span className="text-danger-11">
                             {table.tableState.name}
                           </span>
                         </div>
@@ -275,7 +266,7 @@ const CreateReleaseDialogContent = ({
             </div>
           )}
           {errorMessage && (
-            <p className="text-sm text-destructive">{errorMessage}</p>
+            <p className="text-sm text-danger-11">{errorMessage}</p>
           )}
         </div>
       )}

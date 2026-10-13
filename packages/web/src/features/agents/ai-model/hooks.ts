@@ -1,70 +1,41 @@
-import { AIProviderModel, AIProviderName, isNil } from '@activepieces/shared';
-import { useQuery } from '@tanstack/react-query';
+import { AIProviderName, isNil } from '@activepieces/core-utils';
+import {
+  AIProviderModel,
+  AIProviderModelType,
+  ALLOWED_CHAT_MODELS_BY_PROVIDER,
+  ModelOptionsSurface,
+} from '@activepieces/shared';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
-import { aiProviderApi } from '@/features/platform-admin/api/ai-provider-api';
-
-type Provider =
-  | 'activepieces'
-  | 'openai'
-  | 'anthropic'
-  | 'google'
-  | 'openrouter'
-  | 'cloudflare-gateway'
-  | 'custom'
-  | 'azure'
-  | 'x-ai';
+import {
+  aiProviderApi,
+  ModelTier,
+} from '@/features/platform-admin/api/ai-provider-api';
+import { aiProviderQueries } from '@/features/platform-admin/hooks/ai-provider-hooks';
+import { authenticationSession } from '@/lib/authentication-session';
 
 type AIModelType = 'text' | 'image';
 
-const OPENAI_MODELS = ['gpt-5.2', 'gpt-5.1', 'gpt-5-mini'] as const;
-
-const ANTHROPIC_MODELS = [
-  'claude-haiku-4-5-20251001',
-  'claude-haiku-4.5',
-  'claude-sonnet-4-5-20250929',
-  'claude-opus-4.5',
-  'claude-opus-4-5-20251101',
-  'claude-sonnet-4.5',
-] as const;
-
-const GOOGLE_MODELS = [
-  'gemini-2.5-flash-lite-preview-09-2025',
-  'gemini-2.5-flash-preview-09-2025',
-  'gemini-3-flash-preview',
-  'gemini-3-pro-preview',
-] as const;
-
-const X_AI_MODELS = [
-  'grok-3-mini',
-  'grok-3',
-  'grok-code-fast-1',
-  'grok-4',
-  'grok-4-fast',
-  'grok-4.1-fast',
-] as const;
-
-const ALLOWED_MODELS_BY_PROVIDER: Partial<Record<Provider, readonly string[]>> =
-  {
-    openai: OPENAI_MODELS,
-    anthropic: ANTHROPIC_MODELS,
-    google: GOOGLE_MODELS,
-    'x-ai': X_AI_MODELS,
-    activepieces: [
-      ...OPENAI_MODELS.map((model) => `${AIProviderName.OPENAI}/${model}`),
-      ...ANTHROPIC_MODELS.map(
-        (model) => `${AIProviderName.ANTHROPIC}/${model}`,
-      ),
-      ...GOOGLE_MODELS.map((model) => `${AIProviderName.GOOGLE}/${model}`),
-      ...X_AI_MODELS.map((model) => `${'x-ai'}/${model}`),
-    ],
-  };
-
-function getAllowedModelsForProvider(
-  provider: Provider,
-  allModels: AIProviderModel[],
-  modelType: AIModelType,
-): AIProviderModel[] {
-  const allowedIds = ALLOWED_MODELS_BY_PROVIDER[provider];
+function getAllowedModelsForProvider({
+  provider,
+  allModels,
+  modelType,
+  flowTiers,
+}: {
+  provider: AIProviderName;
+  allModels: AIProviderModel[];
+  modelType: AIModelType;
+  flowTiers: ModelTier[];
+}): AIProviderModel[] {
+  if (provider === AIProviderName.ACTIVEPIECES) {
+    return flowTiers.map((tier) => ({
+      id: tier.id,
+      name: tier.label,
+      type: AIProviderModelType.TEXT,
+    }));
+  }
+  const allowedIds = ALLOWED_CHAT_MODELS_BY_PROVIDER[provider];
 
   return allModels
     .filter((model) => model.type === modelType)
@@ -75,28 +46,68 @@ function getAllowedModelsForProvider(
 
       return allowedIds.includes(model.id);
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => {
+      if (isNil(allowedIds)) {
+        return a.name.localeCompare(b.name);
+      }
+      const aIndex = allowedIds.indexOf(a.id);
+      const bIndex = allowedIds.indexOf(b.id);
+      return aIndex - bIndex;
+    });
 }
 
 export const aiModelHooks = {
   useListProviders: () => {
+    const projectId = authenticationSession.getProjectId();
     return useQuery({
-      queryKey: ['ai-providers'],
-      queryFn: () => aiProviderApi.list(),
+      queryKey: ['ai-providers', projectId],
+      enabled: !isNil(projectId),
+      queryFn: () =>
+        isNil(projectId) ? [] : aiProviderApi.listForProject(projectId),
     });
   },
 
-  useGetModelsForProvider: (provider?: Provider) => {
+  useModelOptions: ({
+    projectId,
+    surface,
+    tierId,
+  }: {
+    projectId: string;
+    surface: ModelOptionsSurface;
+    tierId?: string;
+  }) =>
+    useQuery({
+      queryKey: ['ai-model-options', projectId, surface, tierId],
+      queryFn: () =>
+        aiProviderApi.listModelOptions({ projectId, surface, tierId }),
+      placeholderData: keepPreviousData,
+    }),
+
+  useGetModelsForProvider: (provider?: AIProviderName, configId?: string) => {
+    const projectId = authenticationSession.getProjectId();
+    const { tiers: flowTiers } = aiProviderQueries.useModelTiers('flow');
+    const select = useCallback(
+      (allModels: AIProviderModel[]) =>
+        isNil(provider)
+          ? []
+          : getAllowedModelsForProvider({
+              provider,
+              allModels,
+              modelType: 'text',
+              flowTiers,
+            }),
+      [provider, flowTiers],
+    );
     return useQuery({
-      queryKey: ['ai-models', provider],
-      enabled: !!provider,
-      queryFn: async () => {
-        if (isNil(provider)) return [];
-
-        const allModels = await aiProviderApi.listModelsForProvider(provider);
-
-        return getAllowedModelsForProvider(provider, allModels, 'text');
-      },
+      queryKey: ['ai-models', provider, configId, projectId],
+      enabled: !isNil(provider) && !isNil(projectId),
+      queryFn: () =>
+        isNil(provider) ||
+        isNil(projectId) ||
+        provider === AIProviderName.ACTIVEPIECES
+          ? []
+          : aiProviderApi.listModelsForProvider(provider, projectId, configId),
+      select,
     });
   },
 };

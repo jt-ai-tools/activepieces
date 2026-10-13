@@ -1,28 +1,24 @@
-import {
-    FlowOperationRequest,
-    FlowOperationType,
-    FlowStatus,
-    flowStructureUtil,
-    isNil,
-    McpServer,
-    McpToolDefinition,
-} from '@activepieces/shared'
+import { isNil, Permission } from '@activepieces/core-utils'
+import { FlowOperationRequest, FlowOperationType, FlowStatus, flowStructureUtil, McpToolContext, McpToolDefinition } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { z } from 'zod'
 import { flowService } from '../../flows/flow/flow.service'
 import { projectService } from '../../project/project-service'
+import { mcpUtils } from './mcp-utils'
 
 const lockAndPublishInput = z.object({
     flowId: z.string(),
 })
 
-export const apLockAndPublishTool = (mcp: McpServer, log: FastifyBaseLogger): McpToolDefinition => {
+export const apLockAndPublishTool = ({ mcp, userId }: McpToolContext, log: FastifyBaseLogger): McpToolDefinition => {
     return {
         title: 'ap_lock_and_publish',
+        permission: Permission.UPDATE_FLOW_STATUS,
         description: 'Publish and enable the current draft version of a flow. This locks the draft, sets it as the published version, and enables the flow. Returns validation errors if the flow is not ready.',
         inputSchema: {
             flowId: z.string().describe('The id of the flow to publish'),
         },
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
         execute: async (args) => {
             const { flowId } = lockAndPublishInput.parse(args)
 
@@ -35,7 +31,8 @@ export const apLockAndPublishTool = (mcp: McpServer, log: FastifyBaseLogger): Mc
             }
 
             const allSteps = flowStructureUtil.getAllSteps(flow.version.trigger)
-            const invalidSteps = allSteps.filter(s => !s.valid && !(s as { skip?: boolean }).skip)
+            const skippedStepNames = flowStructureUtil.getSkippedStepNames({ trigger: flow.version.trigger })
+            const invalidSteps = allSteps.filter(s => !s.valid && !skippedStepNames.has(s.name))
             if (invalidSteps.length > 0) {
                 const stepList = invalidSteps.map(s => `"${s.name}" (${s.displayName})`).join(', ')
                 return {
@@ -55,7 +52,8 @@ export const apLockAndPublishTool = (mcp: McpServer, log: FastifyBaseLogger): Mc
                 await flowService(log).update({
                     id: flow.id,
                     projectId: mcp.projectId,
-                    userId: null,
+                    userId,
+                    previousFlow: flow,
                     platformId: project.platformId,
                     operation,
                 })
@@ -64,10 +62,7 @@ export const apLockAndPublishTool = (mcp: McpServer, log: FastifyBaseLogger): Mc
                 }
             }
             catch (err) {
-                const message = err instanceof Error ? err.message : String(err)
-                return {
-                    content: [{ type: 'text', text: `❌ Publish failed: ${message}` }],
-                }
+                return mcpUtils.mcpToolError('Publish failed', err)
             }
         },
     }

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CodeModule, CodeSandbox } from '../../core/code/code-sandbox-common'
+import { readFile } from 'node:fs/promises'
+import { CodeSandbox } from '../../core/code/code-sandbox-common'
 
 const ONE_HUNDRED_TWENTY_EIGHT_MEGABYTES = 128
 
@@ -17,7 +18,7 @@ const getIvm = () => {
  * Runs code in a V8 Isolate sandbox
  */
 export const v8IsolateCodeSandbox: CodeSandbox = {
-    async runCodeModule({ codeModule, inputs }) {
+    async runCodeModule({ codeFilePath, inputs }) {
         const ivm = getIvm()
         const isolate = new ivm.Isolate({ memoryLimit: ONE_HUNDRED_TWENTY_EIGHT_MEGABYTES })
 
@@ -29,12 +30,12 @@ export const v8IsolateCodeSandbox: CodeSandbox = {
                 },
             })
 
-            const serializedCodeModule = serializeCodeModule(codeModule)
+            const source = await readFile(codeFilePath, 'utf8')
 
             return await executeIsolate({
                 isolate,
                 isolateContext,
-                code: serializedCodeModule,
+                code: wrapCjsModule(source),
             })
         }
         finally {
@@ -43,6 +44,16 @@ export const v8IsolateCodeSandbox: CodeSandbox = {
     },
 
     async runScript({ script, scriptContext, functions }) {
+        const session = await v8IsolateCodeSandbox.createScriptSession({ scriptContext, functions })
+        try {
+            return await session.run(script)
+        }
+        finally {
+            session.dispose()
+        }
+    },
+
+    async createScriptSession({ scriptContext, functions }) {
         const ivm = getIvm()
         const isolate = new ivm.Isolate({ memoryLimit: ONE_HUNDRED_TWENTY_EIGHT_MEGABYTES })
 
@@ -52,18 +63,38 @@ export const v8IsolateCodeSandbox: CodeSandbox = {
                 isolate,
                 codeContext: JSON.parse(JSON.stringify(scriptContext)),
             })
+            const globalSets = new Map<string, Promise<void>>(
+                [...Object.keys(scriptContext), ...Object.keys(functions)].map((key) => [key, Promise.resolve()]),
+            )
 
             const serializedFunctions = Object.entries(functions).map(([key, value]) => `const ${key} = ${value.toString()};`).join('\n')
-            const scriptWithFunctions = `${serializedFunctions}\n${script}`
+            if (serializedFunctions.length > 0) {
+                const setupScript = await isolate.compileScript(serializedFunctions)
+                await setupScript.run(isolateContext)
+            }
 
-            return await executeIsolate({
-                isolate,
-                isolateContext,
-                code: scriptWithFunctions,
-            })
+            return {
+                run: async (script: string) => executeIsolate({
+                    isolate,
+                    isolateContext,
+                    code: script,
+                }),
+                setGlobal: async (key: string, value: unknown, noOverwrite = true) => {
+                    const pendingSet = globalSets.get(key)
+                    if (noOverwrite && pendingSet !== undefined) {
+                        await pendingSet
+                        return
+                    }
+                    const newSet = isolateContext.global.set(key, new ivm.ExternalCopy(JSON.parse(JSON.stringify(value))).copyInto())
+                    globalSets.set(key, newSet)
+                    await newSet
+                },
+                dispose: () => isolate.dispose(),
+            }
         }
-        finally {
+        catch (error) {
             isolate.dispose()
+            throw error
         }
     },
 }
@@ -89,14 +120,16 @@ const executeIsolate = async ({ isolate, isolateContext, code }: ExecuteIsolateP
     return outRef.copy()
 }
 
-const serializeCodeModule = (codeModule: CodeModule): string => {
-    const serializedCodeFunction = Object.keys(codeModule)
-        .reduce((acc, key) => 
-            acc + `const ${key} = ${(codeModule as any)[key].toString()};`, 
-        '')
-
-    // replace the exports.function_name with function_name
-    return serializedCodeFunction.replace(/\(0, exports\.(\w+)\)/g, '$1') + 'code(inputs);'
+// Wrap CJS source so `exports`/`module` are defined but `require` is NOT,
+// blocking all Node.js built-in access inside the isolate.
+// `inputs` is already injected as a global by initIsolateContext.
+function wrapCjsModule(source: string): string {
+    return `(function() {
+  const exports = Object.create(null);
+  const module = { exports };
+  ${source}
+  return module.exports.code(inputs);
+})()`
 }
 
 type InitContextParams = {

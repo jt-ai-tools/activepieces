@@ -5,46 +5,47 @@ import {
   ModelModality,
 } from '@aws-sdk/client-bedrock';
 import {
+  AudioFormat,
   BedrockRuntimeClient,
+  ContentBlock,
   ConverseResponse,
+  DocumentFormat,
+  ImageFormat,
+  VideoFormat,
 } from '@aws-sdk/client-bedrock-runtime';
+import { AssumeRoleWithWebIdentityCommand, STSClient } from '@aws-sdk/client-sts';
+import { ApFile, AuthValidationServerContext, ServerContext } from '@activepieces/pieces-framework';
+import { BedrockAuthProps, BedrockOidcAuthProps } from './auth';
 
-export interface BedrockAuth {
-  accessKeyId: string;
-  secretAccessKey: string;
-  region: string;
-}
+const AWS_STS_AUDIENCE = 'sts.amazonaws.com';
 
-export function createBedrockClient(auth: BedrockAuth): BedrockClient {
-  return new BedrockClient({
-    credentials: {
-      accessKeyId: auth.accessKeyId,
-      secretAccessKey: auth.secretAccessKey,
-    },
-    region: auth.region,
-  });
-}
-
-export function createBedrockRuntimeClient(
-  auth: BedrockAuth
-): BedrockRuntimeClient {
+export async function createBedrockRuntimeClient({
+  auth,
+  server,
+}: {
+  auth: BedrockAuthProps;
+  server: ServerContext;
+}): Promise<BedrockRuntimeClient> {
+  if (isOidcAuth(auth)) {
+    const credentials = await getTemporaryCredentials({ auth, server });
+    return new BedrockRuntimeClient({ credentials, region: auth.region, ...BEDROCK_CLIENT_TIMEOUTS });
+  }
   return new BedrockRuntimeClient({
-    credentials: {
-      accessKeyId: auth.accessKeyId,
-      secretAccessKey: auth.secretAccessKey,
-    },
+    credentials: { accessKeyId: auth.accessKeyId, secretAccessKey: auth.secretAccessKey, sessionToken: auth.sessionToken },
     region: auth.region,
+    ...BEDROCK_CLIENT_TIMEOUTS,
   });
 }
 
 export async function getBedrockModelOptions(
-  auth: BedrockAuth | undefined,
+  auth: BedrockAuthProps | undefined,
   filters?: {
     inputModality?: ModelModality;
     outputModality?: ModelModality;
     showAll?: boolean;
     useInferenceProfiles?: boolean;
-  }
+  },
+  server?: ServerContext,
 ) {
   if (!auth) {
     return {
@@ -55,7 +56,20 @@ export async function getBedrockModelOptions(
   }
 
   try {
-    const client = createBedrockClient(auth);
+    let client: BedrockClient;
+    if (isOidcAuth(auth)) {
+      if (!server) {
+        return { disabled: true, options: [], placeholder: 'Unable to load models for IAM Role auth in this context.' };
+      }
+      const credentials = await getTemporaryCredentials({ auth, server });
+      client = new BedrockClient({ credentials, region: auth.region, ...BEDROCK_CLIENT_TIMEOUTS });
+    } else {
+      client = new BedrockClient({
+        credentials: { accessKeyId: auth.accessKeyId, secretAccessKey: auth.secretAccessKey, sessionToken: auth.sessionToken },
+        region: auth.region,
+        ...BEDROCK_CLIENT_TIMEOUTS,
+      });
+    }
 
     if (filters?.useInferenceProfiles) {
       const [profileResponse, modelsResponse] = await Promise.all([
@@ -142,9 +156,182 @@ export async function getBedrockModelOptions(
     return {
       disabled: true,
       options: [],
-      placeholder: 'Failed to load models. Check your credentials.',
+      placeholder: `Failed to load models: ${formatBedrockError(error)}`,
     };
   }
+}
+
+export async function getTemporaryCredentials({
+  auth,
+  server,
+  durationSeconds = DEFAULT_STS_DURATION_SECONDS,
+}: {
+  auth: BedrockOidcAuthProps;
+  server: ServerContext | AuthValidationServerContext;
+  durationSeconds?: number;
+}): Promise<{ accessKeyId: string; secretAccessKey: string; sessionToken: string | undefined }> {
+  if (!auth.roleArn) {
+    throw new Error('Role ARN is required for IAM Role authentication');
+  }
+  if (!AWS_REGION_REGEX.test(auth.region ?? '')) {
+    throw new Error(`Invalid AWS region: ${auth.region}`);
+  }
+  const clampedDuration = Math.min(Math.max(durationSeconds, MIN_STS_DURATION_SECONDS), MAX_STS_DURATION_SECONDS);
+
+  const cacheKey = 'token' in server ? `${server.token}:${auth.roleArn}:${auth.region}:${clampedDuration}` : undefined;
+  if (cacheKey) {
+    const cached = credentialsCache.get(cacheKey);
+    if (cached && cached.expiresAtMS - Date.now() > CREDENTIALS_EXPIRY_MARGIN_MS) {
+      return cached.credentials;
+    }
+  }
+
+  const token = await resolveOidcToken({ server });
+
+  const sts = new STSClient({
+    region: auth.region,
+    maxAttempts: 2,
+    requestHandler: { requestTimeout: STS_REQUEST_TIMEOUT_MS, connectionTimeout: STS_CONNECT_TIMEOUT_MS },
+  });
+  const { Credentials } = await sts.send(
+    new AssumeRoleWithWebIdentityCommand({
+      RoleArn: auth.roleArn,
+      RoleSessionName: 'activepieces-execution',
+      WebIdentityToken: token,
+      DurationSeconds: clampedDuration,
+    }),
+  );
+  if (!Credentials?.AccessKeyId || !Credentials.SecretAccessKey) {
+    throw new Error('Failed to assume role: no credentials returned');
+  }
+  const credentials = {
+    accessKeyId: Credentials.AccessKeyId,
+    secretAccessKey: Credentials.SecretAccessKey,
+    sessionToken: Credentials.SessionToken,
+  };
+  if (cacheKey) {
+    const expiresAtMS = Credentials.Expiration?.getTime() ?? Date.now() + clampedDuration * 1000;
+    sweepExpiredCredentials();
+    credentialsCache.set(cacheKey, { credentials, expiresAtMS });
+  }
+  return credentials;
+}
+
+async function resolveOidcToken({ server }: { server: ServerContext | AuthValidationServerContext }): Promise<string> {
+  if ('mintOidcToken' in server) {
+    return server.mintOidcToken({ audience: AWS_STS_AUDIENCE });
+  }
+  const response = await fetch(`${server.apiUrl}v1/worker/oidc-token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${server.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ audience: AWS_STS_AUDIENCE }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to get OIDC token: ${response.statusText}`);
+  }
+  const { token } = (await response.json()) as { token: string };
+  return token;
+}
+
+function sweepExpiredCredentials() {
+  const now = Date.now();
+  for (const [key, value] of credentialsCache) {
+    if (value.expiresAtMS <= now) {
+      credentialsCache.delete(key);
+    }
+  }
+}
+
+const IMAGE_EXT_MAP: Record<string, ImageFormat> = {
+  png: ImageFormat.PNG,
+  jpg: ImageFormat.JPEG,
+  jpeg: ImageFormat.JPEG,
+  gif: ImageFormat.GIF,
+  webp: ImageFormat.WEBP,
+};
+
+const DOCUMENT_EXT_MAP: Record<string, DocumentFormat> = {
+  pdf: DocumentFormat.PDF,
+  csv: DocumentFormat.CSV,
+  doc: DocumentFormat.DOC,
+  docx: DocumentFormat.DOCX,
+  xls: DocumentFormat.XLS,
+  xlsx: DocumentFormat.XLSX,
+  html: DocumentFormat.HTML,
+  htm: DocumentFormat.HTML,
+  txt: DocumentFormat.TXT,
+  md: DocumentFormat.MD,
+};
+
+const VIDEO_EXT_MAP: Record<string, VideoFormat> = {
+  mkv: VideoFormat.MKV,
+  mov: VideoFormat.MOV,
+  mp4: VideoFormat.MP4,
+  webm: VideoFormat.WEBM,
+  flv: VideoFormat.FLV,
+  mpeg: VideoFormat.MPEG,
+  mpg: VideoFormat.MPG,
+  wmv: VideoFormat.WMV,
+  '3gp': VideoFormat.THREE_GP,
+};
+
+const AUDIO_EXT_MAP: Record<string, AudioFormat> = {
+  mp3: AudioFormat.MP3,
+  opus: AudioFormat.OPUS,
+  wav: AudioFormat.WAV,
+  aac: AudioFormat.AAC,
+  flac: AudioFormat.FLAC,
+  ogg: AudioFormat.OGG,
+  mka: AudioFormat.MKA,
+  m4a: AudioFormat.M4A,
+  pcm: AudioFormat.PCM,
+};
+
+export function buildS3ContentBlock(s3Bucket: string, s3Key: string): ContentBlock {
+  const ext = (s3Key.split('.').pop() ?? '').toLowerCase();
+  const s3Location = { uri: `s3://${s3Bucket}/${s3Key}` };
+
+  if (IMAGE_EXT_MAP[ext]) {
+    return { image: { format: IMAGE_EXT_MAP[ext], source: { s3Location } } };
+  }
+  if (DOCUMENT_EXT_MAP[ext]) {
+    const name = (s3Key.split('/').pop() ?? 'document').replace(/\.[^.]+$/, '');
+    return { document: { format: DOCUMENT_EXT_MAP[ext], name, source: { s3Location } } };
+  }
+  if (VIDEO_EXT_MAP[ext]) {
+    return { video: { format: VIDEO_EXT_MAP[ext], source: { s3Location } } };
+  }
+  if (AUDIO_EXT_MAP[ext]) {
+    return { audio: { format: AUDIO_EXT_MAP[ext], source: { s3Location } } };
+  }
+  throw new Error(
+    `Unsupported file type ".${ext}". Supported: images (png, jpg, gif, webp), documents (pdf, csv, doc, docx, xls, xlsx, html, txt, md), videos (mp4, mov, mkv, webm, flv, mpeg, mpg, wmv, 3gp), audio (mp3, wav, aac, flac, ogg, opus, mka, m4a, pcm).`
+  );
+}
+
+export function buildFileContentBlock(file: ApFile): ContentBlock {
+  const ext = (file.extension ?? '').toLowerCase();
+  const bytes = new Uint8Array(file.data);
+
+  if (IMAGE_EXT_MAP[ext]) {
+    return { image: { format: IMAGE_EXT_MAP[ext], source: { bytes } } };
+  }
+  if (DOCUMENT_EXT_MAP[ext]) {
+    const name = file.filename?.replace(/\.[^.]+$/, '') || 'document';
+    return { document: { format: DOCUMENT_EXT_MAP[ext], name, source: { bytes } } };
+  }
+  if (VIDEO_EXT_MAP[ext]) {
+    return { video: { format: VIDEO_EXT_MAP[ext], source: { bytes } } };
+  }
+  if (AUDIO_EXT_MAP[ext]) {
+    return { audio: { format: AUDIO_EXT_MAP[ext], source: { bytes } } };
+  }
+  throw new Error(
+    `Unsupported file type ".${ext}". Supported: images (png, jpg, gif, webp), documents (pdf, csv, doc, docx, xls, xlsx, html, txt, md), videos (mp4, mov, mkv, webm, flv, mpeg, mpg, wmv, 3gp), audio (mp3, wav, aac, flac, ogg, opus, mka, m4a, pcm).`
+  );
 }
 
 export function extractConverseTextResponse(response: ConverseResponse) {
@@ -184,6 +371,40 @@ export function formatBedrockError(error: unknown): string {
     case 'ServiceQuotaExceededException':
       return 'You have exceeded your AWS Bedrock service quota.';
     default:
-      return err.message ?? 'An unexpected error occurred.';
+      if (err.message && name !== 'Error' && name !== 'UnknownError') {
+        return `${name}: ${err.message}`;
+      }
+      return err.message || 'An unexpected error occurred.';
   }
 }
+
+const DEFAULT_STS_DURATION_SECONDS = 3600;
+const CREDENTIALS_EXPIRY_MARGIN_MS = 5 * 60 * 1000;
+const credentialsCache = new Map<string, CachedCredentials>();
+
+const AWS_REGION_REGEX = /^[a-z]{2}(-[a-z]+)+-\d$/;
+const STS_REQUEST_TIMEOUT_MS = 10_000;
+const STS_CONNECT_TIMEOUT_MS = 5_000;
+const BEDROCK_CLIENT_TIMEOUTS = {
+  maxAttempts: 2,
+  requestHandler: { requestTimeout: 15_000, connectionTimeout: 5_000 },
+} as const;
+
+export const MIN_STS_DURATION_SECONDS = 900;
+export const MAX_STS_DURATION_SECONDS = 43200;
+
+export function isOidcAuth(auth: BedrockAuthProps): auth is BedrockOidcAuthProps {
+  return 'roleArn' in auth;
+}
+
+type TemporaryCredentials = {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string | undefined;
+};
+
+type CachedCredentials = {
+  credentials: TemporaryCredentials;
+  expiresAtMS: number;
+};
+

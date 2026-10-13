@@ -1,10 +1,11 @@
 import { Command } from "commander";
-import { buildPiece, findPiece } from '../utils/piece-utils';
+import { assertPieceExists, buildPiece, findPiece } from '../utils/piece-utils';
 import chalk from "chalk";
 import inquirer from "inquirer";
 
 async function buildPieces(pieceName: string) {
     const pieceFolder = await findPiece(pieceName);
+    assertPieceExists(pieceFolder);
     const { outputFolder } = await buildPiece(pieceFolder);
     console.info(chalk.green(`Piece '${pieceName}' built and packed successfully at ${outputFolder}.`));
 }
@@ -12,7 +13,9 @@ async function buildPieces(pieceName: string) {
 export const buildPieceCommand = new Command('build')
     .description('Build pieces without publishing')
     .argument('[name]', 'name of the piece to build')
-    .action(async (name) => {
+    .option('--name <pieceName>', 'name of the piece to build')
+    .action(async (positionalName, options) => {
+        const pieceName = positionalName ?? options.name;
         const questions = [
             {
                 type: 'input',
@@ -20,10 +23,10 @@ export const buildPieceCommand = new Command('build')
                 message: 'Enter the piece folder name',
                 placeholder: 'google-drive',
                 when() {
-                    return !name
+                    return !pieceName
                 }
             },
         ];
         const answers = await inquirer.prompt(questions);
-        await buildPieces(name ? name : answers.name);
+        await buildPieces(pieceName ?? answers.name);
     });

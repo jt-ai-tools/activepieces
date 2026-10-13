@@ -1,5 +1,5 @@
 import { createPiece } from "@activepieces/pieces-framework";
-import { PieceCategory } from "@activepieces/shared";
+import { PieceCategory } from '@activepieces/pieces-framework';
 import { vertexAiAuth } from "./lib/auth";
 import { generateContent, generateImage, customApiCall } from "./lib/actions";
 
@@ -10,7 +10,7 @@ export const googleVertexai = createPiece({
   minimumSupportedRelease: "0.71.4",
   logoUrl: "https://cdn.activepieces.com/pieces/google-vertexai.png",
   categories: [PieceCategory.ARTIFICIAL_INTELLIGENCE],
-  authors: ["alinperghel", "onyedikachi-david"],
+  authors: ["alinperghel", "onyedikachi-david","bertrandong"],
   actions: [generateContent, generateImage, customApiCall],
   triggers: [],
 });

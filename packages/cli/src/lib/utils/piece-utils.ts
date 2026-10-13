@@ -1,4 +1,4 @@
-import { copyFile, readdir, stat } from 'node:fs/promises'
+import { readdir, stat } from 'node:fs/promises'
 import * as path from 'path'
 import { cwd } from 'node:process'
 import { readPackageJson } from './files'
@@ -7,7 +7,7 @@ import axios from 'axios'
 import chalk from 'chalk'
 import FormData from 'form-data';
 import fs from 'fs';
-import { buildWorkspaceVersionMap, resolveWorkspaceDependencies } from './workspace-utils';
+import { preparePieceDistForPublish } from './prepare-piece-utils';
 
 export const piecesPath = () => path.join(cwd(), 'packages', 'pieces')
 export const customPiecePath = () => path.join(piecesPath(), 'custom')
@@ -55,9 +55,7 @@ export async function buildPiece(pieceFolder: string): Promise<{ outputFolder: s
 
     const compiledPath = `packages/${removeStartingSlashes(pieceFolder).split(path.sep + 'packages')[1]}/dist`;
 
-    await copyFile(path.join(pieceFolder, 'package.json'), path.join(compiledPath, 'package.json'));
-
-    resolveWorkspaceDepsInPackageJson(path.join(compiledPath, 'package.json'), cwd());
+    await preparePieceDistForPublish(pieceFolder);
 
     const { stdout } = await exec('npm pack --json', { cwd: compiledPath });
     const tarFileName = JSON.parse(stdout)[0].filename;
@@ -122,7 +120,7 @@ export async function publishPieceFromFolder(
                 }
             }
         } else {
-            console.error(chalk.red(`Unexpected error: ${error.message}`));
+            console.error(chalk.red(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`));
             if (failOnError) {
               console.info(chalk.yellow(`Terminating process due to unexpected error for piece '${packageJson.name}' (fail-on-error is enabled)`));
               process.exit(1);
@@ -167,23 +165,15 @@ export function displayNameToCamelCase(input: string): string {
     return camelCaseWords.join('');
   }
 
-export const assertPieceExists = async (pieceName: string | null) => {
+export function assertPieceExists(pieceName: string | null): asserts pieceName is string {
     if (!pieceName) {
       console.error(chalk.red(`🚨 Piece ${pieceName} not found`));
       process.exit(1);
     }
-  };
+  }
 
 
   export const removeStartingSlashes = (str: string) => {
     return str.startsWith('/') ? str.slice(1) : str;
   }
 
-function resolveWorkspaceDepsInPackageJson(packageJsonPath: string, rootDir: string): void {
-    const versionMap = buildWorkspaceVersionMap(rootDir)
-    const json = JSON.parse(fs.readFileSync(packageJsonPath).toString())
-    json.dependencies = resolveWorkspaceDependencies(json.dependencies, versionMap)
-    json.devDependencies = resolveWorkspaceDependencies(json.devDependencies, versionMap)
-    json.peerDependencies = resolveWorkspaceDependencies(json.peerDependencies, versionMap)
-    fs.writeFileSync(packageJsonPath, JSON.stringify(json, null, 2))
-}

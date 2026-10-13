@@ -1,15 +1,7 @@
-import { securityAccess } from '@activepieces/server-common'
-import {
-    ActivepiecesError,
-    AppConnection,
-    AppConnectionScope,
-    assertNotNullOrUndefined,
-    EnginePrincipal,
-    ErrorCode,
-    GetAppConnectionForWorkerRequestQuery,
-    isNil,
-} from '@activepieces/shared'
+import { ActivepiecesError, assertNotNullOrUndefined, ErrorCode, isNil } from '@activepieces/core-utils'
+import { AppConnection, EnginePrincipal, GetAppConnectionForWorkerRequestQuery } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
+import { securityAccess } from '../core/security/authorization/fastify-security'
 import { secretManagersService } from '../ee/secret-managers/secret-managers.service'
 import { appConnectionService } from './app-connection-service/app-connection-service'
 
@@ -36,7 +28,7 @@ export const appConnectionWorkerController: FastifyPluginAsyncZod = async (app) 
 
         return {
             ...appConnection,
-            value: appConnection.scope === AppConnectionScope.PROJECT ? appConnection.value : await secretManagersService(request.log).resolveObject({ value: appConnection.value, platformId: enginePrincipal.platform.id, throwOnFailure: false }),
+            value: await secretManagersService(request.log).resolveObject({ value: appConnection.value, projectIds: [enginePrincipal.projectId], platformId: enginePrincipal.platform.id, throwOnFailure: false }),
         }
     },
     )

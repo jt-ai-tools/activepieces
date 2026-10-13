@@ -1,12 +1,5 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import {
-    apId,
-    FilteredPieceBehavior,
-    PiecesFilterType,
-    PieceType,
-    PlatformRole,
-    PrincipalType,
-} from '@activepieces/shared'
+import { apId } from '@activepieces/core-utils'
+import { PieceType, PlatformRole, PrincipalType } from '@activepieces/shared'
 import { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { databaseConnection } from '../../../../src/app/database/database-connection'
@@ -18,9 +11,9 @@ import {
     createMockPlan,
     createMockProject,
     mockAndSaveBasicSetup,
-    mockBasicUser,
 } from '../../../helpers/mocks'
 import { createTestContext } from '../../../helpers/test-context'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 let mockLog: FastifyBaseLogger
@@ -50,10 +43,6 @@ describe('Piece Metadata API', () => {
             await pieceCache(mockLog).setup()
 
             const ctx = await createTestContext(app!, {
-                platform: {
-                    filteredPieceBehavior: FilteredPieceBehavior.BLOCKED,
-                    filteredPieceNames: [],
-                },
             })
 
             // act
@@ -84,7 +73,7 @@ describe('Piece Metadata API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/pieces/@activepieces/a',
+                url: '/api/v1/pieces/@activepieces/a',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -119,10 +108,6 @@ describe('Piece Metadata API', () => {
     describe('List Piece Metadata endpoint', () => {
         it('Should list platform pieces', async () => {
             const { mockOwner, mockPlatform } = await mockAndSaveBasicSetup({
-                platform: {
-                    filteredPieceBehavior: FilteredPieceBehavior.BLOCKED,
-                    filteredPieceNames: [],
-                },
             })
 
             const { mockPlatform: mockPlatform2 } = await mockAndSaveBasicSetup({
@@ -183,7 +168,7 @@ describe('Piece Metadata API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: `/v1/pieces?projectId=${mockProject.id}`,
+                url: `/api/v1/pieces?projectId=${mockProject.id}`,
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -200,16 +185,8 @@ describe('Piece Metadata API', () => {
         it('Should show official piece to other platforms when a custom piece with the same name exists', async () => {
             // arrange
             const { mockOwner: ownerA, mockPlatform: platformA } = await mockAndSaveBasicSetup({
-                platform: {
-                    filteredPieceBehavior: FilteredPieceBehavior.BLOCKED,
-                    filteredPieceNames: [],
-                },
             })
             const { mockOwner: ownerB, mockPlatform: platformB } = await mockAndSaveBasicSetup({
-                platform: {
-                    filteredPieceBehavior: FilteredPieceBehavior.BLOCKED,
-                    filteredPieceNames: [],
-                },
             })
 
             const projectA = await createProjectAndPlan({
@@ -255,7 +232,7 @@ describe('Piece Metadata API', () => {
 
             const responseA = await app?.inject({
                 method: 'GET',
-                url: `/v1/pieces?projectId=${projectA.id}`,
+                url: `/api/v1/pieces?projectId=${projectA.id}`,
                 headers: {
                     authorization: `Bearer ${tokenA}`,
                 },
@@ -263,7 +240,7 @@ describe('Piece Metadata API', () => {
 
             const responseB = await app?.inject({
                 method: 'GET',
-                url: `/v1/pieces?projectId=${projectB.id}`,
+                url: `/api/v1/pieces?projectId=${projectB.id}`,
                 headers: {
                     authorization: `Bearer ${tokenB}`,
                 },
@@ -321,7 +298,7 @@ describe('Piece Metadata API', () => {
             // act
             const exactVersionResponse = await app?.inject({
                 method: 'GET',
-                url: '/v1/pieces/a?version=0.0.1',
+                url: '/api/v1/pieces/a?version=0.0.1',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -332,7 +309,7 @@ describe('Piece Metadata API', () => {
 
             const telda2VersionResponse = await app?.inject({
                 method: 'GET',
-                url: '/v1/pieces/a?version=~0.0.2',
+                url: '/api/v1/pieces/a?version=~0.0.2',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -343,7 +320,7 @@ describe('Piece Metadata API', () => {
 
             const teldaVersionResponse = await app?.inject({
                 method: 'GET',
-                url: '/v1/pieces/a?version=~0.0.1',
+                url: '/api/v1/pieces/a?version=~0.0.1',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -354,7 +331,7 @@ describe('Piece Metadata API', () => {
 
             const notFoundVersionResponse = await app?.inject({
                 method: 'GET',
-                url: '/v1/pieces/a?version=~0.1.2',
+                url: '/api/v1/pieces/a?version=~0.1.2',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -388,7 +365,7 @@ describe('Piece Metadata API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/pieces',
+                url: '/api/v1/pieces',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -427,7 +404,7 @@ describe('Piece Metadata API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/pieces',
+                url: '/api/v1/pieces',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -442,203 +419,15 @@ describe('Piece Metadata API', () => {
             expect(responseBody?.[1].id).toBe(mockPieceMetadataB.id)
         })
 
-        it('Allows filtered pieces if project filter is set to "ALLOWED"', async () => {
-            // arrange
-            const { mockPlatform } = await mockAndSaveBasicSetup({
-                platform: {
-                    filteredPieceBehavior: FilteredPieceBehavior.BLOCKED,
-                    filteredPieceNames: [],
-                },
-            })
-
-            const { mockUser } = await mockBasicUser({
-                user: {
-                    platformId: mockPlatform.id,
-                    platformRole: PlatformRole.MEMBER,
-                },
-            })
-
-            const mockProject = await createProjectAndPlan({
-                ownerId: mockUser.id,
-                platformId: mockPlatform.id,
-                piecesFilterType: PiecesFilterType.ALLOWED,
-                pieces: ['a'],
-            })
-
-            const mockPieceMetadataA = createMockPieceMetadata({
-                name: 'a',
-                pieceType: PieceType.OFFICIAL,
-                displayName: 'a',
-            })
-            const mockPieceMetadataB = createMockPieceMetadata({
-                name: 'b',
-                pieceType: PieceType.OFFICIAL,
-                displayName: 'b',
-            })
-            await db.save('piece_metadata', [mockPieceMetadataA, mockPieceMetadataB])
-
-            await pieceCache(mockLog).setup()
-
-            const testToken = await generateMockToken({
-                type: PrincipalType.USER,
-
-                platform: {
-                    id: mockPlatform.id,
-                },
-                id: mockUser.id,
-            })
-
-            // act
-            const response = await app?.inject({
-                method: 'GET',
-                url: `/v1/pieces?projectId=${mockProject.id}`,
-                headers: {
-                    authorization: `Bearer ${testToken}`,
-                },
-            })
-
-            // assert
-            const responseBody = response?.json()
-
-            expect(response?.statusCode).toBe(StatusCodes.OK)
-            expect(responseBody).toHaveLength(1)
-            expect(responseBody?.[0].id).toBe(mockPieceMetadataA.id)
-        })
-
-        it('Allows filtered pieces if platform filter is set to "ALLOWED"', async () => {
-            // arrange
-            const { mockPlatform } = await mockAndSaveBasicSetup({
-                platform: {
-                    filteredPieceNames: ['a'],
-                    filteredPieceBehavior: FilteredPieceBehavior.ALLOWED,
-                },
-            })
-
-            const { mockUser } = await mockBasicUser({
-                user: {
-                    platformId: mockPlatform.id,
-                    platformRole: PlatformRole.MEMBER,
-                },
-            })
-
-            const mockProject = await createProjectAndPlan({
-                ownerId: mockUser.id,
-                platformId: mockPlatform.id,
-            })
-
-            const mockPieceMetadataA = createMockPieceMetadata({
-                name: 'a',
-                pieceType: PieceType.OFFICIAL,
-                displayName: 'a',
-            })
-            const mockPieceMetadataB = createMockPieceMetadata({
-                name: 'b',
-                pieceType: PieceType.OFFICIAL,
-                displayName: 'b',
-            })
-            await db.save('piece_metadata', [mockPieceMetadataA, mockPieceMetadataB])
-
-            await pieceCache(mockLog).setup()
-
-            const testToken = await generateMockToken({
-                type: PrincipalType.USER,
-
-                platform: {
-                    id: mockPlatform.id,
-                },
-                id: mockUser.id,
-            })
-
-            // act
-            const response = await app?.inject({
-                method: 'GET',
-                url: `/v1/pieces?projectId=${mockProject.id}`,
-                headers: {
-                    authorization: `Bearer ${testToken}`,
-                },
-            })
-
-            // assert
-            const responseBody = response?.json()
-
-            expect(response?.statusCode).toBe(StatusCodes.OK)
-            expect(responseBody).toHaveLength(1)
-            expect(responseBody?.[0].id).toBe(mockPieceMetadataA.id)
-        })
-
-        it('Blocks filtered pieces if platform filter is set to "BLOCKED"', async () => {
-            // arrange
-            const { mockPlatform } = await mockAndSaveBasicSetup({
-                platform: {
-                    filteredPieceNames: ['a'],
-                    filteredPieceBehavior: FilteredPieceBehavior.BLOCKED,
-                },
-            })
-
-            const { mockUser } = await mockBasicUser({
-                user: {
-                    platformId: mockPlatform.id,
-                    platformRole: PlatformRole.MEMBER,
-                },
-            })
-
-            const mockProject = await createProjectAndPlan({
-                ownerId: mockUser.id,
-                platformId: mockPlatform.id,
-            })
-
-            const mockPieceMetadataA = createMockPieceMetadata({
-                name: 'a',
-                pieceType: PieceType.OFFICIAL,
-                displayName: 'a',
-            })
-            const mockPieceMetadataB = createMockPieceMetadata({
-                name: 'b',
-                pieceType: PieceType.OFFICIAL,
-                displayName: 'b',
-            })
-            await db.save('piece_metadata', [mockPieceMetadataA, mockPieceMetadataB])
-
-            await pieceCache(mockLog).setup()
-
-            const testToken = await generateMockToken({
-                type: PrincipalType.USER,
-
-                platform: {
-                    id: mockPlatform.id,
-                },
-                id: mockUser.id,
-            })
-
-            // act
-            const response = await app?.inject({
-                method: 'GET',
-                url: `/v1/pieces?projectId=${mockProject.id}`,
-                headers: {
-                    authorization: `Bearer ${testToken}`,
-                },
-            })
-
-            // assert
-            const responseBody = response?.json()
-
-            expect(response?.statusCode).toBe(StatusCodes.OK)
-            expect(responseBody).toHaveLength(1)
-            expect(responseBody?.[0].id).toBe(mockPieceMetadataB.id)
-        })
     })
 })
 
 async function createProjectAndPlan({
     platformId,
     ownerId,
-    piecesFilterType,
-    pieces,
 }: {
     platformId: string
     ownerId: string
-    piecesFilterType?: PiecesFilterType
-    pieces?: string[]
 }) {
     const project = createMockProject({
         platformId,
@@ -648,9 +437,56 @@ async function createProjectAndPlan({
 
     const projectPlan = createMockPlan({
         projectId: project.id,
-        piecesFilterType,
-        pieces,
     })
     await db.save('project_plan', [projectPlan])
     return project
 }
+describe('Publishing a piece through the admin endpoint', () => {
+    const publish = async (piece: Record<string, unknown>) => app!.inject({
+        method: 'POST',
+        url: '/api/v1/admin/pieces',
+        headers: { 'api-key': process.env['AP_API_KEY'] ?? '' },
+        body: {
+            displayName: 'Gone Vendor',
+            logoUrl: 'https://cdn.activepieces.com/pieces/gone-vendor.png',
+            description: 'A vendor that shut down',
+            version: '0.1.7',
+            authors: [],
+            categories: [],
+            minimumSupportedRelease: '0.0.0',
+            maximumSupportedRelease: '9999.9999.9999',
+            actions: {},
+            triggers: {},
+            ...piece,
+        },
+    })
+
+    it('keeps the deprecated flag the release pipeline sends', async () => {
+        const response = await publish({ name: '@activepieces/piece-gone-vendor', deprecated: true })
+
+        expect(response.statusCode).toBe(StatusCodes.OK)
+        expect(response.json().deprecated).toBe(true)
+
+        const saved = await databaseConnection().getRepository('piece_metadata').findOneByOrFail({ name: '@activepieces/piece-gone-vendor' })
+        expect(saved.deprecated).toBe(true)
+    })
+
+    it('hides a deprecated piece from the selector, keeps a live one listed, and still resolves the deprecated one by name', async () => {
+        await publish({ name: '@activepieces/piece-gone-vendor', deprecated: true })
+        await publish({ name: '@activepieces/piece-live-vendor', displayName: 'Live Vendor' })
+        const ctx = await createTestContext(app!, {})
+        const namesIn = (response: Awaited<ReturnType<typeof ctx.get>>): string[] => response.json().map((piece: { name: string }) => piece.name)
+
+        const listed = await ctx.get(`/v1/pieces?projectId=${ctx.project.id}`)
+        expect(listed.statusCode).toBe(StatusCodes.OK)
+        expect(namesIn(listed)).toContain('@activepieces/piece-live-vendor')
+        expect(namesIn(listed)).not.toContain('@activepieces/piece-gone-vendor')
+
+        const includingHidden = await ctx.get(`/v1/pieces?projectId=${ctx.project.id}&includeHidden=true`)
+        expect(namesIn(includingHidden)).toContain('@activepieces/piece-gone-vendor')
+
+        const byName = await ctx.get(`/v1/pieces/@activepieces/piece-gone-vendor?projectId=${ctx.project.id}`)
+        expect(byName.statusCode).toBe(StatusCodes.OK)
+        expect(byName.json().deprecated).toBe(true)
+    })
+})

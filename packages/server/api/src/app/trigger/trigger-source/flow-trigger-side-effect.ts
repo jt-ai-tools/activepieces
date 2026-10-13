@@ -1,35 +1,15 @@
+import { ActivepiecesError, ErrorCode, FlowId, FlowVersionId, formatPieceError, isNil, tryCatch, tryParseFriendlyPieceError } from '@activepieces/core-utils'
 import {
     TriggerBase,
     TriggerStrategy,
     WebhookRenewStrategy,
 } from '@activepieces/pieces-framework'
-import {
-    AppSystemProp,
-} from '@activepieces/server-common'
-import {
-    ActivepiecesError,
-    ApEnvironment,
-    EngineResponseStatus,
-    ErrorCode,
-    FlowId,
-    FlowTriggerType,
-    FlowVersionId,
-    isNil,
-    LATEST_JOB_DATA_SCHEMA_VERSION,
-    ScheduleOptions,
-    TriggerHookType,
-    TriggerSourceScheduleType,
-    WorkerJobType,
-} from '@activepieces/shared'
+import { ApEnvironment, EngineResponse, EngineResponseStatus, ExecuteTriggerResponse, FlowTriggerType, LATEST_JOB_DATA_SCHEMA_VERSION, ScheduleOptions, TriggerHookType, TriggerSourceScheduleType, WorkerJobType } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
-import {
-    EngineHelperTriggerResult,
-    OperationResponse,
-} from 'worker'
 import { system } from '../../helper/system/system'
+import { AppSystemProp } from '../../helper/system/system-props'
 import { projectService } from '../../project/project-service'
-import { jobQueue } from '../../workers/queue/job-queue'
-import { JobType } from '../../workers/queue/queue-manager'
+import { jobQueue, JobType } from '../../workers/job-queue/job-queue'
 import { userInteractionWatcher } from '../../workers/user-interaction-watcher'
 import { appEventRoutingService } from '../app-event-routing/app-event-routing.service'
 
@@ -43,10 +23,10 @@ export const flowTriggerSideEffect = (log: FastifyBaseLogger) => {
                     scheduleOptions: undefined,
                 }
             }
-            const { flowId, flowVersionId, projectId, simulate, pieceTrigger } = params
+            const { flowId, flowVersionId, projectId, simulate, pieceTrigger, isRepublish } = params
 
             const platformId = await projectService(log).getPlatformId(projectId)
-            const engineHelperResponse = await userInteractionWatcher(log).submitAndWaitForResponse<OperationResponse<EngineHelperTriggerResult<TriggerHookType.ON_ENABLE>>>({
+            const engineHelperResponse = await userInteractionWatcher.submitAndWaitForResponse<EngineResponse<ExecuteTriggerResponse<TriggerHookType.ON_ENABLE>>>({
                 jobType: WorkerJobType.EXECUTE_TRIGGER_HOOK,
                 hookType: TriggerHookType.ON_ENABLE,
                 flowId,
@@ -54,9 +34,13 @@ export const flowTriggerSideEffect = (log: FastifyBaseLogger) => {
                 platformId,
                 projectId,
                 test: simulate,
-            })
+                isRepublish,
+            }, log)
 
             assertEngineResponseIsOk(engineHelperResponse, flowId, flowVersionId)
+            if (isNil(engineHelperResponse.response)) {
+                throwTriggerUpdateFailed({ flowId, flowVersionId, standardError: 'The worker skipped the trigger enable hook' })
+            }
 
             switch (pieceTrigger.type) {
                 case TriggerStrategy.APP_WEBHOOK: {
@@ -93,17 +77,28 @@ export const flowTriggerSideEffect = (log: FastifyBaseLogger) => {
             }
             const { flowId, flowVersionId, projectId, simulate, pieceTrigger } = params
             const platformId = await projectService(log).getPlatformId(projectId)
-            const engineHelperResponse = await userInteractionWatcher(log).submitAndWaitForResponse<OperationResponse<EngineHelperTriggerResult<TriggerHookType.ON_DISABLE>>>({
-                jobType: WorkerJobType.EXECUTE_TRIGGER_HOOK,
-                hookType: TriggerHookType.ON_DISABLE,
-                flowId,
-                flowVersionId,
-                test: simulate,
-                projectId,
-                platformId,
-            })
-            if (!params.ignoreError) {
-                assertEngineResponseIsOk(engineHelperResponse, flowId, flowVersionId)
+            const { error, data: engineHelperResponse } = await tryCatch(
+                () => userInteractionWatcher.submitAndWaitForResponse<EngineResponse<ExecuteTriggerResponse<TriggerHookType.ON_DISABLE>>>({
+                    jobType: WorkerJobType.EXECUTE_TRIGGER_HOOK,
+                    hookType: TriggerHookType.ON_DISABLE,
+                    flowId,
+                    flowVersionId,
+                    test: simulate,
+                    projectId,
+                    platformId,
+                }, log),
+            )
+            if (!isNil(error)) {
+                if (!params.ignoreError) {
+                    throw error
+                }
+                log.warn({ flow: { id: flowId }, error: error.message }, IGNORED_DISABLE_ERROR)
+            }
+            else if (!params.ignoreError) {
+                assertEngineResponseIsOk(engineHelperResponse!, flowId, flowVersionId)
+            }
+            else if (engineHelperResponse?.status !== EngineResponseStatus.OK) {
+                log.warn({ flow: { id: flowId }, error: sanitizeIgnoredError(engineHelperResponse?.error) }, IGNORED_DISABLE_ERROR)
             }
             switch (pieceTrigger.type) {
                 case TriggerStrategy.APP_WEBHOOK:
@@ -134,8 +129,12 @@ export const flowTriggerSideEffect = (log: FastifyBaseLogger) => {
     }
 }
 
+function sanitizeIgnoredError(error: string | undefined): string {
+    return tryParseFriendlyPieceError(error)?.message ?? formatPieceError(error).message
+}
+
 async function handleAppWebhookTrigger({ engineHelperResponse, flowId, projectId, pieceName }: ActiveTriggerParams): Promise<ActiveTriggerReturn> {
-    for (const listener of engineHelperResponse.result.listeners) {
+    for (const listener of engineHelperResponse.response?.listeners ?? []) {
         await appEventRoutingService.createListeners({
             projectId,
             flowId,
@@ -182,14 +181,12 @@ async function handleWebhookTrigger({ flowId, flowVersionId, projectId, pieceTri
 }
 
 async function handlePollingTrigger({ engineHelperResponse, flowId, flowVersionId, projectId, log }: ActiveTriggerParams): Promise<ActiveTriggerReturn> {
-    const pollingFrequencyCronExpression = `*/${system.getNumber(AppSystemProp.TRIGGER_DEFAULT_POLL_INTERVAL) ?? 5} * * * *`
-    if (isNil(engineHelperResponse.result.scheduleOptions)) {
-        engineHelperResponse.result.scheduleOptions = {
-            cronExpression: pollingFrequencyCronExpression,
-            timezone: 'UTC',
-            type: TriggerSourceScheduleType.CRON_EXPRESSION,
-        }
+    const pollIntervalMinutes = system.getNumberOrThrow(AppSystemProp.TRIGGER_DEFAULT_POLL_INTERVAL)
+    const defaultScheduleOptions: ScheduleOptions = {
+        type: TriggerSourceScheduleType.INTERVAL,
+        intervalMs: pollIntervalMinutes * 60_000,
     }
+    const scheduleOptions = engineHelperResponse.response?.scheduleOptions ?? defaultScheduleOptions
     const platformId = await projectService(log).getPlatformId(projectId)
     await jobQueue(log).add({
         id: flowVersionId,
@@ -203,27 +200,32 @@ async function handlePollingTrigger({ engineHelperResponse, flowId, flowVersionI
             jobType: WorkerJobType.EXECUTE_POLLING,
             platformId,
         },
-        scheduleOptions: engineHelperResponse.result.scheduleOptions,
+        scheduleOptions,
     })
     return {
-        scheduleOptions: engineHelperResponse.result.scheduleOptions,
+        scheduleOptions,
     }
 }
 
-function assertEngineResponseIsOk(engineHelperResponse: OperationResponse<EngineHelperTriggerResult<TriggerHookType.ON_ENABLE | TriggerHookType.ON_DISABLE>>, flowId: FlowId, flowVersionId: FlowVersionId) {
-    if (engineHelperResponse.status !== EngineResponseStatus.OK) {
-        throw new ActivepiecesError({
-            code: ErrorCode.TRIGGER_UPDATE_STATUS,
-            params: {
-                flowId,
-                flowVersionId,
-                standardOutput: engineHelperResponse.standardOutput,
-                standardError: engineHelperResponse.standardError,
-            },
-        })
+const IGNORED_DISABLE_ERROR = '[flowTriggerSideEffect#disable] Ignored error during trigger disable'
+
+function assertEngineResponseIsOk(engineHelperResponse: EngineResponse<ExecuteTriggerResponse<TriggerHookType.ON_ENABLE | TriggerHookType.ON_DISABLE>>, flowId: FlowId, flowVersionId: FlowVersionId) {
+    if (isNil(engineHelperResponse) || engineHelperResponse.status !== EngineResponseStatus.OK) {
+        throwTriggerUpdateFailed({ flowId, flowVersionId, standardError: engineHelperResponse?.error ?? 'Engine response is undefined' })
     }
 }
 
+function throwTriggerUpdateFailed({ flowId, flowVersionId, standardError }: ThrowTriggerUpdateFailedParams): never {
+    throw new ActivepiecesError({
+        code: ErrorCode.TRIGGER_UPDATE_STATUS,
+        params: {
+            flowId,
+            flowVersionId,
+            standardOutput: '',
+            standardError,
+        },
+    }, `flowId=${flowId} standardError=${standardError}`)
+}
 
 
 type EnableFlowTriggerParams = {
@@ -233,6 +235,7 @@ type EnableFlowTriggerParams = {
     projectId: string
     pieceTrigger: TriggerBase
     simulate: boolean
+    isRepublish?: boolean
 }
 
 type DisableFlowTriggerParams = EnableFlowTriggerParams & {
@@ -241,9 +244,15 @@ type DisableFlowTriggerParams = EnableFlowTriggerParams & {
 
 type ActiveTriggerParams = EnableFlowTriggerParams & {
     log: FastifyBaseLogger
-    engineHelperResponse: OperationResponse<EngineHelperTriggerResult<TriggerHookType.ON_ENABLE>>
+    engineHelperResponse: EngineResponse<ExecuteTriggerResponse<TriggerHookType.ON_ENABLE>>
 }
 
 type ActiveTriggerReturn = {
     scheduleOptions?: ScheduleOptions
+}
+
+type ThrowTriggerUpdateFailedParams = {
+    flowId: FlowId
+    flowVersionId: FlowVersionId
+    standardError: string
 }

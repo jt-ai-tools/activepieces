@@ -6,8 +6,11 @@ import { famulorCommon } from '../common';
 export const addLead = createAction({
   auth: famulorAuth,
   name: 'addLead',
+  classification: 'WRITE',
   displayName: 'Add Lead to Campaign',
   description: 'Add a lead to an outbound campaign to be called by an AI assistant.',
+  audience: 'both',
+  aiMetadata: { description: 'Enqueue a lead (primary phone number plus optional template variables and up to ten secondary contacts) into an existing campaign for the AI assistant to call. Pick when populating a campaign with people to dial. Not idempotent — each call appends a lead unless allow_dupplicate is left off, which can still create repeats across calls.', idempotent: false },
   props: famulorCommon.addLeadProperties(),
   async run({ auth, propsValue }) {
     await propsValidation.validateZod(propsValue, famulorCommon.addLeadSchema);
@@ -26,7 +29,7 @@ export const addLead = createAction({
         
         if (phoneNumber && phoneNumber.trim() !== '') {
           contacts.push({
-            phone_number: phoneNumber,
+            phone_number: phoneNumber.trim(),
             variables: variables || { customer_name: '' }
           });
         }
@@ -41,7 +44,7 @@ export const addLead = createAction({
       auth: auth.secret_text,
       campaign_id: propsValue.campaign,
       phone_number: propsValue.phone_number!,
-      variable: propsValue.variables,
+      variables: propsValue.variables,
       allow_dupplicate: propsValue.allow_dupplicate,
       secondary_contacts: secondaryContacts,
     });

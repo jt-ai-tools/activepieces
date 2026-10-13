@@ -11,6 +11,7 @@ function ScrollArea({
   orientation = 'vertical',
   showGradient = false,
   gradientClassName,
+  scrollBarClassName,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> &
   ScrollAreaCustomProps) {
@@ -60,13 +61,13 @@ function ScrollArea({
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
-      <ScrollBar orientation={orientation} />
+      <ScrollBar orientation={orientation} className={scrollBarClassName} />
       <ScrollAreaPrimitive.Corner />
 
       {showGradient && showBottomGradient && (
         <div
           className={cn(
-            'pointer-events-none absolute bottom-0 left-0 right-0 h-1/5 bg-linear-to-t from-sidebar to-transparent',
+            'pointer-events-none absolute bottom-0 left-0 right-0 h-1/5 bg-linear-to-t from-gray-2 to-transparent',
             gradientClassName,
           )}
         />
@@ -85,18 +86,16 @@ function ScrollBar({
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
       className={cn(
-        'flex touch-none p-px transition-colors select-none',
-        orientation === 'vertical' &&
-          'h-full w-2.5 border-l border-l-transparent',
-        orientation === 'horizontal' &&
-          'h-2.5 flex-col border-t border-t-transparent',
+        'flex touch-none transition-colors select-none',
+        orientation === 'vertical' && 'h-full w-1.5',
+        orientation === 'horizontal' && 'h-1.5 flex-col',
         className,
       )}
       {...props}
     >
       <ScrollAreaPrimitive.ScrollAreaThumb
         data-slot="scroll-area-thumb"
-        className="relative flex-1 rounded-full bg-border"
+        className="relative flex-1 rounded-full bg-gray-6 hover:bg-gray-8 transition-colors"
       />
     </ScrollAreaPrimitive.ScrollAreaScrollbar>
   );
@@ -110,4 +109,5 @@ type ScrollAreaCustomProps = {
   viewPortRef?: React.RefObject<HTMLDivElement | null>;
   showGradient?: boolean;
   gradientClassName?: string;
+  scrollBarClassName?: string;
 };

@@ -1,36 +1,61 @@
 import {
+  AIProviderName,
+  AiStepAction,
   ApFile,
   createAction,
   DynamicPropsValue,
+  getEffectiveProviderAndModel,
   InputPropertyMap,
+  isNil,
   PieceAuth,
   Property,
+  spreadIfDefined,
 } from '@activepieces/pieces-framework';
-import {
-  GeneratedFile,
-  generateText,
-  GenerateTextResult,
-  ImagePart,
-  LanguageModel,
-  ToolSet,
-} from 'ai';
-import { experimental_generateImage as generateImage } from 'ai';
 import mime from 'mime-types';
-import { isNil } from '@activepieces/shared';
-import { createAIModel } from '../../common/ai-sdk';
-import { AIProviderName } from '@activepieces/shared';
-import { aiProps } from '../../common/props';
+import { runOnWorker, uploadAiFiles } from '../../common/ai-step';
+import { aiProps, aiProviderSelection } from '../../common/props';
 
 export const generateImageAction = createAction({
+  audience: 'both',
   name: 'generateImage',
+  classification: 'READ',
   displayName: 'Generate Image',
-  description: 'Create unique, high-quality images from simple text descriptions using AI.',
+  description: 'Create or edit images from a text description.',
+  aiMetadata: { description: 'Generates an image from a text prompt with an image-capable model and writes it out as a flow file; when Input Images are attached and the model supports editing, it edits, varies, or merges those images instead of generating from scratch. Pick it for any image creation or edit step; use askAi or run_agent when you need text output. Requires a prompt plus an image-capable provider/model, and input images fail on a model that cannot accept them; not idempotent, as each call generates and stores a new image file.', idempotent: false },
+  propertyGroups: [
+    {
+      key: 'ai_model',
+      display: 'section',
+      label: 'AI Model',
+      icon: 'sliders',
+      props: ['provider', 'model'],
+    },
+    {
+      key: 'image',
+      display: 'section',
+      label: 'Image',
+      icon: 'file',
+      props: ['prompt', 'inputImages', 'advancedOptions'],
+    },
+  ],
   props: {
     provider: aiProps({ modelType: 'image' }).provider,
     model: aiProps({ modelType: 'image' }).model,
     prompt: Property.LongText({
       displayName: 'Prompt',
+      placeholder: 'e.g. A watercolor fox in a snowy forest',
       required: true,
+    }),
+    inputImages: Property.Array({
+      displayName: 'Input Images',
+      description: 'Images to edit or combine. Not every model accepts them.',
+      required: false,
+      properties: {
+        file: Property.File({
+          displayName: 'Image File',
+          required: true,
+        }),
+      },
     }),
     advancedOptions: Property.DynamicProperties({
       displayName: 'Advanced Options',
@@ -38,8 +63,14 @@ export const generateImageAction = createAction({
       auth: PieceAuth.None(),
       refreshers: ['provider', 'model'],
       props: async (propsValue): Promise<InputPropertyMap> => {
-        const providerId = propsValue['provider'] as unknown as string;
-        const modelId = propsValue['model'] as unknown as string;
+        const rawProvider = aiProviderSelection.resolve(propsValue['provider'])?.provider;
+        const rawModel = propsValue['model'] as unknown as string;
+        const { provider: effectiveProvider, model: effectiveModel } = getEffectiveProviderAndModel({
+          provider: rawProvider,
+          model: rawModel,
+        });
+        const providerId = effectiveProvider ?? rawProvider;
+        const modelId = effectiveModel ?? rawModel;
 
         let options: InputPropertyMap = {};
 
@@ -53,7 +84,7 @@ export const generateImageAction = createAction({
                       { label: 'Standard', value: 'standard' },
                       { label: 'HD', value: 'hd' },
                     ]
-                    : modelId === 'gpt-image-1'
+                    : isGptImageModel({ modelId })
                       ? [
                         { label: 'High', value: 'high' },
                         { label: 'Medium', value: 'medium' },
@@ -75,7 +106,7 @@ export const generateImageAction = createAction({
                       { label: '1792x1024', value: '1792x1024' },
                       { label: '1024x1792', value: '1024x1792' },
                     ]
-                    : modelId === 'gpt-image-1'
+                    : isGptImageModel({ modelId })
                       ? [
                         { label: '1024x1024', value: '1024x1024' },
                         { label: '1536x1024', value: '1536x1024' },
@@ -92,7 +123,7 @@ export const generateImageAction = createAction({
             }),
           };
 
-          if (modelId === 'gpt-image-1') {
+          if (isGptImageModel({ modelId })) {
             options = {
               ...options,
               background: Property.StaticDropdown({
@@ -104,7 +135,6 @@ export const generateImageAction = createAction({
                   ],
                 },
                 defaultValue: 'auto',
-                description: 'The background of the image.',
                 displayName: 'Background',
                 required: true,
               }),
@@ -114,178 +144,91 @@ export const generateImageAction = createAction({
           return options;
         }
 
-        if (
-          providerId === AIProviderName.GOOGLE &&
-          modelId === 'gemini-2.5-flash-image-preview'
-        ) {
-          options = {
-            image: Property.Array({
-              displayName: 'Images',
-              required: false,
-              properties: {
-                file: Property.File({
-                  displayName: 'Image File',
-                  required: true,
-                }),
-              },
-              description: 'The image(s) you want to edit/merge',
-            }),
-          };
-        }
-
         return options;
       },
     }),
   },
   async run(context) {
-    const provider = context.propsValue.provider;
-    const modelId = context.propsValue.model;
+    const { provider, configId } = aiProviderSelection.resolveOrThrow(context.propsValue.provider);
 
-    const image = await getGeneratedImage({
-      provider: provider as AIProviderName,
-      modelId,
-      engineToken: context.server.token,
-      apiUrl: context.server.apiUrl,
-      prompt: context.propsValue.prompt,
-      projectId: context.project.id,
-      flowId: context.flows.current.id,
-      runId: context.run.id,
+    const inputImages = collectInputImages({
+      inputImages: context.propsValue.inputImages,
       advancedOptions: context.propsValue.advancedOptions,
     });
 
-    const imageData =
-      image.base64 && image.base64.length > 0
-        ? Buffer.from(image.base64, 'base64')
-        : Buffer.from(image.uint8Array);
-
-    return context.files.write({
-      data: imageData,
-      fileName: 'image.png',
+    const result = await runOnWorker({
+      context,
+      buildRequest: async () => ({
+        action: AiStepAction.GENERATE_IMAGE,
+        provider,
+        ...spreadIfDefined('providerConfigId', configId),
+        modelId: context.propsValue.model,
+        prompt: context.propsValue.prompt,
+        files: await uploadAiFiles({ context, files: inputImages, mimeTypeOf: inputImageMimeType }),
+        ...spreadIfDefined('advancedOptions', withoutInputImages(context.propsValue.advancedOptions)),
+      }),
     });
+
+    if (result.status === 'paused') {
+      return {};
+    }
+
+    return result.output.answer;
   },
 });
 
-const getGeneratedImage = async ({
-  provider,
-  modelId,
-  engineToken,
-  apiUrl,
-  prompt,
-  projectId,
-  flowId,
-  runId,
-  advancedOptions,
-}: {
-  provider: AIProviderName;
-  modelId: string;
-  engineToken: string;
-  apiUrl: string;
-  prompt: string;
-  projectId: string;
-  flowId: string;
-  runId: string;
-  advancedOptions?: DynamicPropsValue;
-}): Promise<GeneratedFile> => {
-  const model = await createAIModel({
-    provider,
-    modelId,
-    engineToken,
-    apiUrl,
-    projectId,
-    flowId,
-    runId,
-    isImage: true,
-  });
-
-  switch (provider) {
-    case AIProviderName.GOOGLE:
-    case AIProviderName.ACTIVEPIECES:
-    case AIProviderName.OPENROUTER:
-    case AIProviderName.CLOUDFLARE_GATEWAY:
-      return generateImageUsingGenerateText({
-        model: model as unknown as LanguageModel,
-        prompt,
-        advancedOptions,
-      });
-    default: {
-      const { image } = await generateImage({
-        model,
-        prompt,
-        providerOptions: {
-          [provider]: { ...advancedOptions },
-        },
-      });
-      return image
-    };
+const withoutInputImages = (advancedOptions: DynamicPropsValue | undefined): Record<string, unknown> | undefined => {
+  if (isNil(advancedOptions)) {
+    return undefined;
   }
+  const { image: _inputImages, ...rest } = advancedOptions as Record<string, unknown>;
+  return rest;
 };
 
-const generateImageUsingGenerateText = async ({
-  model,
-  prompt,
+const inputImageMimeType = (file: ApFile): string => {
+  const detected = file.extension ? mime.lookup(file.extension) : false;
+  return detected && ALLOWED_IMAGE_MIME_TYPES.has(detected) ? detected : 'image/jpeg';
+};
+
+const collectInputImages = ({
+  inputImages,
   advancedOptions,
 }: {
-  model: LanguageModel;
-  prompt: string;
+  inputImages?: unknown;
   advancedOptions?: DynamicPropsValue;
-}): Promise<GeneratedFile> => {
-  const images =
-    (advancedOptions?.['image'] as Array<{ file: ApFile }> | undefined) ?? [];
-
-  const imageFiles = images.map<ImagePart>((image) => {
-    const fileType = image.file.extension
-      ? mime.lookup(image.file.extension)
-      : 'image/jpeg';
-
-    return {
-      type: 'image',
-      image: `data:${fileType};base64,${image.file.base64}`,
-    };
-  });
-
-  const result = await generateText({
-    model,
-    providerOptions: {
-      google: { responseModalities: ['TEXT', 'IMAGE'] },
-      openrouter: { modalities: ['image', 'text'] },
-    },
-    messages: [
-      {
-        role: 'user',
-        content: [{ type: 'text', text: prompt }, ...imageFiles],
-      },
-    ],
-  });
-
-  assertImageGenerationSuccess(result);
-
-  return result.files[0];
+}): ApFile[] => {
+  const fromTopLevel = extractImageFiles(inputImages);
+  if (fromTopLevel.length > 0) {
+    return fromTopLevel;
+  }
+  return extractImageFiles(advancedOptions?.['image']);
 };
 
-const assertImageGenerationSuccess = (
-  result: GenerateTextResult<ToolSet, never>
-): void => {
-  const responseBody =
-    result.response.body &&
-      typeof result.response.body === 'object' &&
-      'candidates' in result.response.body
-      ? result.response.body
-      : { candidates: [] };
-
-  const responseCandidates = Array.isArray(responseBody?.candidates)
-    ? responseBody?.candidates
-    : [];
-
-  responseCandidates.forEach((candidate: { finishReason: string }) => {
-    if (candidate.finishReason !== 'STOP') {
-      throw new Error(
-        'Image generation failed Reason:\n ' +
-        JSON.stringify(responseCandidates, null, 2)
-      );
+const extractImageFiles = (value: unknown): ApFile[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.flatMap((entry) => {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      'file' in entry &&
+      entry.file
+    ) {
+      return [entry.file as ApFile];
     }
+    return [];
   });
-
-  if (isNil(result.files) || result.files.length === 0) {
-    throw new Error('No image generated');
-  }
 };
+
+const ALLOWED_IMAGE_MIME_TYPES: ReadonlySet<string> = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+]);
+
+function isGptImageModel({ modelId }: { modelId: string }): boolean {
+  return modelId.startsWith('gpt-image');
+}

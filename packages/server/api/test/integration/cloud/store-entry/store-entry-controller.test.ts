@@ -1,10 +1,10 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import { apId, DefaultProjectRole, PrincipalType } from '@activepieces/shared'
+import { apId, ProjectRole } from '@activepieces/core-utils'
+import { DefaultProjectRole, PlatformRole, PrincipalType } from '@activepieces/shared'
 import { FastifyInstance, LightMyRequestResponse } from 'fastify'
 import { generateMockToken } from '../../../helpers/auth'
 import { db } from '../../../helpers/db'
 import { createMockProjectMember, mockAndSaveBasicSetup, mockBasicUser } from '../../../helpers/mocks'
-import { ProjectRole, PlatformRole } from '@activepieces/shared'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -108,7 +108,7 @@ describe('Store-entries API', () => {
 function makePostRequest(testToken: string, key: string, value: string, projectId?: string): Promise<LightMyRequestResponse> | undefined {
     return app?.inject({
         method: 'POST',
-        url: '/v1/store-entries/',
+        url: '/api/v1/store-entries/',
         headers: { authorization: `Bearer ${testToken}` },
         body: { projectId, key, value },
     })
@@ -117,7 +117,7 @@ function makePostRequest(testToken: string, key: string, value: string, projectI
 function makeGetRequest(testToken: string, key: string): Promise<LightMyRequestResponse> | undefined {
     return app?.inject({
         method: 'GET',
-        url: `/v1/store-entries/?key=${key}`,
+        url: `/api/v1/store-entries/?key=${key}`,
         headers: { authorization: `Bearer ${testToken}` },
     })
 }
@@ -125,7 +125,7 @@ function makeGetRequest(testToken: string, key: string): Promise<LightMyRequestR
 function makeDeleteRequest(testToken: string, key: string): Promise<LightMyRequestResponse> | undefined {
     return app?.inject({
         method: 'DELETE',
-        url: `/v1/store-entries/?key=${key}`,
+        url: `/api/v1/store-entries/?key=${key}`,
         headers: { authorization: `Bearer ${testToken}` },
     })
 }

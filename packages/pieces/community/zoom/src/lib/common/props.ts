@@ -1,4 +1,34 @@
 import { Property } from '@activepieces/pieces-framework';
+import { HttpMethod } from '@activepieces/pieces-common';
+import { zoomAuth } from '../..';
+import { ZoomApiError, zoomClient } from './client';
+
+export const zoomMeetingDropdown = Property.Dropdown({
+  displayName: 'Meeting',
+  description: 'Select a meeting from your Zoom account.',
+  required: true,
+  auth: zoomAuth,
+  refreshers: ['auth'],
+  options: async ({ auth }) => {
+    if (!auth) {
+      return {
+        disabled: true,
+        placeholder: 'Connect your Zoom account first.',
+        options: [],
+      };
+    }
+    try {
+      const options = await loadScheduledMeetings({ accessToken: auth.access_token });
+      return { disabled: false, options };
+    } catch (error) {
+      return {
+        disabled: true,
+        placeholder: dropdownErrorReason(error),
+        options: [],
+      };
+    }
+  },
+});
 
 export const getRegistarantProps = () => ({
   meeting_id: Property.ShortText({
@@ -58,7 +88,7 @@ export const getRegistarantProps = () => ({
   }),
   custom_questions: Property.Object({
     displayName: 'Custom questions',
-    description: '',
+    description: 'Answers to the meeting\'s custom registration questions: use the question title as the key and the answer as the value.',
     required: false,
   }),
   industry: Property.ShortText({
@@ -124,3 +154,75 @@ export const getRegistarantProps = () => ({
     },
   }),
 });
+
+export const zoomProps = {
+  meetingId: ({ description }: { description: string }) =>
+    Property.ShortText({
+      displayName: 'Meeting ID',
+      description,
+      required: true,
+    }),
+  occurrenceId: () =>
+    Property.ShortText({
+      displayName: 'Occurrence ID',
+      description: 'Only for recurring meetings: the occurrence ID of one specific occurrence. Leave empty to target the whole meeting.',
+      required: false,
+    }),
+  pageSize: () =>
+    Property.Number({
+      displayName: 'Page Size',
+      description: 'How many records to return in this page (1-300). Default 30.',
+      required: false,
+      defaultValue: 30,
+    }),
+  nextPageToken: () =>
+    Property.ShortText({
+      displayName: 'Next Page Token',
+      description: 'Leave empty for the first page. To get the next page, paste the Next Page Token from the previous run.',
+      required: false,
+    }),
+};
+
+async function loadScheduledMeetings({ accessToken }: { accessToken: string }): Promise<{ label: string; value: string }[]> {
+  const options: { label: string; value: string }[] = [];
+  const seenTokens = new Set<string>();
+  let nextPageToken: string | undefined = undefined;
+  do {
+    const body: Record<string, unknown> = await zoomClient.requestObject({
+      accessToken,
+      method: HttpMethod.GET,
+      path: '/users/me/meetings',
+      query: { type: 'scheduled', page_size: 300, next_page_token: nextPageToken },
+      scope: 'meeting:read:list_meetings',
+    });
+    const meetings = Array.isArray(body['meetings']) ? body['meetings'] : [];
+    for (const meeting of meetings) {
+      if (zoomClient.isRecord(meeting) && meeting['id'] !== undefined) {
+        const topic = typeof meeting['topic'] === 'string' && meeting['topic'].length > 0 ? meeting['topic'] : `Meeting ${String(meeting['id'])}`;
+        options.push({ label: topic, value: String(meeting['id']) });
+      }
+    }
+    const token = body['next_page_token'];
+    nextPageToken = typeof token === 'string' && token.length > 0 && !seenTokens.has(token) ? token : undefined;
+    if (nextPageToken !== undefined) {
+      seenTokens.add(nextPageToken);
+    }
+  } while (nextPageToken !== undefined);
+  return options;
+}
+
+function dropdownErrorReason(error: unknown): string {
+  if (error instanceof ZoomApiError) {
+    if (error.code === 4711 || /does not contain scopes/i.test(error.message)) {
+      return 'Your Zoom app is missing the meeting:read:list_meetings scope. Add it in the Zoom Marketplace app and reconnect.';
+    }
+    if (error.status === 401) {
+      return 'Zoom did not accept the connection. Reconnect your Zoom account.';
+    }
+    if (error.status === 429) {
+      return 'Zoom rate limit reached. Wait a moment and refresh.';
+    }
+    return `Could not load meetings: ${error.message.slice(0, 200)}`;
+  }
+  return 'Could not load meetings from Zoom. Try again or reconnect your Zoom account.';
+}

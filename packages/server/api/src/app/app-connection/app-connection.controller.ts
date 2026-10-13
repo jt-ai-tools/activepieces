@@ -1,42 +1,44 @@
-import { ProjectResourceType, securityAccess } from '@activepieces/server-common'
-import { ApId,
-    AppConnectionOwners,
-    AppConnectionScope,
-    AppConnectionWithoutSensitiveData,
-    ApplicationEventName,
-    ListAppConnectionOwnersRequestQuery,
-    ListAppConnectionsRequestQuery,
-    Permission,
-    PrincipalType,
-    ReplaceAppConnectionsRequestBody,
-    SeekPage,
-    SERVICE_KEY_SECURITY_OPENAPI,
-    UpdateConnectionValueRequestBody,
-    UpsertAppConnectionRequestBody,
-} from '@activepieces/shared'
+import { ApId, Permission, SeekPage } from '@activepieces/core-utils'
+import { wideEvent } from '@activepieces/server-utils'
+import { ActivepiecesError, AppConnectionOwners, AppConnectionScope, AppConnectionStatus, AppConnectionType, AppConnectionWithoutSensitiveData, ApplicationEventName, ErrorCode, GetOAuth2AuthorizationUrlRequestBody, GetOAuth2AuthorizationUrlResponse, ListAppConnectionOwnersRequestQuery, ListAppConnectionsRequestQuery, PLACEHOLDER_CONNECTION_TYPE, PrincipalType, ReplaceAppConnectionsRequestBody, SERVICE_KEY_SECURITY_OPENAPI, UpdateConnectionValueRequestBody, UpsertAppConnectionRequestBody } from '@activepieces/shared'
 import { FastifyPluginCallbackZod } from 'fastify-type-provider-zod'
 import { StatusCodes } from 'http-status-codes'
 import { z } from 'zod'
+import { ProjectResourceType } from '../core/security/authorization/common'
+import { securityAccess } from '../core/security/authorization/fastify-security'
 import { applicationEvents } from '../helper/application-events'
+import { auditEvents } from '../helper/audit-events'
 import { securityHelper } from '../helper/security-helper'
 import { appConnectionService } from './app-connection-service/app-connection-service'
+import { oauth2Util } from './app-connection-service/oauth2/oauth2-util'
 import { AppConnectionEntity } from './app-connection.entity'
 
 export const appConnectionController: FastifyPluginCallbackZod = (app, _opts, done) => {
     app.post('/', UpsertAppConnectionRequest, async (request, reply) => {
-        const appConnection = await appConnectionService(request.log).upsert({
+        const ownerId = await securityHelper.getUserIdFromRequest(request)
+        const baseUpsert = {
             platformId: request.principal.platform.id,
             projectIds: [request.projectId],
-            type: request.body.type,
             externalId: request.body.externalId,
-            value: request.body.value,
             displayName: request.body.displayName,
             pieceName: request.body.pieceName,
-            ownerId: await securityHelper.getUserIdFromRequest(request),
+            ownerId,
             scope: AppConnectionScope.PROJECT,
             metadata: request.body.metadata,
             pieceVersion: request.body.pieceVersion,
-        })
+        }
+        const appConnection = request.body.type === PLACEHOLDER_CONNECTION_TYPE
+            ? await appConnectionService(request.log).upsert({
+                ...baseUpsert,
+                type: AppConnectionType.NO_AUTH,
+                value: { type: AppConnectionType.NO_AUTH },
+                status: AppConnectionStatus.MISSING,
+            })
+            : await appConnectionService(request.log).upsert({
+                ...baseUpsert,
+                type: request.body.type,
+                value: request.body.value,
+            })
         applicationEvents(request.log).sendUserEvent(request, {
             action: ApplicationEventName.CONNECTION_UPSERTED,
             data: {
@@ -82,9 +84,34 @@ export const appConnectionController: FastifyPluginCallbackZod = (app, _opts, do
             ...appConnections,
             data: appConnections.data.map(appConnectionService(request.log).removeSensitiveData),
         }
+        wideEvent.audit(auditEvents.connectionListed({
+            actor: auditEvents.actorFromPrincipal(request.principal),
+            target: {
+                type: 'project',
+                id: request.projectId,
+                platformId: request.principal.platform.id,
+                connectionCount: appConnectionsWithoutSensitiveData.data.length,
+            },
+        }))
         return appConnectionsWithoutSensitiveData
     },
     )
+    app.get('/:id', GetAppConnectionRequest, async (request): Promise<AppConnectionWithoutSensitiveData> => {
+        return appConnectionService(request.log).getOnePublicOrThrow({
+            id: request.params.id,
+            platformId: request.principal.platform.id,
+            projectId: request.projectId,
+        })
+    })
+
+    app.post('/:id/revalidate', RevalidateAppConnectionRequest, async (request): Promise<AppConnectionWithoutSensitiveData> => {
+        return appConnectionService(request.log).revalidate({
+            id: request.params.id,
+            platformId: request.principal.platform.id,
+            projectId: request.projectId,
+        })
+    })
+
     app.get('/owners', ListAppConnectionOwnersRequest, async (request): Promise<SeekPage<AppConnectionOwners>> => {
         const owners = await appConnectionService(request.log).getOwners({
             projectId: request.projectId,
@@ -99,13 +126,15 @@ export const appConnectionController: FastifyPluginCallbackZod = (app, _opts, do
     )
 
     app.post('/replace', ReplaceAppConnectionsRequest, async (request, reply) => {
-        const { sourceAppConnectionId, targetAppConnectionId } = request.body
+        const { sourceAppConnectionId, targetAppConnectionId, deleteSourceConnection, applyToPublishedVersions } = request.body
         await appConnectionService(request.log).replace({
             sourceAppConnectionId,
             targetAppConnectionId,
             projectId: request.projectId,
             platformId: request.principal.platform.id,
             userId: request.principal.id,
+            deleteSourceConnection,
+            applyToPublishedVersions,
         })
         await reply.status(StatusCodes.NO_CONTENT).send()
     })
@@ -116,21 +145,40 @@ export const appConnectionController: FastifyPluginCallbackZod = (app, _opts, do
             platformId: request.principal.platform.id,
             projectId: request.projectId,
         })
-        applicationEvents(request.log).sendUserEvent(request, {
-            action: ApplicationEventName.CONNECTION_DELETED,
-            data: {
-                connection,
-            },
-        })
+        if (connection.scope === AppConnectionScope.PLATFORM) {
+            throw new ActivepiecesError({
+                code: ErrorCode.AUTHORIZATION,
+                params: {
+                    message: 'Platform connections must be deleted from the platform admin connections page',
+                },
+            })
+        }
         await appConnectionService(request.log).delete({
             id: request.params.id,
             platformId: request.principal.platform.id,
             scope: AppConnectionScope.PROJECT,
             projectId: request.projectId,
         })
+        applicationEvents(request.log).sendUserEvent(request, {
+            action: ApplicationEventName.CONNECTION_DELETED,
+            data: {
+                connection,
+            },
+        })
         await reply.status(StatusCodes.NO_CONTENT).send()
     })
-
+    app.post('/oauth2/authorization-url', GetOAuth2AuthorizationUrlRequest, async (request) => {
+        return oauth2Util(request.log).buildAuthorizationUrl({
+            platformId: request.principal.platform.id,
+            pieceName: request.body.pieceName,
+            pieceVersion: request.body.pieceVersion,
+            clientId: request.body.clientId,
+            redirectUrl: request.body.redirectUrl,
+            props: request.body.props,
+            projectId: request.projectId,
+            scopes: request.body.scopes,
+        })
+    })
     done()
 }
 
@@ -221,6 +269,54 @@ const ListAppConnectionsRequest = {
         },
     },
 }
+const GetAppConnectionRequest = {
+    config: {
+        security: securityAccess.project(
+            [PrincipalType.USER, PrincipalType.SERVICE],
+            Permission.READ_APP_CONNECTION,
+            {
+                type: ProjectResourceType.TABLE,
+                tableName: AppConnectionEntity,
+            },
+        ),
+    },
+    schema: {
+        tags: ['app-connections'],
+        security: [SERVICE_KEY_SECURITY_OPENAPI],
+        description: 'Get an app connection by id',
+        params: z.object({
+            id: ApId,
+        }),
+        response: {
+            [StatusCodes.OK]: AppConnectionWithoutSensitiveData,
+        },
+    },
+}
+
+const RevalidateAppConnectionRequest = {
+    config: {
+        security: securityAccess.project(
+            [PrincipalType.USER, PrincipalType.SERVICE],
+            Permission.WRITE_APP_CONNECTION,
+            {
+                type: ProjectResourceType.TABLE,
+                tableName: AppConnectionEntity,
+            },
+        ),
+    },
+    schema: {
+        tags: ['app-connections'],
+        security: [SERVICE_KEY_SECURITY_OPENAPI],
+        description: 'Revalidate an app connection and refresh its runtime status',
+        params: z.object({
+            id: ApId,
+        }),
+        response: {
+            [StatusCodes.OK]: AppConnectionWithoutSensitiveData,
+        },
+    },
+}
+
 const ListAppConnectionOwnersRequest = {
     config: {
         security: securityAccess.project(
@@ -262,6 +358,23 @@ const DeleteAppConnectionRequest = {
         }),
         response: {
             [StatusCodes.NO_CONTENT]: z.never(),
+        },
+    },
+}
+
+const GetOAuth2AuthorizationUrlRequest = {
+    config: {
+        security: securityAccess.publicPlatform(
+            [PrincipalType.USER],
+        ),
+    },
+    schema: {
+        tags: ['app-connections'],
+        security: [SERVICE_KEY_SECURITY_OPENAPI],
+        description: 'Get OAuth2 authorization URL',
+        body: GetOAuth2AuthorizationUrlRequestBody,
+        response: {
+            [StatusCodes.OK]: GetOAuth2AuthorizationUrlResponse,
         },
     },
 }

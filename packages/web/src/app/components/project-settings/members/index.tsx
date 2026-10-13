@@ -1,9 +1,5 @@
-import {
-  InvitationType,
-  Permission,
-  PlatformRole,
-  UserStatus,
-} from '@activepieces/shared';
+import { Permission } from '@activepieces/core-utils';
+import { InvitationType, PlatformRole, UserStatus } from '@activepieces/shared';
 import { t } from 'i18next';
 import { Users } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -12,7 +8,6 @@ import { AnimatedIconButton } from '@/components/custom/animated-icon-button';
 import { DataTable } from '@/components/custom/data-table';
 import { DataTableInputPopover } from '@/components/custom/data-table/data-table-input-popover';
 import { UserRoundPlusIcon } from '@/components/icons/user-round-plus';
-import { Button } from '@/components/ui/button';
 import {
   InviteUserDialog,
   projectMembersHooks,
@@ -28,15 +23,20 @@ export const MembersSettings = () => {
   const {
     projectMembers,
     isLoading: projectMembersIsPending,
+    isError: projectMembersFailed,
     refetch: refetchProjectMembers,
   } = projectMembersHooks.useProjectMembers();
   const {
     invitations,
     isLoading: invitationsIsPending,
+    isError: invitationsFailed,
     refetch: refetchInvitations,
   } = userInvitationsHooks.useInvitations();
-  const { data: platformUsersData, isLoading: platformUsersIsPending } =
-    platformUserHooks.useUsers();
+  const {
+    data: platformUsersData,
+    isLoading: platformUsersIsPending,
+    isError: platformUsersFailed,
+  } = platformUserHooks.useUsers();
 
   const [filterValue, setFilterValue] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -159,6 +159,11 @@ export const MembersSettings = () => {
           invitationsIsPending ||
           platformUsersIsPending
         }
+        isError={
+          projectMembersFailed || invitationsFailed || platformUsersFailed
+        }
+        errorStateEntity={t('members')}
+        onRetry={refetch}
         hidePagination={true}
         emptyStateTextTitle={t('No members found')}
         emptyStateTextDescription={t(

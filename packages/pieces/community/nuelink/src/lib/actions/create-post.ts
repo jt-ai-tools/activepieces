@@ -1,23 +1,29 @@
 import { createAction, Property } from '@activepieces/pieces-framework';
-import { httpClient, HttpMethod } from '@activepieces/pieces-common';
-import { nuelinkAuth } from '../..';
+import { nuelinkAuths } from '../auth';
+import { nuelinkClient } from '../common/client';
 
 export const createPost = createAction({
-  // auth: check https://www.activepieces.com/docs/developers/piece-reference/authentication,
   name: 'createPost',
-  auth: nuelinkAuth,
+  classification: 'WRITE',
+  auth: nuelinkAuths,
   displayName: 'Create Post',
-  description: 'Creates a post on nuelink.',
+  description: 'Adds a post to the collection linked to your Nuelink automation token. Needs an Automation Token connection; with an API key, use Create Post in Collection.',
+  audience: 'human',
+  aiMetadata: {
+    description:
+      'Adds a post to the single Nuelink collection tied to this connection\'s automation token; the post then follows that collection\'s channels and schedule. It cannot choose the collection, publish mode or time, and needs an Automation Token connection; prefer Create Post in Collection. Each call creates a new post, so retries duplicate it.',
+    idempotent: false,
+  },
   props: {
     body: Property.LongText({
       displayName: 'Caption',
       required: true,
-      description: 'The your post caption here',
+      description: 'The text of the post.',
     }),
     media: Property.LongText({
       displayName: 'Media',
       required: false,
-      description: 'Enter the media URL here',
+      description: 'Public URL of one image or video. Nuelink downloads it, so it must open without a login.',
     }),
     title: Property.LongText({
       displayName: 'Title',
@@ -42,24 +48,13 @@ export const createPost = createAction({
       defaultValue: false,
     }),
   },
-
   async run(context) {
-    const res = await httpClient.sendRequest<string[]>({
-      method: HttpMethod.POST,
-      url: 'https://nuelink.com/api/v1/pabbly',
-      headers: {
-        Authorization: `Bearer ${context.auth.secret_text}`,
-      },
-      body: {
-        body: context.propsValue.body,
-        media: context.propsValue.media,
-        title: context.propsValue.title,
-        altText: context.propsValue.altText,
-        shareToFeed: context.propsValue.shareToFeed,
-        postAsShort: context.propsValue.postAsShort
-      },
+    const token = nuelinkClient.legacyTokenOf({ auth: context.auth });
+    const { body, media, title, altText, shareToFeed, postAsShort } = context.propsValue;
+    const mediaUrl = typeof media === 'string' && media.trim().length > 0 ? media.trim() : undefined;
+    return nuelinkClient.legacyCreatePost({
+      token,
+      body: { body, media: mediaUrl, title, altText, shareToFeed, postAsShort },
     });
-    return res.body;
   },
-
 });

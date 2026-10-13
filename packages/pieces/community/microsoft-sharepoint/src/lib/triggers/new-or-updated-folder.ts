@@ -6,11 +6,12 @@ import {
 	DropdownOption,
 	AppConnectionValueForAuthProperty,
 } from '@activepieces/pieces-framework';
+import { DedupeStrategy, Polling, pollingHelper } from '@activepieces/pieces-common';
+import { getGraphBaseUrl } from '../common/microsoft-cloud';
 import { microsoftSharePointCommon } from '../common';
 import { Client, PageCollection } from '@microsoft/microsoft-graph-client';
 import { DriveItem } from '@microsoft/microsoft-graph-types';
 import dayjs from 'dayjs';
-import { DedupeStrategy, Polling, pollingHelper } from '@activepieces/pieces-common';
 
 type Props = {
 	siteId: string;
@@ -24,10 +25,12 @@ const polling: Polling<AppConnectionValueForAuthProperty<typeof microsoftSharePo
 		const { siteId, driveId, parentFolderId } = propsValue;
 		const isTestMode = lastFetchEpochMS === 0;
 
+		const cloud = auth.props?.['cloud'] as string | undefined;
 		const client = Client.initWithMiddleware({
 			authProvider: {
 				getAccessToken: () => Promise.resolve(auth.access_token),
 			},
+			baseUrl: getGraphBaseUrl(cloud),
 		});
 
 		const folders = [];
@@ -87,8 +90,12 @@ const polling: Polling<AppConnectionValueForAuthProperty<typeof microsoftSharePo
 export const newOrUpdatedFolderTrigger = createTrigger({
 	auth: microsoftSharePointAuth,
 	name: 'new_or_updated_folder',
+	classification: 'READ',
 	displayName: 'New or Updated Folder',
 	description: 'Triggers when a folder is created or updated (e.g., name change).',
+	aiMetadata: {
+		description: 'Fires when a subfolder is created or modified (such as a rename) directly inside one monitored parent folder of a SharePoint drive, based on its last-modified time (polling). Each event represents one new or changed folder.',
+	},
 	props: {
 		siteId: microsoftSharePointCommon.siteId,
 		driveId: microsoftSharePointCommon.driveId,
@@ -107,11 +114,13 @@ export const newOrUpdatedFolderTrigger = createTrigger({
 						options: [],
 					};
 				}
-				const authValue = auth
+				const authValue = auth;
+				const cloud = authValue.props?.['cloud'] as string | undefined;
 				const client = Client.initWithMiddleware({
 					authProvider: {
 						getAccessToken: () => Promise.resolve(authValue.access_token),
 					},
+					baseUrl: getGraphBaseUrl(cloud),
 				});
 				const options: DropdownOption<string>[] = [{ label: 'Root Folder', value: 'root' }];
 				let response: PageCollection = await client

@@ -1,8 +1,8 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 import { ApEdition } from '@activepieces/shared'
 import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { system } from '../../../../src/app/helper/system/system'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -35,7 +35,7 @@ describe('AppSumo API', () => {
             // act
             const response = await app?.inject({
                 method: 'POST',
-                url: '/v1/appsumo/action',
+                url: '/api/v1/appsumo/action',
                 headers: {
                     authorization: `Bearer ${appSumoToken}`,
                 },

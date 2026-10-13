@@ -1,8 +1,7 @@
+import { isNil, apId } from '@activepieces/core-utils';
 import {
-  isNil,
   PopulatedFlow,
   FlowVersionState,
-  apId,
   FlowStatus,
   FlowOperationStatus,
   TemplateType,
@@ -22,13 +21,13 @@ import { TagWithBright } from '@/components/custom/tag-with-bright';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar-shadcn';
+import { UseTemplateDialog } from '@/features/templates/components/use-template-dialog';
 import { authenticationSession } from '@/lib/authentication-session';
 import { formatUtils } from '@/lib/format-utils';
 import { FROM_QUERY_PARAM } from '@/lib/navigation-utils';
 
 import { FlowCard } from './flow-card';
 import { PieceCard } from './piece-card';
-import { UseTemplateDialog } from './use-template-dialog';
 
 type TemplateDetailsPageProps = {
   template: Template;
@@ -202,7 +201,7 @@ const TemplateDetailsPage = ({ template }: TemplateDetailsPageProps) => {
                   <span className="text-sm font-medium">
                     {t('About this template')}
                   </span>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-sm text-gray-11 leading-relaxed">
                     {template.description}
                   </p>
                 </div>
@@ -260,7 +259,7 @@ const TemplateDetailsPage = ({ template }: TemplateDetailsPageProps) => {
 
           <div
             ref={canvasContainerRef}
-            className="bg-muted/30 h-full w-full relative overflow-hidden border-l"
+            className="bg-gray-2 h-full w-full relative overflow-hidden border-l"
           >
             {mockFlow && renderKey > 0 ? (
               <div key={renderKey} className="h-full w-full">
@@ -289,9 +288,9 @@ const TemplateDetailsPage = ({ template }: TemplateDetailsPageProps) => {
                 </ReactFlowProvider>
               </div>
             ) : mockFlow ? (
-              <div className="text-muted-foreground text-sm flex items-center justify-center h-full" />
+              <div className="text-gray-11 text-sm flex items-center justify-center h-full" />
             ) : (
-              <div className="text-muted-foreground text-sm flex items-center justify-center h-full">
+              <div className="text-gray-11 text-sm flex items-center justify-center h-full">
                 {t('No flow preview available')}
               </div>
             )}

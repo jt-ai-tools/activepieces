@@ -42,9 +42,9 @@ const Container = ({
   return (
     <Alert
       className={cn('rounded-md border', {
-        'dark:bg-amber-950 bg-amber-50  border-none dark:text-amber-600 text-amber-700':
+        'bg-warning-3 border-none text-warning-11':
           variant === MarkdownVariant.WARNING,
-        'bg-success-100 text-success-300 border-none':
+        'bg-success-3 text-success-11 border-none':
           variant === MarkdownVariant.TIP,
         'p-0 bg-transparent border-none':
           variant === MarkdownVariant.BORDERLESS,
@@ -56,14 +56,16 @@ const Container = ({
             <Info className="w-4 h-4 mt-1" />
           )}
           {variant === MarkdownVariant.WARNING && (
-            <AlertTriangle className="w-4 h-4 mt-1 stroke-amber-700" />
+            <AlertTriangle className="w-4 h-4 mt-1 stroke-warning-11" />
           )}
           {variant === MarkdownVariant.TIP && (
             <Lightbulb className="w-4 h-4 mt-1" />
           )}
         </>
       )}
-      <AlertDescription className="grow w-full">{children}</AlertDescription>
+      <AlertDescription className="grow w-full min-w-0">
+        {children}
+      </AlertDescription>
     </Alert>
   );
 };
@@ -106,7 +108,7 @@ const ApMarkdown = React.memo(
           className={cn('grow w-full ', className)}
           remarkPlugins={[gfm, breaks]}
           components={{
-            code({ node, ref, ...props }) {
+            code({ node: _node, ref: _ref, ...props }) {
               const isLanguageText = props.className?.includes('language-text');
               if (!isLanguageText) {
                 return <code {...props} className="text-wrap" />;
@@ -114,16 +116,16 @@ const ApMarkdown = React.memo(
               const codeContent = String(props.children).trim();
               const isCopying = codeContent === copiedText;
               return (
-                <div className="relative w-full items-center flex bg-background border border-solid text-sm rounded block w-full gap-1 p-1.5">
-                  <input
-                    type="text"
-                    className="grow bg-background"
-                    value={codeContent}
-                    disabled
-                  />
+                <div className="relative flex w-full max-w-full items-center gap-1 rounded border border-solid bg-gray-1 p-1.5 text-sm">
+                  <code
+                    data-testid="markdown-code-block"
+                    className="grow min-w-0 whitespace-pre-wrap break-all select-all px-1 py-1.5 font-mono text-sm"
+                  >
+                    {codeContent}
+                  </code>
                   <Button
                     variant="ghost"
-                    className="bg-background rounded p-2 inline-flex items-center justify-center h-8"
+                    className="bg-gray-1 rounded p-2 inline-flex items-center justify-center h-8"
                     onClick={() => copyToClipboard(codeContent)}
                   >
                     {isCopying ? (
@@ -135,69 +137,74 @@ const ApMarkdown = React.memo(
                 </div>
               );
             },
-            h1: ({ node, ref, ...props }) => (
+            h1: ({ node: _node, ref: _ref, ...props }) => (
               <h1
                 className="scroll-m-20 text-xl font-extrabold tracking-tight lg:text-3xl"
                 {...props}
               />
             ),
-            h2: ({ node, ref, ...props }) => (
+            h2: ({ node: _node, ref: _ref, ...props }) => (
               <h2
                 className="scroll-m-20 text-lg text-xl font-semibold tracking-tight first:mt-0"
                 {...props}
               />
             ),
-            h3: ({ node, ref, ...props }) => (
+            h3: ({ node: _node, ref: _ref, ...props }) => (
               <h3
                 className="scroll-m-20 text-lg font-semibold tracking-tight"
                 {...props}
               />
             ),
-            p: ({ node, ref, ...props }) => (
-              <p className="leading-7 not-first:mt-2 w-full" {...props} />
+            p: ({ node: _node, ref: _ref, ...props }) => (
+              <p
+                className="leading-5 first-of-type:mt-1 not-first-of-type:mt-2 w-full mb-2 break-words"
+                {...props}
+              />
             ),
-            ul: ({ node, ref, ...props }) => (
+            ul: ({ node: _node, ref: _ref, ...props }) => (
               <ul className="mt-4 ml-6 list-disc [&>li]:mt-2" {...props} />
             ),
-            ol: ({ node, ref, ...props }) => (
+            ol: ({ node: _node, ref: _ref, ...props }) => (
               <ol className="mt-4 ml-6 list-decimal [&>li]:mt-2" {...props} />
             ),
-            li: ({ node, ref, ...props }) => <li {...props} />,
-            a: ({ node, ref, ...props }) => (
+            li: ({ node: _node, ref: _ref, ...props }) => <li {...props} />,
+            a: ({ node: _node, ref: _ref, ...props }) => (
               <a
-                className="font-medium text-primary underline underline-offset-4"
+                className="font-medium text-accent-11 underline underline-offset-4"
                 target="_blank"
                 rel="noreferrer noopener"
                 {...props}
               />
             ),
-            blockquote: ({ node, ref, ...props }) => (
+            blockquote: ({ node: _node, ref: _ref, ...props }) => (
               <blockquote
                 className="mt-4 first:mt-0 border-l-2 pl-6 italic"
                 {...props}
               />
             ),
-            hr: ({ node, ref, ...props }) => (
-              <hr className="my-4 border-t border-border/50" {...props} />
+            hr: ({ node: _node, ref: _ref, ...props }) => (
+              <hr className="my-4 border-t border-gray-6/50" {...props} />
             ),
-            img: ({ node, ref, ...props }) => (
+            img: ({ node: _node, ref: _ref, ...props }) => (
               <img className="my-8" {...props} />
             ),
-            b: ({ node, ref, ...props }) => <b {...props} />,
-            em: ({ node, ref, ...props }) => <em {...props} />,
-            table: ({ node, ref, ...props }) => (
+            b: ({ node: _node, ref: _ref, ...props }) => <b {...props} />,
+            em: ({ node: _node, ref: _ref, ...props }) => <em {...props} />,
+            table: ({ node: _node, ref: _ref, ...props }) => (
               <table className="w-full my-4 border-collapse" {...props} />
             ),
-            thead: ({ node, ref, ...props }) => (
-              <thead className="bg-muted" {...props} />
+            thead: ({ node: _node, ref: _ref, ...props }) => (
+              <thead className="bg-gray-3" {...props} />
             ),
-            tr: ({ node, ref, ...props }) => (
-              <tr className="border-b border-border" {...props} />
+            tr: ({ node: _node, ref: _ref, ...props }) => (
+              <tr className="border-b border-gray-6" {...props} />
             ),
-            th: ({ node, ref, ...props }) => (
+            th: ({ node: _node, ref: _ref, ...props }) => (
               <th className="text-left p-2 font-medium" {...props} />
             ),
-            td: ({ node, ref, ...props }) => <td className="p-2" {...props} />,
+            td: ({ node: _node, ref: _ref, ...props }) => (
+              <td className="p-2" {...props} />
+            ),
           }}
         >
           {markdownProcessed.trim()}

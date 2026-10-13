@@ -1,17 +1,35 @@
 import { notionAuth } from '../auth';
-import { createAction } from '@activepieces/pieces-framework';
+import {
+  createAction,
+  MarkdownVariant,
+  Property,
+} from '@activepieces/pieces-framework';
 import { getNotionToken, notionCommon } from '../common';
 import { Client } from '@notionhq/client';
+import { notionFindDatabaseItemActionOutputSchema } from '../output-schemas';
 
 export const findDatabaseItem = createAction({
   auth: notionAuth,
   name: 'notion-find-database-item',
+  classification: 'SEARCH',
   displayName: 'Find Database Item',
-  description: 'Searches for an item in database by field.',
+  description: 'Find items in a database whose fields match exact values.',
+  audience: 'human',
+  aiMetadata: {
+    description:
+      'Queries a Notion database for items whose property values match the given filter fields (combined with AND). Use when an agent needs to look up existing records by field value before reading or updating them; requires the database_id and at least one filter field matching the database schema. Idempotent read-only lookup.',
+    idempotent: true,
+  },
   props: {
     database_id: notionCommon.database_id,
+    filter_hint: Property.MarkDown({
+      value:
+        'Pick a database, then fill one or more of its fields. Items must match every value exactly.',
+      variant: MarkdownVariant.INFO,
+    }),
     filterDatabaseFields: notionCommon.filterDatabaseFields,
   },
+  outputSchema: notionFindDatabaseItemActionOutputSchema,
   async run(context) {
     const databaseId = context.propsValue.database_id;
     const filterFields = context.propsValue.filterDatabaseFields;
@@ -76,6 +94,40 @@ export const findDatabaseItem = createAction({
           filterArray.push({
             property: fieldKey,
             title: { equals: fieldValue },
+          });
+          break;
+        case 'date':
+          filterArray.push({
+            property: fieldKey,
+            date: { equals: fieldValue },
+          });
+          break;
+        case 'checkbox':
+          filterArray.push({
+            property: fieldKey,
+            checkbox: { equals: Boolean(fieldValue) },
+          });
+          break;
+        case 'status':
+          filterArray.push({
+            property: fieldKey,
+            status: { equals: fieldValue },
+          });
+          break;
+        case 'multi_select':
+          for (const value of Array.isArray(fieldValue)
+            ? fieldValue
+            : [fieldValue]) {
+            filterArray.push({
+              property: fieldKey,
+              multi_select: { contains: value },
+            });
+          }
+          break;
+        case 'people':
+          filterArray.push({
+            property: fieldKey,
+            people: { contains: fieldValue },
           });
           break;
       }

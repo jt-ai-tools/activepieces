@@ -1,4 +1,5 @@
-import { Permission, Table } from '@activepieces/shared';
+import { Permission } from '@activepieces/core-utils';
+import { Table } from '@activepieces/shared';
 import { t } from 'i18next';
 import {
   Download,
@@ -163,7 +164,7 @@ const ApTableActionsMenu = ({
                   refetch?.();
                 }}
               >
-                <div className="flex items-center gap-2 text-destructive">
+                <div className="flex items-center gap-2 text-danger-11">
                   <TrashIcon className="h-4 w-4" />
                   {t('Delete')}
                 </div>
@@ -177,7 +178,6 @@ const ApTableActionsMenu = ({
         setIsOpen={setIsImportTableDialogOpen}
         showTrigger={false}
         tableId={table.id}
-        allowedFileTypes={['json', 'csv']}
         onImportSuccess={() => {
           refetch?.();
         }}

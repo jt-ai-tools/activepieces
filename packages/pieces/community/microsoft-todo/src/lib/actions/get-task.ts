@@ -1,14 +1,18 @@
 import { Property, createAction, OAuth2PropertyValue } from '@activepieces/pieces-framework';
-import { getTaskListsDropdown, getTasksInListDropdown } from '../common';
+import { getTaskListsDropdown, getTasksInListDropdown, createTodoClient } from '../common';
 import { microsoftToDoAuth } from '../auth';
-import { Client } from '@microsoft/microsoft-graph-client';
 import { TodoTask } from '@microsoft/microsoft-graph-types';
+import { createTaskOutputSchema } from '../output-schemas';
 
 export const getTaskAction = createAction({
     auth: microsoftToDoAuth,
     name: 'get_task',
+    outputSchema: createTaskOutputSchema,
+    classification: 'READ',
     displayName: 'Get Task',
     description: 'Gets the details of a specific task.',
+    audience: 'human',
+    aiMetadata: { description: 'Retrieve the full details of a single Microsoft To Do task by its task list id and task id. Use when you already know the exact task and need its current fields (title, status, dates, etc.). Read-only and idempotent.', idempotent: true },
     props: {
         task_list_id: Property.Dropdown({
    auth: microsoftToDoAuth,
@@ -57,11 +61,7 @@ export const getTaskAction = createAction({
             throw new Error('Task List ID and Task ID are required');
         }
 
-        const client = Client.initWithMiddleware({
-            authProvider: {
-                getAccessToken: () => Promise.resolve(auth.access_token),
-            },
-        });
+        const client = createTodoClient(auth);
 
         try {
             const response = await client

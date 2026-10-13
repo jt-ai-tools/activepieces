@@ -1,4 +1,8 @@
-import { ToolCallType, type ToolCallContentBlock } from '@activepieces/shared';
+import {
+  PieceAudienceFilter,
+  ToolCallType,
+  type ToolCallContentBlock,
+} from '@activepieces/shared';
 import { useQuery } from '@tanstack/react-query';
 
 import { piecesApi } from '../pieces/api/pieces-api';
@@ -6,6 +10,7 @@ import { piecesApi } from '../pieces/api/pieces-api';
 type ToolMetadata = {
   displayName?: string | null;
   logoUrl?: string | null;
+  iconType?: 'knowledge-base' | null;
 };
 
 export const agentToolHooks = {
@@ -22,6 +27,7 @@ export const agentToolHooks = {
             const piece = await piecesApi.get({
               name: contentBlock.pieceName,
               version: contentBlock.pieceVersion,
+              audience: PieceAudienceFilter.ALL,
             });
             const actionMetadata = piece.actions[contentBlock.actionName];
             return {
@@ -35,7 +41,14 @@ export const agentToolHooks = {
               displayName: contentBlock.displayName,
               logoUrl: null,
             };
+          case ToolCallType.KNOWLEDGE_BASE:
+            return {
+              displayName: contentBlock.displayName ?? contentBlock.toolName,
+              logoUrl: null,
+              iconType: 'knowledge-base',
+            };
           case ToolCallType.MCP:
+          case ToolCallType.UNKNOWN:
             return {
               displayName: contentBlock.displayName ?? contentBlock.toolName,
               logoUrl: null,

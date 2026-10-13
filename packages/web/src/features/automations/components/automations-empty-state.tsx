@@ -1,11 +1,12 @@
+import { Permission } from '@activepieces/core-utils';
 import {
-  Permission,
   Template,
   TemplateType,
   UncategorizedFolderId,
 } from '@activepieces/shared';
 import { t } from 'i18next';
 import {
+  Bot,
   ChevronRight,
   Plus,
   Sparkles,
@@ -18,16 +19,20 @@ import { useNavigate } from 'react-router-dom';
 
 import { PermissionNeededTooltip } from '@/components/custom/permission-needed-tooltip';
 import { TagWithBright } from '@/components/custom/tag-with-bright';
+import { useEmbedding } from '@/components/providers/embed-provider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ImportFlowDialog } from '@/features/automations/components/import-flow-dialog';
+import { ImportFlowDialog } from '@/features/flows/components/import-flow-dialog';
 import { flowHooks } from '@/features/flows/hooks/flow-hooks';
 import { PieceIconList } from '@/features/pieces/components/piece-icon-list';
 import { ImportTableDialog } from '@/features/tables/components/import-table-dialog';
 import { tableHooks } from '@/features/tables/hooks/table-hooks';
+import { TemplatesBrowseDialog } from '@/features/templates';
+import { UseTemplateDialog } from '@/features/templates/components/use-template-dialog';
 import { templatesHooks } from '@/features/templates/hooks/templates-hook';
 import { useGradientFromPieces } from '@/features/templates/hooks/use-gradient-from-pieces';
 import { useAuthorization } from '@/hooks/authorization-hooks';
+import { flagsHooks } from '@/hooks/flags-hooks';
 import { platformHooks } from '@/hooks/platform-hooks';
 
 type ActionRowProps = {
@@ -49,13 +54,13 @@ const ActionRow = ({
     <button
       onClick={onClick}
       disabled={disabled || !hasPermission}
-      className="flex items-center justify-between w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-t first:border-t-0"
+      className="flex items-center justify-between w-full px-4 py-3 text-left hover:bg-gray-3/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-t first:border-t-0"
     >
       <div className="flex items-center gap-3">
-        <span className="text-muted-foreground">{icon}</span>
+        <span className="text-gray-11">{icon}</span>
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      <ChevronRight className="h-4 w-4 text-gray-11" />
     </button>
   );
 
@@ -96,7 +101,7 @@ const GetStartedCard = ({
           </div>
           <div>
             <h3 className="font-semibold text-base">{title}</h3>
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="text-sm text-gray-11">{description}</p>
           </div>
         </div>
         <div className="flex flex-col">{children}</div>
@@ -134,7 +139,7 @@ const SuggestedTemplateCard = ({
           </h3>
         </div>
 
-        <p className="text-muted-foreground text-sm line-clamp-2 mt-1 flex-shrink-0">
+        <p className="text-gray-11 text-sm line-clamp-2 mt-1 flex-shrink-0">
           {template.summary || (
             <span className="italic">{t('No summary')}</span>
           )}
@@ -167,7 +172,6 @@ const SuggestedTemplateCard = ({
             maxNumberOfIconsToShow={4}
             size="md"
             className="flex gap-0.5"
-            background="white"
             excludeCore={true}
           />
         )}
@@ -185,20 +189,35 @@ const TemplateCardSkeleton = () => {
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-6 w-24 mt-2" />
       </CardContent>
-      <div className="h-14 bg-muted/30 rounded-b-lg" />
+      <div className="h-14 bg-gray-3/30 rounded-b-lg" />
     </Card>
   );
 };
 
 type AutomationsEmptyStateProps = {
   onRefresh: () => void;
+  agentsVisible: boolean;
+  userHasPermissionToWriteAgent: boolean;
+  isCreatingAgent: boolean;
+  onCreateAgent: () => void;
 };
 
 export const AutomationsEmptyState = ({
   onRefresh,
+  agentsVisible,
+  userHasPermissionToWriteAgent,
+  isCreatingAgent,
+  onCreateAgent,
 }: AutomationsEmptyStateProps) => {
   const navigate = useNavigate();
+  const { embedState } = useEmbedding();
   const [isImportTableDialogOpen, setIsImportTableDialogOpen] = useState(false);
+  const [isTemplatesBrowseDialogOpen, setIsTemplatesBrowseDialogOpen] =
+    useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
+    null,
+  );
+  const [useTemplateDialogOpen, setUseTemplateDialogOpen] = useState(false);
 
   const { checkAccess } = useAuthorization();
   const userHasPermissionToWriteFlow = checkAccess(Permission.WRITE_FLOW);
@@ -219,26 +238,38 @@ export const AutomationsEmptyState = ({
     tableHooks.useCreateTable(UncategorizedFolderId);
 
   const handleTemplateSelect = (template: Template) => {
-    navigate(`/templates/${template.id}`);
+    if (embedState.isEmbedded) {
+      setSelectedTemplate(template);
+      setUseTemplateDialogOpen(true);
+    } else {
+      navigate(`/templates/${template.id}`);
+    }
   };
 
   const handleViewAllTemplates = () => {
-    navigate('/templates');
+    if (embedState.isEmbedded) {
+      setIsTemplatesBrowseDialogOpen(true);
+    } else {
+      navigate('/templates');
+    }
   };
 
   const topTemplates = templates?.slice(0, 3) || [];
   const hasTemplates = topTemplates.length > 0;
+  const branding = flagsHooks.useWebsiteBranding();
 
   return (
     <div className="flex flex-col gap-8 py-8 px-4 max-w-5xl mx-auto">
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground mb-4">
-          {t('Get started with Activepieces')}
+        <h2 className="text-sm font-medium text-gray-11 mb-4">
+          {t('Get started with {brandName}', {
+            brandName: branding.websiteName ?? platform.name,
+          })}
         </h2>
         <div className="flex gap-4">
           <GetStartedCard
-            icon={<Workflow className="h-5 w-5 text-purple-600" />}
-            iconBgClass="bg-purple-100"
+            icon={<Workflow className="h-5 w-5 text-accent-11" />}
+            iconBgClass="bg-accent-3"
             title={t('Build a Flow')}
             description={t('Create automated workflows')}
           >
@@ -259,59 +290,84 @@ export const AutomationsEmptyState = ({
               >
                 <button
                   disabled={!userHasPermissionToWriteFlow}
-                  className="flex items-center justify-between w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-t"
+                  className="flex items-center justify-between w-full px-4 py-3 text-left hover:bg-gray-3/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-t"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground">
+                    <span className="text-gray-11">
                       <Upload className="h-4 w-4" />
                     </span>
                     <span className="text-sm font-medium">{t('Import')}</span>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <ChevronRight className="h-4 w-4 text-gray-11" />
                 </button>
               </ImportFlowDialog>
             </PermissionNeededTooltip>
             <ActionRow
               icon={<Sparkles className="h-4 w-4" />}
               label={t('Use Templates')}
-              onClick={handleViewAllTemplates}
+              onClick={() => {
+                if (embedState.isEmbedded) {
+                  setIsTemplatesBrowseDialogOpen(true);
+                } else {
+                  navigate('/templates');
+                }
+              }}
               hasPermission={userHasPermissionToWriteFlow}
             />
           </GetStartedCard>
 
-          <GetStartedCard
-            icon={<Table2 className="h-5 w-5 text-emerald-600" />}
-            iconBgClass="bg-emerald-100"
-            title={t('Create a Table')}
-            description={t('Organize and manage data')}
-          >
-            <ActionRow
-              icon={<Plus className="h-4 w-4" />}
-              label={t('Start from scratch')}
-              onClick={() => createTable({ name: t('New Table') })}
-              disabled={isCreateTablePending}
-              hasPermission={userHasPermissionToWriteTable}
-            />
-            <ActionRow
-              icon={<Upload className="h-4 w-4" />}
-              label={t('Import')}
-              onClick={() => setIsImportTableDialogOpen(true)}
-              hasPermission={userHasPermissionToWriteTable}
-            />
-          </GetStartedCard>
+          {!embedState.hideTables && (
+            <GetStartedCard
+              icon={<Table2 className="h-5 w-5 text-accent-11" />}
+              iconBgClass="bg-accent-3"
+              title={t('Create a Table')}
+              description={t('Organize and manage data')}
+            >
+              <ActionRow
+                icon={<Plus className="h-4 w-4" />}
+                label={t('Start from scratch')}
+                onClick={() => createTable({ name: t('New Table') })}
+                disabled={isCreateTablePending}
+                hasPermission={userHasPermissionToWriteTable}
+              />
+              <ActionRow
+                icon={<Upload className="h-4 w-4" />}
+                label={t('Import')}
+                onClick={() => setIsImportTableDialogOpen(true)}
+                hasPermission={userHasPermissionToWriteTable}
+              />
+            </GetStartedCard>
+          )}
+
+          {agentsVisible && (
+            <GetStartedCard
+              icon={<Bot className="h-5 w-5 text-accent-11" />}
+              iconBgClass="bg-accent-3"
+              title={t('Build an Agent')}
+              description={t('Delegate tasks to AI')}
+            >
+              <ActionRow
+                icon={<Plus className="h-4 w-4" />}
+                label={t('Start from scratch')}
+                onClick={onCreateAgent}
+                disabled={isCreatingAgent}
+                hasPermission={userHasPermissionToWriteAgent}
+              />
+            </GetStartedCard>
+          )}
         </div>
       </div>
 
       {(hasTemplates || isLoadingTemplates) && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <h2 className="text-sm font-medium text-gray-11 flex items-center gap-2">
               {t('Templates For You')}
-              <Sparkles className="h-4 w-4 text-yellow-500" />
+              <Sparkles className="h-4 w-4 text-swatch-6-mark" />
             </h2>
             <button
               onClick={handleViewAllTemplates}
-              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              className="text-sm text-gray-11 hover:text-gray-12 flex items-center gap-1 transition-colors"
             >
               {t('All templates')}
               <ChevronRight className="h-4 w-4" />
@@ -337,11 +393,28 @@ export const AutomationsEmptyState = ({
         </div>
       )}
 
-      <ImportTableDialog
-        open={isImportTableDialogOpen}
-        setIsOpen={setIsImportTableDialogOpen}
-        showTrigger={false}
+      {!embedState.hideTables && (
+        <ImportTableDialog
+          open={isImportTableDialogOpen}
+          setIsOpen={setIsImportTableDialogOpen}
+          showTrigger={false}
+        />
+      )}
+      <TemplatesBrowseDialog
+        open={isTemplatesBrowseDialogOpen}
+        onOpenChange={setIsTemplatesBrowseDialogOpen}
       />
+      {selectedTemplate && (
+        <UseTemplateDialog
+          key={selectedTemplate.id}
+          template={selectedTemplate}
+          open={useTemplateDialogOpen}
+          onOpenChange={(isOpen) => {
+            setUseTemplateDialogOpen(isOpen);
+            if (!isOpen) setSelectedTemplate(null);
+          }}
+        />
+      )}
     </div>
   );
 };

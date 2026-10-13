@@ -1,5 +1,7 @@
-import { apId, FlowAction, FlowActionType, FlowOperationStatus, FlowStatus, FlowTrigger, FlowTriggerType, FlowVersion, FlowVersionState, PopulatedFlow, PropertyExecutionType } from '@activepieces/shared'
+import { apId } from '@activepieces/core-utils'
+import { FlowAction, FlowActionType, FlowOperationStatus, FlowStatus, FlowTrigger, FlowTriggerType, FlowVersion, FlowVersionState, PopulatedFlow, PropertyExecutionType } from '@activepieces/shared'
 import { faker } from '@faker-js/faker'
+import dayjs from 'dayjs'
 
 
 export const flowGenerator = {
@@ -68,6 +70,7 @@ function generateAction(): FlowAction {
         displayName: faker.hacker.noun(),
         name: apId(),
         skip: false,
+        lastUpdatedDate: dayjs().toISOString(),
         settings: {
             input: {},
             pieceName: faker.helpers.arrayElement(['@activepieces/piece-schedule', '@activepieces/piece-webhook']),
@@ -84,6 +87,7 @@ function generateTrigger(): FlowTrigger {
         type: FlowTriggerType.PIECE,
         displayName: faker.hacker.noun(),
         name: apId(),
+        lastUpdatedDate: dayjs().toISOString(),
         settings: {
             pieceName: faker.helpers.arrayElement(['@activepieces/piece-schedule', '@activepieces/piece-webhook']),
             pieceVersion: faker.system.semver(),

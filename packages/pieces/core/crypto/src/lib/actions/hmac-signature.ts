@@ -1,12 +1,17 @@
 import { createAction, Property } from '@activepieces/pieces-framework';
+import { hmacSignatureActionOutputSchema } from '../output-schemas';
 import Crypto from 'crypto';
 import { Buffer } from 'buffer';
 
 export const hmacSignature = createAction({
+  audience: 'both',
   name: 'hmac-signature',
+  classification: 'READ',
   description:
     'Converts text to a HMAC signed hash value using various hashing algorithms',
+  aiMetadata: { description: 'Computes a keyed HMAC digest of a text string with a secret key, selecting the hash algorithm and how the secret key itself is interpreted (UTF-8, hex or base64). Pick this to sign or verify webhook payloads and API requests that use a shared secret; use Text to Hash for an unkeyed digest and Generate RSA Signature for asymmetric private-key signing. The secret-key encoding must match how the key was issued or the signature will not match; pure computation and idempotent.', idempotent: true },
   displayName: 'Generate HMAC Signature',
+  outputSchema: hmacSignatureActionOutputSchema,
   props: {
     secretKey: Property.ShortText({
       displayName: 'Secret key',
@@ -42,6 +47,18 @@ export const hmacSignature = createAction({
       description: 'The text to be hashed and encrypted',
       required: true,
     }),
+    outputEncoding: Property.StaticDropdown<'hex' | 'base64'>({
+      displayName: 'Output Encoding',
+      description: 'The encoding of the output signature',
+      required: false,
+      defaultValue: 'hex',
+      options: {
+        options: [
+          { label: 'Hex', value: 'hex' },
+          { label: 'Base64', value: 'base64' },
+        ],
+      },
+    }),
   },
   async run(context) {
     const hashAlgorithm = Crypto.createHmac(
@@ -55,7 +72,7 @@ export const hmacSignature = createAction({
     const text = context.propsValue.text;
     hashAlgorithm.update(text);
 
-    const hashedString = hashAlgorithm.digest('hex');
+    const hashedString = hashAlgorithm.digest(context.propsValue.outputEncoding ?? 'hex');
 
     return hashedString;
   },

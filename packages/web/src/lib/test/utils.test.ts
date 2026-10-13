@@ -4,7 +4,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('i18next', () => ({
   default: { language: 'en' },
-  t: (key: string) => key,
+  t: (key: string, opts?: Record<string, unknown>) => {
+    if (!opts) return key;
+    return key.replace(/\{(\w+)\}/g, (_, k: string) =>
+      String(opts[k] ?? `{${k}}`),
+    );
+  },
 }));
 
 import { formatUtils } from '../format-utils';
@@ -96,31 +101,61 @@ describe('formatUtils.formatToHoursAndMinutes', () => {
   });
 });
 
-describe('formatUtils.urlIsNotLocalhostOrIp', () => {
+describe('formatUtils.urlIsPubliclyReachable', () => {
   it('returns false for localhost', () => {
-    expect(formatUtils.urlIsNotLocalhostOrIp('http://localhost:3000')).toBe(
+    expect(formatUtils.urlIsPubliclyReachable('http://localhost:3000')).toBe(
+      false,
+    );
+    expect(formatUtils.urlIsPubliclyReachable('https://localhost:3000')).toBe(
       false,
     );
   });
 
-  it('returns false for 127.0.0.1', () => {
-    expect(formatUtils.urlIsNotLocalhostOrIp('http://127.0.0.1:3000')).toBe(
+  it('returns false for loopback addresses', () => {
+    expect(formatUtils.urlIsPubliclyReachable('https://127.0.0.1:3000')).toBe(
+      false,
+    );
+    expect(formatUtils.urlIsPubliclyReachable('https://[::1]:3000')).toBe(
       false,
     );
   });
 
-  it('returns false for IP address', () => {
-    expect(formatUtils.urlIsNotLocalhostOrIp('http://192.168.1.1:3000')).toBe(
+  it('returns false for private and link-local addresses', () => {
+    expect(formatUtils.urlIsPubliclyReachable('https://192.168.1.1')).toBe(
       false,
     );
+    expect(formatUtils.urlIsPubliclyReachable('https://10.0.0.1')).toBe(false);
+    expect(formatUtils.urlIsPubliclyReachable('https://172.20.0.1')).toBe(
+      false,
+    );
+    expect(formatUtils.urlIsPubliclyReachable('https://169.254.169.254')).toBe(
+      false,
+    );
+    expect(formatUtils.urlIsPubliclyReachable('https://[fd00::1]')).toBe(false);
+  });
+
+  it('returns true for a routable public IP over https', () => {
+    expect(formatUtils.urlIsPubliclyReachable('https://203.0.113.5')).toBe(
+      true,
+    );
+    expect(formatUtils.urlIsPubliclyReachable('https://172.32.0.1')).toBe(true);
   });
 
   it('returns true for valid https URL', () => {
-    expect(formatUtils.urlIsNotLocalhostOrIp('https://example.com')).toBe(true);
+    expect(formatUtils.urlIsPubliclyReachable('https://example.com')).toBe(
+      true,
+    );
   });
 
   it('returns false for http URL with valid domain', () => {
-    expect(formatUtils.urlIsNotLocalhostOrIp('http://example.com')).toBe(false);
+    expect(formatUtils.urlIsPubliclyReachable('http://example.com')).toBe(
+      false,
+    );
+  });
+
+  it('returns false for a value that is not a URL at all', () => {
+    expect(formatUtils.urlIsPubliclyReachable('')).toBe(false);
+    expect(formatUtils.urlIsPubliclyReachable('not a url')).toBe(false);
   });
 });
 
@@ -168,9 +203,9 @@ describe('formatUtils.formatDate', () => {
     vi.setSystemTime(new Date('2025-06-15T12:00:00Z'));
   });
 
-  it('returns Today for today', () => {
+  it('returns relative time for today', () => {
     const date = new Date('2025-06-15T08:00:00Z');
-    expect(formatUtils.formatDate(date)).toBe('Today');
+    expect(formatUtils.formatDate(date)).toBe('4 hours ago');
   });
 
   it('returns Yesterday for yesterday', () => {

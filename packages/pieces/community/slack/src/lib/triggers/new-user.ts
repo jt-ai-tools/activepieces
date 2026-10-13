@@ -1,6 +1,9 @@
 import { TriggerStrategy, createTrigger } from '@activepieces/pieces-framework';
 import { slackAuth } from '../auth';
 import { WebClient } from '@slack/web-api';
+import { getBotToken, getTeamId, SlackAuthValue } from '../common/auth-helpers';
+import { appWebhookSetupInfo } from '../common/props';
+import { newUserTriggerOutputSchema } from '../output-schemas';
 
 const sampleData = {
 	id: 'USLACKBOT',
@@ -53,14 +56,21 @@ const sampleData = {
 export const newUserTrigger = createTrigger({
 	auth: slackAuth,
 	name: 'new-user',
+	classification: 'READ',
 	displayName: 'New User',
 	description: 'Triggers when a new user is created / first joins your org.',
-	props: {},
+	aiMetadata: {
+		description:
+			'Fires when a new member joins the Slack workspace (a team_join event). The event payload is the new user object, including their id, name, profile, and account flags.',
+	},
+	props: {
+		info: appWebhookSetupInfo,
+	},
 	type: TriggerStrategy.APP_WEBHOOK,
 	sampleData,
+	outputSchema: newUserTriggerOutputSchema,
 	onEnable: async (context) => {
-		// Older OAuth2 has team_id, newer has team.id
-		const teamId = context.auth.data['team_id'] ?? context.auth.data['team']['id'];
+		const teamId = await getTeamId(context.auth as SlackAuthValue);
 		context.app.createListeners({
 			events: ['team_join'],
 			identifierValue: teamId,
@@ -71,7 +81,7 @@ export const newUserTrigger = createTrigger({
 	},
 
 	test: async (context) => {
-		const client = new WebClient(context.auth.access_token);
+		const client = new WebClient(getBotToken(context.auth as SlackAuthValue));
 
 		const response = await client.users.list({limit:10});
 
@@ -83,7 +93,6 @@ export const newUserTrigger = createTrigger({
 	run: async (context) => {
 		const payloadBody = context.payload.body as PayloadBody;
 
-		// check if it's emoji message
 		if (payloadBody.event.type !== 'team_join') {
 			return [];
 		}

@@ -1,115 +1,160 @@
-import { inspect } from 'util'
+import { inspect } from 'node:util'
+import { isNil, tryCatch } from '@activepieces/core-utils'
 import {
-    emitWithAck,
-    EngineOperation,
-    EngineOperationType,
+    createNotifyClient,
+    createRpcClient,
+    createRpcServer,
+    EngineContract,
     EngineResponse,
-    EngineResponseStatus,
-    EngineSocketEvent,
-    EngineStderr,
-    EngineStdout,
     ERROR_MESSAGES_TO_REDACT,
+    ForceReinstallPieceRequest,
+    WorkerNotifyContract,
+    WorkerRpcContract,
 } from '@activepieces/shared'
-import { io, type Socket } from 'socket.io-client'
+import { io, type ManagerOptions, type Socket, type SocketOptions } from 'socket.io-client'
+import { flowRunProgressReporter } from './helper/flow-run-progress-reporter'
 import { execute } from './operations'
-import { progressService } from './services/progress.service'
-import { utils } from './utils'
 
-const WS_URL = 'ws://127.0.0.1:12345'
+const INITIAL_CONNECT_TIMEOUT_MS = 60_000
+const PIECE_REINSTALL_RPC_TIMEOUT_MS = 120_000
 
 let socket: Socket | undefined
+let notifyClient: WorkerNotifyContract | undefined
+let rpcClient: WorkerRpcContract | undefined
+let initialConnectWatchdog: NodeJS.Timeout | undefined
 
-async function executeFromSocket(operation: EngineOperation, operationType: EngineOperationType): Promise<void> {
-    const result = await execute(operationType, operation)
-    const resultParsed = JSON.parse(JSON.stringify(result))
-    await progressService.shutdown()
-    await workerSocket.sendToWorkerWithAck(EngineSocketEvent.ENGINE_RESPONSE, resultParsed)
+function clearInitialConnectWatchdog(): void {
+    if (initialConnectWatchdog) {
+        clearTimeout(initialConnectWatchdog)
+        initialConnectWatchdog = undefined
+    }
 }
 
 export const workerSocket = {
     init: (sandboxId: string): void => {
-   
-        socket = io(WS_URL, {
-            path: '/worker/ws',
-            auth: {
-                sandboxId,
-            },
-            autoConnect: false,
-            reconnection: true,
+        const wsUrl = `ws://127.0.0.1:${process.env.AP_SANDBOX_WS_PORT ?? '12345'}`
+        socket = io(wsUrl, buildSocketOptions(sandboxId))
+
+        // Without this watchdog, if the parent worker is SIGKILLed (OOM, crash) before
+        // the engine ever connects, the engine sits forever retrying the handshake on a
+        // dead port — orphaned, idle, holding ~80 MB. The worker is the only thing that
+        // can kill us, so if it's not there to talk to, we self-terminate.
+        initialConnectWatchdog = setTimeout(() => {
+            initialConnectWatchdog = undefined
+            // eslint-disable-next-line no-console
+            console.error('[engine] Failed to connect to worker within 60s, exiting')
+            process.exit(5)
+        }, INITIAL_CONNECT_TIMEOUT_MS)
+
+        notifyClient = createNotifyClient<WorkerNotifyContract>(socket)
+        rpcClient = createRpcClient<WorkerRpcContract>(socket, PIECE_REINSTALL_RPC_TIMEOUT_MS)
+
+        socket.on('connect', () => {
+            clearInitialConnectWatchdog()
         })
 
-        
-        // Redirect console.log/error/warn to socket
+        // Same rationale as the watchdog: once the control channel is gone, this engine
+        // can never reattach (worker rotates the handshake token per start()), so we'd
+        // just be a zombie sandbox-* process accumulating until the next host OOM.
+        // Exclude 'io client disconnect' so the engine's own workerSocket.disconnect()
+        // path (used by tests) doesn't fire process.exit on the test runner.
+        socket.on('disconnect', (reason) => {
+            if (reason === 'io client disconnect') {
+                return
+            }
+            // eslint-disable-next-line no-console
+            console.error(`[engine] Worker socket disconnected (${reason}), exiting`)
+            process.exit(6)
+        })
+
         const originalLog = console.log
         console.log = function (...args): void {
-            const engineStdout: EngineStdout = {
-                message: args.join(' ') + '\n',
-            }
-            socket?.emit('command', { event: EngineSocketEvent.ENGINE_STDOUT, payload: engineStdout })
+            notifyClient?.stdout({ message: args.join(' ') + '\n' })
             originalLog.apply(console, args)
         }
 
         const originalWarn = console.warn
         console.warn = function (...args): void {
-            const engineStdout: EngineStdout = {
-                message: args.join(' ') + '\n',
-            }
-            socket?.emit('command', { event: EngineSocketEvent.ENGINE_STDOUT, payload: engineStdout })
+            notifyClient?.stdout({ message: args.join(' ') + '\n' })
             originalWarn.apply(console, args)
         }
 
         const originalError = console.error
         console.error = function (...args): void {
             let sanitizedArgs = [...args]
-            if (typeof args[0] === 'string' && ERROR_MESSAGES_TO_REDACT.some(errorMessage => args[0].includes(errorMessage))) {
+            if (typeof args[0] === 'string' && ERROR_MESSAGES_TO_REDACT.some(m => args[0].includes(m))) {
                 sanitizedArgs = [sanitizedArgs[0], 'REDACTED']
             }
-            const engineStderr: EngineStderr = {
-                message: sanitizedArgs.join(' ') + '\n',
-            }
-            socket?.emit('command', { event: EngineSocketEvent.ENGINE_STDERR, payload: engineStderr })
-
+            notifyClient?.stderr({ message: sanitizedArgs.join(' ') + '\n' })
             originalError.apply(console, sanitizedArgs)
         }
 
-        socket.on(EngineSocketEvent.ENGINE_OPERATION, async (data: { operation: EngineOperation, operationType: EngineOperationType }) => {
-            const { error: resultError } = await utils.tryCatchAndThrowOnEngineError(() =>
-                executeFromSocket(data.operation, data.operationType),
-            )
-
-            if (resultError) {
-                const engineError: EngineResponse = {
-                    response: undefined,
-                    status: EngineResponseStatus.INTERNAL_ERROR,
-                    error: utils.formatExecutionError(resultError),
+        createRpcServer<EngineContract>(socket, {
+            executeOperation: async ({ operationType, operation }): Promise<EngineResponse<unknown>> => {
+                flowRunProgressReporter.init()
+                try {
+                    const response = await execute(operationType, operation)
+                    return JSON.parse(JSON.stringify(response)) as EngineResponse<unknown>
                 }
-                console.error(utils.formatExecutionError(resultError))
-                await workerSocket.sendToWorkerWithAck(EngineSocketEvent.ENGINE_RESPONSE, engineError)
-            }
+                finally {
+                    await flowRunProgressReporter.shutdown()
+                }
+            },
         })
+
+        const gc = global.gc
+        if (typeof gc === 'function') {
+            const GC_INTERVAL_MS = 60_000
+            setInterval(() => {
+                gc()
+            }, GC_INTERVAL_MS)
+        }
 
         socket.connect()
     },
 
-    sendToWorkerWithAck: async (
-        type: EngineSocketEvent,
-        data: unknown,
-    ): Promise<void> => {
-        await emitWithAck(socket, 'command', { event: type, payload: data }, {
-            timeoutMs: 4000,
-            retries: 4,
-            retryDelayMs: 1000,
-        })
+    sendError: (error: unknown): void => {
+        notifyClient?.stderr({ message: inspect(error) })
     },
 
-    sendError: async (error: unknown): Promise<void> => {
-        const engineStderr: EngineStderr = {
-            message: inspect(error),
+    requestPieceReinstall: async (input: ForceReinstallPieceRequest): Promise<boolean> => {
+        if (isNil(socket) || !socket.connected || isNil(rpcClient)) {
+            return false
         }
-        await emitWithAck(socket, 'command', { event: EngineSocketEvent.ENGINE_STDERR, payload: engineStderr }, {
-            timeoutMs: 3000,
-            retries: 4,
-            retryDelayMs: 1000,
-        })
+        const client = rpcClient
+        const { error } = await tryCatch(() => client.forceReinstallPiece(input))
+        if (error) {
+            notifyClient?.stderr({ message: `Piece reinstall request failed: ${inspect(error)}\n` })
+            return false
+        }
+        return true
     },
+
+    disconnect: (): void => {
+        clearInitialConnectWatchdog()
+        socket?.disconnect()
+        socket = undefined
+        notifyClient = undefined
+    },
+}
+
+function buildSocketOptions(sandboxId: string): Partial<ManagerOptions & SocketOptions> {
+    const base: Partial<ManagerOptions & SocketOptions> = {
+        path: '/worker/ws',
+        // Connect straight over websocket to the localhost worker. The socket.io default starts with
+        // HTTP long-polling then upgrades, adding ~75ms to a cold-fork handshake — pure waste for a
+        // same-host control channel.
+        transports: ['websocket'],
+        auth: {
+            sandboxId,
+            connectionToken: process.env.AP_SANDBOX_WS_TOKEN,
+        },
+        autoConnect: false,
+        // Engines are one-shot per sandbox. The worker rotates the handshake token on
+        // every start(), so any reconnect attempt after a disconnect is permanently
+        // unauthorized — looping just turns the engine into a zombie. Self-exit on
+        // disconnect (above) handles teardown.
+        reconnection: false,
+    }
+    return base
 }

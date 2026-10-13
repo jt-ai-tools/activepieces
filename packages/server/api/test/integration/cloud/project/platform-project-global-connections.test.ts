@@ -1,11 +1,5 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import {
-    apId,
-    AppConnectionScope,
-    AppConnectionType,
-    PackageType,
-    UpsertGlobalConnectionRequestBody,
-} from '@activepieces/shared'
+import { apId } from '@activepieces/core-utils'
+import { AppConnectionScope, AppConnectionType, PackageType, UpsertGlobalConnectionRequestBody } from '@activepieces/shared'
 import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { db } from '../../../helpers/db'
@@ -13,6 +7,7 @@ import {
     createMockPieceMetadata,
 } from '../../../helpers/mocks'
 import { createTestContext } from '../../../helpers/test-context'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -63,7 +58,7 @@ async function createGlobalConnection(
 
     const response = await app?.inject({
         method: 'POST',
-        url: '/v1/global-connections',
+        url: '/api/v1/global-connections',
         headers: { authorization: `Bearer ${token}` },
         body,
     })
@@ -75,7 +70,7 @@ async function createGlobalConnection(
 async function listGlobalConnections(token: string): Promise<{ data: { id: string, externalId: string, projectIds: string[] }[] }> {
     const response = await app?.inject({
         method: 'GET',
-        url: '/v1/global-connections',
+        url: '/api/v1/global-connections',
         headers: { authorization: `Bearer ${token}` },
     })
     expect(response?.statusCode).toBe(StatusCodes.OK)
@@ -107,7 +102,7 @@ describe('Platform Project Global Connections', () => {
 
             const createResponse = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     displayName: 'Project With Connections',
@@ -140,7 +135,7 @@ describe('Platform Project Global Connections', () => {
 
             const createResponse = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     displayName: 'Project Without Connections',
@@ -190,7 +185,7 @@ describe('Platform Project Global Connections', () => {
 
             const newProjectRes = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: { displayName: 'Target Project' },
             })
@@ -198,7 +193,7 @@ describe('Platform Project Global Connections', () => {
 
             const updateResponse = await app?.inject({
                 method: 'POST',
-                url: `/v1/projects/${newProject.id}`,
+                url: `/api/v1/projects/${newProject.id}`,
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     globalConnectionExternalIds: [conn1.externalId, conn2.externalId],
@@ -226,7 +221,7 @@ describe('Platform Project Global Connections', () => {
 
             const newProjectRes = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     displayName: 'Remove Test',
@@ -243,7 +238,7 @@ describe('Platform Project Global Connections', () => {
             // Update to remove all connections
             const updateResponse = await app?.inject({
                 method: 'POST',
-                url: `/v1/projects/${newProject.id}`,
+                url: `/api/v1/projects/${newProject.id}`,
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     globalConnectionExternalIds: [],
@@ -282,7 +277,7 @@ describe('Platform Project Global Connections', () => {
             // Create project with connA and connB
             const newProjectRes = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     displayName: 'Swap Test',
@@ -294,7 +289,7 @@ describe('Platform Project Global Connections', () => {
             // Update to connB and connC (remove connA, keep connB, add connC)
             const updateResponse = await app?.inject({
                 method: 'POST',
-                url: `/v1/projects/${newProject.id}`,
+                url: `/api/v1/projects/${newProject.id}`,
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     globalConnectionExternalIds: [connB.externalId, connC.externalId],
@@ -324,7 +319,7 @@ describe('Platform Project Global Connections', () => {
 
             const newProjectRes = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     displayName: 'Idempotency Test',
@@ -336,7 +331,7 @@ describe('Platform Project Global Connections', () => {
             // Update with the same connection again
             await app?.inject({
                 method: 'POST',
-                url: `/v1/projects/${newProject.id}`,
+                url: `/api/v1/projects/${newProject.id}`,
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     globalConnectionExternalIds: [conn.externalId],
@@ -364,7 +359,7 @@ describe('Platform Project Global Connections', () => {
             // Create a project on platform1 and try to assign platform2's connection externalId
             const newProjectRes = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${platform1.ctx.token}` },
                 body: {
                     displayName: 'Cross Platform Test',
@@ -390,7 +385,7 @@ describe('Platform Project Global Connections', () => {
 
             const newProjectRes = await app?.inject({
                 method: 'POST',
-                url: '/v1/projects',
+                url: '/api/v1/projects',
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: { displayName: 'Original Name' },
             })
@@ -398,7 +393,7 @@ describe('Platform Project Global Connections', () => {
 
             const updateResponse = await app?.inject({
                 method: 'POST',
-                url: `/v1/projects/${newProject.id}`,
+                url: `/api/v1/projects/${newProject.id}`,
                 headers: { authorization: `Bearer ${ctx.token}` },
                 body: {
                     displayName: 'Updated Name',

@@ -1,14 +1,23 @@
 import { Property, createAction } from '@activepieces/pieces-framework';
-import { GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import { S3 } from '@aws-sdk/client-s3';
 import * as openpgp from 'openpgp';
-import { amazonS3Auth } from '../auth';
-import { createS3, createSecretsManagerClient } from '../common';
+import { amazonS3CombinedAuth, S3AuthProps } from '../auth';
+import { createS3, createSecretsManagerClient, getTemporaryCredentials, isOidcAuth } from '../common';
+import { readFileOutputSchema } from '../output-schemas';
 
 export const decryptPgpFile = createAction({
-  auth: amazonS3Auth,
+  auth: amazonS3CombinedAuth,
   name: 'decrypt-pgp-file',
+  outputSchema: readFileOutputSchema,
+  classification: 'READ',
   displayName: 'Decrypt PGP File',
   description: 'Decrypt a PGP encrypted file from S3 using a private key stored in AWS Secrets Manager',
+  audience: 'both',
+  aiMetadata: {
+    description: 'Downloads a PGP-encrypted object from the configured S3 bucket and decrypts it using a private key (and optional passphrase) retrieved from AWS Secrets Manager by ARN, returning the decrypted contents as a file. Use when an S3 file is PGP-encrypted and you have the key stored in Secrets Manager. Requires the secret ARN for the private key; idempotent since it only reads and decrypts without modifying anything.',
+    idempotent: true,
+  },
   props: {
     key: Property.ShortText({
       displayName: 'S3 File Key',
@@ -30,14 +39,35 @@ export const decryptPgpFile = createAction({
       description: 'The AWS region where the Secrets Manager secret is stored (defaults to S3 region if not provided)',
       required: false,
     }),
+    allowUnauthenticatedMessages: Property.Checkbox({
+      displayName: 'Allow Unauthenticated Messages',
+      description: 'Allow decryption of messages without integrity protection (no MDC). WARNING: Without MDC, a malicious actor can silently modify the ciphertext, so the decrypted output may have been tampered with. Only enable this when working with legacy files where integrity protection was never used.',
+      required: false,
+      defaultValue: false,
+    }),
+    allowInsecureDecryptionWithSigningKeys: Property.Checkbox({
+      displayName: 'Allow Decryption With Signing Keys',
+      description: 'Allow decryption using a key not marked for encryption (e.g. a signing-only key). Enable this if your PGP key was not flagged for encryption use.',
+      required: false,
+      defaultValue: false,
+    }),
   },
   async run(context) {
-    const { bucket } = context.auth.props;
-    const { key, secretArn, passphraseArn, secretsManagerRegion } = context.propsValue;
-    const { accessKeyId, secretAccessKey, region } = context.auth.props;
+    const authProps: S3AuthProps = context.auth.props;
+    const { bucket } = authProps;
+    const { key, secretArn, passphraseArn, secretsManagerRegion, allowUnauthenticatedMessages, allowInsecureDecryptionWithSigningKeys } = context.propsValue;
 
-    // Create S3 client
-    const s3 = createS3(context.auth.props);
+    let s3: S3;
+    let secretsClient: SecretsManagerClient;
+    if (isOidcAuth(authProps)) {
+      const credentials = await getTemporaryCredentials({ auth: authProps, server: context.server });
+      s3 = new S3({ credentials, region: authProps.region });
+      secretsClient = new SecretsManagerClient({ credentials, region: secretsManagerRegion || authProps.region });
+    } else {
+      const smAuth = secretsManagerRegion ? { ...authProps, region: secretsManagerRegion } : authProps;
+      s3 = createS3(authProps);
+      secretsClient = createSecretsManagerClient(smAuth);
+    }
 
     // Download the encrypted file from S3
     let encryptedData: Buffer;
@@ -46,22 +76,15 @@ export const decryptPgpFile = createAction({
         Bucket: bucket,
         Key: key,
       });
-      
+
       const base64 = await file.Body?.transformToString('base64');
       if (!base64) {
         throw new Error(`Could not read file ${key} from S3`);
       }
       encryptedData = Buffer.from(base64, 'base64');
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Failed to download file from S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    // Create AWS Secrets Manager client
-    const secretsClient = createSecretsManagerClient({
-      accessKeyId: accessKeyId,
-      secretAccessKey: secretAccessKey,
-      region: secretsManagerRegion || region,
-    });
 
     // Fetch the secret key from AWS Secrets Manager
     let privateKeyArmored: string;
@@ -70,27 +93,27 @@ export const decryptPgpFile = createAction({
         SecretId: secretArn,
       });
       const response = await secretsClient.send(command);
-      
+
       if (!response.SecretString) {
         throw new Error(`Secret ${secretArn} does not contain a string value`);
       }
-      
+
       // Trim whitespace from the key (AWS Secrets Manager might add extra whitespace)
       privateKeyArmored = response.SecretString.trim();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Provide more specific error messages for common issues
-      if (error.name === 'AccessDeniedException') {
+      if (error instanceof Error && error.name === 'AccessDeniedException') {
         throw new Error(
           `Access denied when retrieving secret ${secretArn}. ` +
           `Please ensure your AWS credentials have the secretsmanager:GetSecretValue permission for this secret.`
         );
       }
-      if (error.name === 'ResourceNotFoundException') {
+      if (error instanceof Error && error.name === 'ResourceNotFoundException') {
         throw new Error(
-          `Secret ${secretArn} not found. Please verify the secret ARN is correct and exists in region ${secretsManagerRegion || region}.`
+          `Secret ${secretArn} not found. Please verify the secret ARN is correct and exists in region ${secretsManagerRegion || authProps.region}.`
         );
       }
-      if (error.name === 'InvalidParameterException') {
+      if (error instanceof Error && error.name === 'InvalidParameterException') {
         throw new Error(
           `Invalid secret ARN: ${secretArn}. Please verify the ARN format is correct.`
         );
@@ -108,26 +131,26 @@ export const decryptPgpFile = createAction({
           SecretId: passphraseArn,
         });
         const passphraseResponse = await secretsClient.send(passphraseCommand);
-        
+
         if (!passphraseResponse.SecretString) {
           throw new Error(`Secret ${passphraseArn} does not contain a string value`);
         }
-        
+
         passphrase = passphraseResponse.SecretString.trim();
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Provide more specific error messages for common issues
-        if (error.name === 'AccessDeniedException') {
+        if (error instanceof Error && error.name === 'AccessDeniedException') {
           throw new Error(
             `Access denied when retrieving passphrase secret ${passphraseArn}. ` +
             `Please ensure your AWS credentials have the secretsmanager:GetSecretValue permission for this secret.`
           );
         }
-        if (error.name === 'ResourceNotFoundException') {
+        if (error instanceof Error && error.name === 'ResourceNotFoundException') {
           throw new Error(
-            `Passphrase secret ${passphraseArn} not found. Please verify the secret ARN is correct and exists in region ${secretsManagerRegion || region}.`
+            `Passphrase secret ${passphraseArn} not found. Please verify the secret ARN is correct and exists in region ${secretsManagerRegion || authProps.region}.`
           );
         }
-        if (error.name === 'InvalidParameterException') {
+        if (error instanceof Error && error.name === 'InvalidParameterException') {
           throw new Error(
             `Invalid passphrase secret ARN: ${passphraseArn}. Please verify the ARN format is correct.`
           );
@@ -159,7 +182,7 @@ export const decryptPgpFile = createAction({
       let privateKey = await openpgp.readPrivateKey({
         armoredKey: privateKeyArmored,
       });
-      
+
       if (!privateKey.isPrivate()) {
         throw new Error('The provided key is not a private key. Please ensure you are using a private key, not a public key.');
       }
@@ -186,7 +209,8 @@ export const decryptPgpFile = createAction({
         decryptionKeys: privateKey,
         format: 'binary',
         config: {
-          allowInsecureDecryptionWithSigningKeys: false,
+          allowInsecureDecryptionWithSigningKeys: allowInsecureDecryptionWithSigningKeys ?? false,
+          allowUnauthenticatedMessages: allowUnauthenticatedMessages ?? false,
         },
       });
 
@@ -194,7 +218,7 @@ export const decryptPgpFile = createAction({
       const decryptedData = new Uint8Array(await decrypted.data);
 
       // Write the decrypted file
-      const fileName = key.split("/").at(-1)?.toLowerCase().replace(/\.(pgp|gpg)$/i, '');
+      const fileName = key.split('/').at(-1)?.toLowerCase().replace(/\.(pgp|gpg)$/i, '');
 
       return await context.files.write({
         fileName: fileName ?? 'decrypted_file',

@@ -7,12 +7,36 @@ import {
 import { googleSheetsAuth } from '../common/common';
 import { commonProps } from '../common/props';
 import { areSheetIdsValid, getAccessToken } from '../common/common';
+import { exportSheetActionOutputSchema } from '../output-schemas';
 
 export const exportSheetAction = createAction({
   name: 'export_sheet',
+  classification: 'READ',
   displayName: 'Export Worksheet',
   description: 'Download a worksheet as a CSV or TSV file.',
+  audience: 'human',
+  aiMetadata: {
+    description:
+      'Exports a worksheet as a CSV or TSV file, returned either as a file reference or as raw text. Use when an agent needs the sheet contents in a flat delimited format for downstream processing or attachment. Read-only and idempotent.',
+    idempotent: true,
+  },
   auth: googleSheetsAuth,
+  propertyGroups: [
+    {
+      key: 'spreadsheet',
+      display: 'section',
+      label: 'Spreadsheet',
+      icon: 'file',
+      props: ['spreadsheetId', 'sheetId'],
+    },
+    {
+      key: 'export',
+      display: 'section',
+      label: 'Export',
+      icon: 'paperclip',
+      props: ['format', 'returnAsText'],
+    },
+  ],
   props: {
     ...commonProps,
     format: Property.StaticDropdown({
@@ -35,6 +59,7 @@ export const exportSheetAction = createAction({
       defaultValue: false,
     }),
   },
+  outputSchema: exportSheetActionOutputSchema,
   async run({ propsValue, auth, files }) {
     const { spreadsheetId, sheetId, format, returnAsText } = propsValue;
 

@@ -1,12 +1,6 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import {
-    apId,
-    CreateTemplateRequestBody,
-    PlatformPlan,
-    PlatformRole,
-    PrincipalType,
-    TemplateType,
-} from '@activepieces/shared'
+import { apId } from '@activepieces/core-utils'
+import { CreateTemplateRequestBody, FlowTrigger, FlowTriggerType, PlatformPlan, PlatformRole, PrincipalType, TemplateType } from '@activepieces/shared'
+import dayjs from 'dayjs'
 import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { generateMockToken } from '../../../helpers/auth'
@@ -18,6 +12,7 @@ import {
     mockBasicUser,
 } from '../../../helpers/mocks'
 import { createTestContext } from '../../../helpers/test-context'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -43,7 +38,7 @@ describe('Templates', () => {
 
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/templates',
+                url: '/api/v1/templates',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -63,7 +58,7 @@ describe('Templates', () => {
         it('should list cloud platform template for anonymous users', async () => {
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/templates',
+                url: '/api/v1/templates',
                 query: {
                     type: TemplateType.OFFICIAL,
                 },
@@ -125,7 +120,7 @@ describe('Templates', () => {
 
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/templates/${mockPlatformTemplate.id}`,
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -148,7 +143,7 @@ describe('Templates', () => {
 
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/templates/${mockPlatformTemplate.id}`,
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -166,14 +161,264 @@ describe('Templates', () => {
 
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/templates/${mockPlatformTemplate.id}`,
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.FORBIDDEN)
+        })
+
+        it('should not delete official template even as platform admin', async () => {
+            // arrange
+            const { mockOwner, mockPlatform } = await createMockPlatformTemplate({ platformId: apId() })
+            const officialTemplate = createMockTemplate({
+                platformId: CLOUD_PLATFORM_ID,
+                type: TemplateType.OFFICIAL,
+            })
+            await db.save('template', officialTemplate)
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: mockOwner.id,
+                platform: { id: mockPlatform.id },
+            })
+
+            const response = await app?.inject({
+                method: 'DELETE',
+                url: `/api/v1/templates/${officialTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.FORBIDDEN)
+        })
+
+        it('should not delete custom template from another platform (IDOR)', async () => {
+            // arrange
+            const { mockPlatformTemplate } = await createMockPlatformTemplate({ platformId: apId() })
+
+            const { mockOwner: otherOwner, mockPlatform: otherPlatform } =
+                await createMockPlatformTemplate({ platformId: apId() })
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: otherOwner.id,
+                platform: { id: otherPlatform.id },
+            })
+
+            const response = await app?.inject({
+                method: 'DELETE',
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
             })
 
             // assert
             expect(response?.statusCode).toBe(StatusCodes.FORBIDDEN)
         })
     })
+
+    describe('Update Template', () => {
+        it('should not update official template even as platform admin', async () => {
+            // arrange
+            const { mockOwner, mockPlatform } = await createMockPlatformTemplate({ platformId: apId() })
+            const officialTemplate = createMockTemplate({
+                platformId: CLOUD_PLATFORM_ID,
+                type: TemplateType.OFFICIAL,
+            })
+            await db.save('template', officialTemplate)
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: mockOwner.id,
+                platform: { id: mockPlatform.id },
+            })
+
+            const response = await app?.inject({
+                method: 'POST',
+                url: `/api/v1/templates/${officialTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
+                body: {
+                    name: 'hacked-name',
+                },
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.FORBIDDEN)
+        })
+
+        it('should not update custom template from another platform (IDOR)', async () => {
+            // arrange
+            const { mockPlatformTemplate } = await createMockPlatformTemplate({ platformId: apId() })
+
+            const { mockOwner: otherOwner, mockPlatform: otherPlatform } =
+                await createMockPlatformTemplate({ platformId: apId() })
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: otherOwner.id,
+                platform: { id: otherPlatform.id },
+            })
+
+            const response = await app?.inject({
+                method: 'POST',
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
+                body: {
+                    name: 'hacked-name',
+                },
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.FORBIDDEN)
+        })
+
+        it('should update own custom template as platform owner', async () => {
+            // arrange
+            const { mockOwner, mockPlatform, mockPlatformTemplate } =
+                await createMockPlatformTemplate({ platformId: apId() })
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: mockOwner.id,
+                platform: { id: mockPlatform.id },
+            })
+
+            const response = await app?.inject({
+                method: 'POST',
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
+                body: {
+                    name: 'updated-name',
+                },
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.OK)
+            expect(response?.json().name).toBe('updated-name')
+        })
+
+        it.each([
+            ['omits flows', { summary: 'updated-summary' }],
+            ['sends an empty flows list', { summary: 'updated-summary', flows: [] }],
+        ])('should keep the packaged flow when an update %s', async (_case, body) => {
+            // arrange
+            const { mockOwner, mockPlatform, mockPlatformTemplate } =
+                await createMockPlatformTemplate({ platformId: apId() })
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: mockOwner.id,
+                platform: { id: mockPlatform.id },
+            })
+
+            // act
+            const response = await app?.inject({
+                method: 'POST',
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
+                body,
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.OK)
+            expect(response?.json().summary).toBe('updated-summary')
+            expect(response?.json().flows).toHaveLength(mockPlatformTemplate.flows.length)
+            expect(response?.json().flows[0].displayName).toBe(mockPlatformTemplate.flows[0].displayName)
+        })
+
+        it('should replace the packaged flow when an update carries a new one', async () => {
+            // arrange
+            const { mockOwner, mockPlatform, mockPlatformTemplate } =
+                await createMockPlatformTemplate({ platformId: apId() })
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: mockOwner.id,
+                platform: { id: mockPlatform.id },
+            })
+            const replacementFlow = { ...createMockTemplate().flows[0], displayName: 'replacement-flow' }
+
+            // act
+            const response = await app?.inject({
+                method: 'POST',
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
+                body: {
+                    flows: [replacementFlow],
+                },
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.OK)
+            expect(response?.json().flows).toHaveLength(1)
+            expect(response?.json().flows[0].displayName).toBe('replacement-flow')
+        })
+
+        it('should list the pieces of every flow when an update carries several', async () => {
+            // arrange
+            const { mockOwner, mockPlatform, mockPlatformTemplate } =
+                await createMockPlatformTemplate({ platformId: apId() })
+
+            const testToken = await generateMockToken({
+                type: PrincipalType.USER,
+                id: mockOwner.id,
+                platform: { id: mockPlatform.id },
+            })
+            const flowUsing = (pieceName: string) => ({
+                ...createMockTemplate().flows[0],
+                trigger: pieceTrigger({ pieceName }),
+            })
+
+            // act
+            const response = await app?.inject({
+                method: 'POST',
+                url: `/api/v1/templates/${mockPlatformTemplate.id}`,
+                headers: {
+                    authorization: `Bearer ${testToken}`,
+                },
+                body: {
+                    flows: [flowUsing('@activepieces/piece-slack'), flowUsing('@activepieces/piece-gmail')],
+                },
+            })
+
+            // assert
+            expect(response?.statusCode).toBe(StatusCodes.OK)
+            expect(response?.json().flows).toHaveLength(2)
+            expect(response?.json().pieces).toEqual(expect.arrayContaining(['@activepieces/piece-slack', '@activepieces/piece-gmail']))
+        })
+    })
 })
+
+function pieceTrigger({ pieceName }: { pieceName: string }): FlowTrigger {
+    return {
+        type: FlowTriggerType.PIECE,
+        name: 'trigger',
+        displayName: 'Trigger',
+        valid: true,
+        lastUpdatedDate: dayjs().toISOString(),
+        settings: {
+            pieceName,
+            pieceVersion: '0.1.0',
+            triggerName: 'new_message',
+            input: {},
+            propertySettings: {},
+        },
+    }
+}
 
 async function createMockPlatformTemplate({ platformId, plan, type }: { platformId: string, plan?: Partial<PlatformPlan>, type?: TemplateType }) {
     const { mockOwner, mockPlatform, mockProject } = await mockAndSaveBasicSetup({

@@ -8,7 +8,9 @@ export type ToolCategory = {
 // NOTE: Keep this list in sync with ALL_CONTROLLABLE_TOOL_NAMES and LOCKED_TOOL_NAMES in
 // packages/server/api/src/app/mcp/tools/index.ts
 // Any tool added to the backend index must also be added here so it appears in the UI settings panel.
-export const TOOL_CATEGORIES: ToolCategory[] = [
+// The tool-search pair only registers server-side when AP_TOOL_SEARCH_ENABLED is on, so the panel
+// renders it only when the TOOL_SEARCH_ENABLED flag is true — use getToolCategories, not the raw list.
+const TOOL_CATEGORIES: ToolCategory[] = [
   {
     label: 'Discovery',
     locked: true,
@@ -23,14 +25,85 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
           'Get the structure of a flow: step tree, configuration status, and valid insert locations',
       },
       {
-        name: 'ap_list_pieces',
+        name: 'ap_read_step_code',
         description:
-          'List pieces with actions and triggers — required before adding or updating steps',
+          'Read full source code, package.json, and input of a CODE step',
+      },
+      {
+        name: 'ap_read_step_settings',
+        description:
+          'Read the full untruncated settings of any step, including piece input, code source, loop items, and router branches',
+      },
+      {
+        name: 'ap_validate_flow',
+        description:
+          'Validate one flow, or a whole solution folder including the connections between its flows and tables, without publishing',
+      },
+      {
+        name: 'ap_research_pieces',
+        description:
+          'Research pieces with actions and triggers — required before adding or updating steps',
+      },
+      {
+        name: 'ap_search_actions',
+        description:
+          'Semantic search across the whole action catalog — find the right action by describing the task in plain language',
+      },
+      {
+        name: 'ap_search_triggers',
+        description:
+          'Semantic search across the whole trigger catalog — find the right trigger by describing the event in plain language',
+      },
+      {
+        name: 'ap_get_piece_props',
+        description:
+          'Get detailed property schema for a specific piece action or trigger',
+      },
+      {
+        name: 'ap_resolve_property_options',
+        description:
+          'Resolve dropdown options for a specific piece property — returns available choices with labels and IDs',
+      },
+      {
+        name: 'ap_resolve_property_chain',
+        description:
+          'Resolve a chain of dependent dropdown properties in one call — for cascading fields like Spreadsheet → Sheet → Columns',
+      },
+      {
+        name: 'ap_validate_step_config',
+        description:
+          'Validate step configuration before applying — returns field-level errors without modifying any flow',
       },
       {
         name: 'ap_list_connections',
         description:
           'List OAuth/app connections in the project — required before adding steps that need auth',
+      },
+      {
+        name: 'ap_list_ai_models',
+        description: 'List configured AI providers and their available models',
+      },
+      {
+        name: 'ap_list_tables',
+        description: 'List all tables and their fields in the current project',
+      },
+      {
+        name: 'ap_find_records',
+        description: 'Query records from a table with optional filtering',
+      },
+      {
+        name: 'ap_list_runs',
+        description: 'List recent flow runs with optional filters',
+      },
+      {
+        name: 'ap_get_run',
+        description:
+          'Get detailed results of a flow run including step outputs and errors',
+      },
+      {
+        name: 'ap_setup_guide',
+        description:
+          'Get instructions for setting up connections or AI providers',
       },
     ],
   },
@@ -42,12 +115,25 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         description: 'Create a new flow',
       },
       {
+        name: 'ap_create_folder',
+        description: 'Create a folder to group a solution of flows and tables',
+      },
+      {
+        name: 'ap_duplicate_flow',
+        description:
+          'Duplicate an existing flow with all steps and configuration',
+      },
+      {
         name: 'ap_rename_flow',
         description: 'Rename an existing flow',
       },
       {
         name: 'ap_change_flow_status',
         description: 'Enable or disable a flow',
+      },
+      {
+        name: 'ap_delete_flow',
+        description: 'Permanently delete a flow and all its versions',
       },
       {
         name: 'ap_lock_and_publish',
@@ -58,6 +144,10 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   {
     label: 'Flow Building',
     tools: [
+      {
+        name: 'ap_build_flow',
+        description: 'Create a complete flow in one call: trigger + steps',
+      },
       {
         name: 'ap_update_trigger',
         description: 'Set or update the trigger for a flow',
@@ -84,6 +174,11 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         description: 'Add a conditional branch to a router step',
       },
       {
+        name: 'ap_update_branch',
+        description:
+          'Update the conditions or name of an existing router branch',
+      },
+      {
         name: 'ap_delete_branch',
         description: 'Delete a branch from a router step',
       },
@@ -98,8 +193,73 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
       },
     ],
   },
+  {
+    label: 'Tables',
+    tools: [
+      {
+        name: 'ap_create_table',
+        description: 'Create a new table with initial fields',
+      },
+      {
+        name: 'ap_delete_table',
+        description: 'Permanently delete a table and all its data',
+      },
+      {
+        name: 'ap_manage_fields',
+        description: 'Add, rename, or delete fields on a table',
+      },
+      {
+        name: 'ap_insert_records',
+        description: 'Insert one or more records into a table',
+      },
+      {
+        name: 'ap_update_record',
+        description: 'Update specific cells in a record',
+      },
+      {
+        name: 'ap_delete_records',
+        description: 'Delete records by their IDs',
+      },
+    ],
+  },
+  {
+    label: 'Testing & Runs',
+    tools: [
+      {
+        name: 'ap_test_flow',
+        description: 'Test a flow end-to-end and get step-by-step results',
+      },
+      {
+        name: 'ap_test_step',
+        description: 'Test a single step within a flow',
+      },
+      {
+        name: 'ap_retry_run',
+        description: 'Retry a failed flow run',
+      },
+      {
+        name: 'ap_run_action',
+        description:
+          'Run a single piece action once without saving a flow — for one-shot tasks like "check my inbox"',
+      },
+    ],
+  },
 ];
 
-export const ALL_CONTROLLABLE_TOOL_NAMES: string[] = TOOL_CATEGORIES.filter(
-  (c) => !c.locked,
-).flatMap((c) => c.tools.map((t) => t.name));
+const TOOL_SEARCH_TOOL_NAMES = ['ap_search_actions', 'ap_search_triggers'];
+
+export function getToolCategories({
+  toolSearchEnabled,
+}: {
+  toolSearchEnabled: boolean;
+}): ToolCategory[] {
+  if (toolSearchEnabled) {
+    return TOOL_CATEGORIES;
+  }
+  return TOOL_CATEGORIES.map((category) => ({
+    ...category,
+    tools: category.tools.filter(
+      (tool) => !TOOL_SEARCH_TOOL_NAMES.includes(tool.name),
+    ),
+  }));
+}

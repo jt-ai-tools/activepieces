@@ -1,16 +1,7 @@
-import { Property } from '@activepieces/pieces-framework';
-import {
-  HttpMethod,
-  AuthenticationType,
-  httpClient,
-} from '@activepieces/pieces-common';
-import { zendeskAuth } from '../..';
-
-type AuthProps = {
-  email: string;
-  token: string;
-  subdomain: string;
-};
+import { DynamicPropsValue, Property } from '@activepieces/pieces-framework';
+import { HttpMethod, httpClient } from '@activepieces/pieces-common';
+import { zendeskAuth } from '../auth';
+import { getZendeskAuthentication, getZendeskBaseUrl } from './client';
 
 interface ZendeskTicket {
   id: number;
@@ -109,15 +100,10 @@ export const ticketIdDropdown =  Property.Dropdown({
     }
 
     try {
-      const authentication = auth;
       const response = await httpClient.sendRequest<ZendeskTicketsResponse>({
-        url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/tickets.json?per_page=100`,
+        url: `${getZendeskBaseUrl(auth)}/tickets.json?per_page=100`,
         method: HttpMethod.GET,
-        authentication: {
-          type: AuthenticationType.BASIC,
-          username: authentication.props.email + '/token',
-          password: authentication.props.token,
-        },
+        authentication: getZendeskAuthentication(auth),
       });
 
       const tickets = response.body.tickets;
@@ -161,16 +147,11 @@ auth: zendeskAuth,
     }
 
     try {
-      const authentication = auth;
       const response =
         await httpClient.sendRequest<ZendeskOrganizationsResponse>({
-          url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/organizations.json?per_page=100`,
+          url: `${getZendeskBaseUrl(auth)}/organizations.json?per_page=100`,
           method: HttpMethod.GET,
-          authentication: {
-            type: AuthenticationType.BASIC,
-            username: authentication.props.email + '/token',
-            password: authentication.props.token,
-          },
+          authentication: getZendeskAuthentication(auth),
         });
 
       const organizations = response.body.organizations;
@@ -216,15 +197,10 @@ auth: zendeskAuth,
     }
 
     try {
-      const authentication = auth;
       const response = await httpClient.sendRequest<ZendeskUsersResponse>({
-        url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/users.json?per_page=100`,
+        url: `${getZendeskBaseUrl(auth)}/users.json?per_page=100`,
         method: HttpMethod.GET,
-        authentication: {
-          type: AuthenticationType.BASIC,
-          username: authentication.props.email + '/token',
-          password: authentication.props.token,
-        },
+        authentication: getZendeskAuthentication(auth),
       });
 
       const users = response.body.users;
@@ -270,15 +246,10 @@ auth: zendeskAuth,
     }
 
     try {
-      const authentication = auth;
       const response = await httpClient.sendRequest<ZendeskBrandsResponse>({
-        url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/brands.json`,
+        url: `${getZendeskBaseUrl(auth)}/brands.json`,
         method: HttpMethod.GET,
-        authentication: {
-          type: AuthenticationType.BASIC,
-          username: authentication.props.email + '/token',
-          password: authentication.props.token,
-        },
+        authentication: getZendeskAuthentication(auth),
       });
 
       const brands = response.body.brands;
@@ -326,15 +297,10 @@ auth: zendeskAuth,
     }
 
     try {
-      const authentication = auth;
       const response = await httpClient.sendRequest<ZendeskTicketsResponse>({
-        url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/tickets.json?per_page=100`,
+        url: `${getZendeskBaseUrl(auth)}/tickets.json?per_page=100`,
         method: HttpMethod.GET,
-        authentication: {
-          type: AuthenticationType.BASIC,
-          username: authentication.props.email + '/token',
-          password: authentication.props.token,
-        },
+        authentication: getZendeskAuthentication(auth),
       });
 
       const tickets = response.body.tickets;
@@ -384,15 +350,10 @@ auth: zendeskAuth,
     }
 
     try {
-      const authentication = auth;
       const response = await httpClient.sendRequest<ZendeskCustomRolesResponse>({
-        url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/custom_roles.json`,
+        url: `${getZendeskBaseUrl(auth)}/custom_roles.json`,
         method: HttpMethod.GET,
-        authentication: {
-          type: AuthenticationType.BASIC,
-          username: authentication.props.email + '/token',
-          password: authentication.props.token,
-        },
+        authentication: getZendeskAuthentication(auth),
       });
 
       const customRoles = response.body.custom_roles;
@@ -435,15 +396,10 @@ export const agentBrandIdDropdown = Property.MultiSelectDropdown({
     }
 
     try {
-      const authentication = auth;
       const response = await httpClient.sendRequest<ZendeskBrandsResponse>({
-        url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/brands.json`,
+        url: `${getZendeskBaseUrl(auth)}/brands.json`,
         method: HttpMethod.GET,
-        authentication: {
-          type: AuthenticationType.BASIC,
-          username: authentication.props.email + '/token',
-          password: authentication.props.token,
-        },
+        authentication: getZendeskAuthentication(auth),
       });
 
       const brands = response.body.brands;
@@ -471,6 +427,129 @@ export const agentBrandIdDropdown = Property.MultiSelectDropdown({
   },
 });
 
+export const userFieldsDynamicProp = Property.DynamicProperties({
+  auth: zendeskAuth,
+  displayName: 'User Fields',
+  description: 'Custom user field values.',
+  required: false,
+  refreshers: ['auth'],
+  props: async ({ auth }) => {
+    if (!auth) return {};
+
+    try {
+      const response = await httpClient.sendRequest({
+        url: `${getZendeskBaseUrl(auth)}/user_fields.json`,
+        method: HttpMethod.GET,
+        authentication: getZendeskAuthentication(auth),
+      });
+
+      const fields = (response.body as {
+        user_fields: Array<{
+          key: string;
+          title: string;
+          description?: string;
+          type: string;
+          active: boolean;
+          custom_field_options?: Array<{ name: string; value: string }>;
+          regexp_for_validation?: string;
+        }>;
+      }).user_fields;
+
+      const dynamicProps: DynamicPropsValue = {};
+
+      for (const field of fields) {
+        if (!field.active) continue;
+
+        const fieldKey = `field_${field.key}`;
+        const displayName = field.title;
+        const description = field.description ?? `Custom ${field.type} field`;
+
+        switch (field.type) {
+          case 'tagger':
+          case 'dropdown':
+            if (field.custom_field_options && field.custom_field_options.length > 0) {
+              dynamicProps[fieldKey] = Property.StaticDropdown({
+                displayName,
+                description,
+                required: false,
+                options: {
+                  disabled: false,
+                  placeholder: `Select ${displayName}`,
+                  options: field.custom_field_options.map((option) => ({
+                    label: option.name,
+                    value: option.value,
+                  })),
+                },
+              });
+            }
+            break;
+          case 'multiselect':
+            if (field.custom_field_options && field.custom_field_options.length > 0) {
+              dynamicProps[fieldKey] = Property.StaticMultiSelectDropdown({
+                displayName,
+                description,
+                required: false,
+                options: {
+                  options: field.custom_field_options.map((option) => ({
+                    label: option.name,
+                    value: option.value,
+                  })),
+                },
+              });
+            }
+            break;
+          case 'integer':
+          case 'decimal':
+            dynamicProps[fieldKey] = Property.Number({
+              displayName,
+              description,
+              required: false,
+            });
+            break;
+          case 'date':
+            dynamicProps[fieldKey] = Property.DateTime({
+              displayName,
+              description,
+              required: false,
+            });
+            break;
+          case 'checkbox':
+            dynamicProps[fieldKey] = Property.Checkbox({
+              displayName,
+              description,
+              required: false,
+            });
+            break;
+          case 'textarea':
+            dynamicProps[fieldKey] = Property.LongText({
+              displayName,
+              description,
+              required: false,
+            });
+            break;
+          case 'regexp':
+            dynamicProps[fieldKey] = Property.ShortText({
+              displayName,
+              description: `${description}${field.regexp_for_validation ? ` (Pattern: ${field.regexp_for_validation})` : ''}`,
+              required: false,
+            });
+            break;
+          default:
+            dynamicProps[fieldKey] = Property.ShortText({
+              displayName,
+              description,
+              required: false,
+            });
+        }
+      }
+
+      return dynamicProps;
+    } catch {
+      return {};
+    }
+  },
+});
+
 export const groupIdDropdown =  Property.Dropdown({
 auth: zendeskAuth,
 
@@ -489,15 +568,10 @@ auth: zendeskAuth,
     }
 
     try {
-      const authentication = auth;
       const response = await httpClient.sendRequest<ZendeskGroupsResponse>({
-        url: `https://${authentication.props.subdomain}.zendesk.com/api/v2/groups.json?per_page=100`,
+        url: `${getZendeskBaseUrl(auth)}/groups.json?per_page=100`,
         method: HttpMethod.GET,
-        authentication: {
-          type: AuthenticationType.BASIC,
-          username: authentication.props.email + '/token',
-          password: authentication.props.token,
-        },
+        authentication: getZendeskAuthentication(auth),
       });
 
       const groups = response.body.groups;
@@ -522,4 +596,3 @@ auth: zendeskAuth,
     }
   },
 });
-

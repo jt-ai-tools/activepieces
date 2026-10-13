@@ -1,57 +1,54 @@
 import {
-  OAuth2PropertyValue,
   Property,
   TriggerStrategy,
   createTrigger,
 } from '@activepieces/pieces-framework';
-import { getChannels, multiSelectChannelInfo, userId } from '../common/props';
+import { appWebhookSetupInfo, onlyBotChannels, slackChannels, multiSelectChannelInfo, userIds, usergroupIds } from '../common/props';
 import { slackAuth } from '../auth';
+import { getTeamId, SlackAuthValue } from '../common/auth-helpers';
+import { newMentionTriggerOutputSchema } from '../output-schemas';
 
 export const newMention = createTrigger({
   auth: slackAuth,
   name: 'new_mention',
+  classification: 'READ',
   displayName: 'New Mention in Channel',
-  description: 'Triggers when a username is mentioned.',
+  description: 'Triggers when a user or user group is mentioned.',
+  aiMetadata: {
+    description:
+      'Fires when a channel or group message @-mentions one of the configured users or user groups. Can be optionally filtered to specific channels, and bot messages can be ignored. When the remove-mention option is enabled, the event payload includes a clean_text field with the mention tokens stripped from the message text; otherwise the raw Slack message event is returned.',
+  },
   props: {
+    webhookInfo: appWebhookSetupInfo,
     info: multiSelectChannelInfo,
-    user: userId,
-    channels: Property.MultiSelectDropdown({
-      auth: slackAuth,
-      displayName: 'Channels',
-      description:
-        'If no channel is selected, the flow will be triggered for username mentions in all channels',
-      required: false,
-      refreshers: [],
-      async options({ auth }) {
-        if (!auth) {
-          return {
-            disabled: true,
-            placeholder: 'connect slack account',
-            options: [],
-          };
-        }
-        const authentication = auth as OAuth2PropertyValue;
-        const accessToken = authentication['access_token'];
-        const channels = await getChannels(accessToken);
-        return {
-          disabled: false,
-          placeholder: 'Select channel',
-          options: channels,
-        };
-      },
-    }),
+    users: userIds,
+    usergroups: usergroupIds,
+    onlyBotChannels,
+    channels: slackChannels,
     ignoreBots: Property.Checkbox({
-      displayName: 'Ignore Bot Messages ?',
-      required: true,
+      displayName: 'Ignore Bot Messages',
+      description: 'Skip messages posted by bots and apps.',
+      required: false,
       defaultValue: false,
+    }),
+    removeMention: Property.Checkbox({
+      displayName: 'Remove Mention from Message',
+      description: 'Adds clean_text with the mentions stripped out.',
+      required: false,
+      defaultValue: false,
+      advanced: true,
     }),
   },
   type: TriggerStrategy.APP_WEBHOOK,
   sampleData: undefined,
+  outputSchema: newMentionTriggerOutputSchema,
   onEnable: async (context) => {
-    // Older OAuth2 has team_id, newer has team.id
-    const teamId =
-      context.auth.data['team_id'] ?? context.auth.data['team']['id'];
+    const users = context.propsValue.users ?? [];
+    const usergroups = context.propsValue.usergroups ?? [];
+    if (users.length === 0 && usergroups.length === 0) {
+      throw new Error('Pick at least one user or user group; with both empty this trigger never fires.');
+    }
+    const teamId = await getTeamId(context.auth as SlackAuthValue);
     context.app.createListeners({
       events: ['message'],
       identifierValue: teamId,
@@ -64,28 +61,50 @@ export const newMention = createTrigger({
   run: async (context) => {
     const payloadBody = context.payload.body as PayloadBody;
     const channels = (context.propsValue.channels as string[]) ?? [];
+    const users = (context.propsValue.users as string[]) ?? [];
+    const usergroups = (context.propsValue.usergroups as string[]) ?? [];
 
     // check if it's channel message
 		if (!['channel','group'].includes(payloadBody.event.channel_type)) {
 			return [];
 		}
 
-
-    if (channels.length === 0 || channels.includes(payloadBody.event.channel)) {
-      // check for bot messages
-      if (context.propsValue.ignoreBots && payloadBody.event.bot_id) {
-        return [];
-      }
-      // check for mention
-      if (
-        context.propsValue.user &&
-        payloadBody.event.text?.includes(`<@${context.propsValue.user}>`)
-      ) {
-        return [payloadBody.event];
-      }
+    if (channels.length > 0 && !channels.includes(payloadBody.event.channel)) {
+      return [];
     }
 
-    return [];
+    // check for bot messages
+    if (context.propsValue.ignoreBots && payloadBody.event.bot_id) {
+      return [];
+    }
+
+    const text = payloadBody.event.text ?? '';
+
+    const userMentioned = users.some((uid) => text.includes(`<@${uid}>`));
+    const usergroupMentioned = usergroups.some((gid) =>
+      new RegExp(`<!subteam\\^${gid}(\\|[^>]*)?>`).test(text)
+    );
+
+    if (!userMentioned && !usergroupMentioned) {
+      return [];
+    }
+
+    if (context.propsValue.removeMention) {
+      let cleanText = text;
+      for (const uid of users) {
+        cleanText = cleanText.replace(new RegExp(`<@${uid}>`, 'g'), '');
+      }
+      for (const gid of usergroups) {
+        cleanText = cleanText.replace(
+          new RegExp(`<!subteam\\^${gid}(\\|[^>]*)?>`, 'g'),
+          ''
+        );
+      }
+      cleanText = cleanText.trim();
+      return [{ ...payloadBody.event, clean_text: cleanText }];
+    }
+
+    return [payloadBody.event];
   },
 });
 

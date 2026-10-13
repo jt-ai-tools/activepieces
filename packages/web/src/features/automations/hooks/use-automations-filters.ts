@@ -1,8 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDebouncedCallback } from 'use-debounce';
 
-import { AutomationsFilters } from '../lib/types';
+import { AutomationsFilters, AutomationsSort } from '../lib/types';
 import { hasActiveFilters } from '../lib/utils';
 
 const SEARCH_PARAM = 'search';
@@ -11,6 +11,7 @@ const STATUS_PARAM = 'status';
 const CONNECTION_PARAM = 'connection';
 const OWNER_PARAM = 'owner';
 const FOLDER_PARAM = 'folder';
+const SORT_PARAM = 'sort';
 
 const FILTER_PARAMS = [
   SEARCH_PARAM,
@@ -42,9 +43,12 @@ export function useAutomationsFilters() {
   const [ownerFilter, setOwnerFilterState] = useState<string[]>(() =>
     searchParams.getAll(OWNER_PARAM),
   );
-  const [folderFilter, setFolderFilterState] = useState<string[]>(() =>
-    searchParams.getAll(FOLDER_PARAM),
+  const folderParamStr = searchParams.getAll(FOLDER_PARAM).join('\0');
+  const folderFilter = useMemo(
+    () => searchParams.getAll(FOLDER_PARAM),
+    [folderParamStr],
   );
+  const sort = parseSort(searchParams.get(SORT_PARAM));
 
   const updateParams = useCallback(
     (updates: Record<string, string | string[] | null>) => {
@@ -115,8 +119,14 @@ export function useAutomationsFilters() {
 
   const setFolderFilter = useCallback(
     (value: string[]) => {
-      setFolderFilterState(value);
       updateParams({ [FOLDER_PARAM]: value.length > 0 ? value : null });
+    },
+    [updateParams],
+  );
+
+  const setSort = useCallback(
+    (value: AutomationsSort) => {
+      updateParams({ [SORT_PARAM]: value === 'default' ? null : value });
     },
     [updateParams],
   );
@@ -139,7 +149,6 @@ export function useAutomationsFilters() {
     setStatusFilterState([]);
     setConnectionFilterState([]);
     setOwnerFilterState([]);
-    setFolderFilterState([]);
     updateParams(Object.fromEntries(FILTER_PARAMS.map((key) => [key, null])));
   }, [updateParams]);
 
@@ -156,8 +165,20 @@ export function useAutomationsFilters() {
     setOwnerFilter,
     folderFilter,
     setFolderFilter,
+    sort,
+    setSort,
     filters,
     filtersActive,
     clearAllFilters,
   };
+}
+
+function parseSort(value: string | null): AutomationsSort {
+  switch (value) {
+    case 'name-asc':
+    case 'name-desc':
+      return value;
+    default:
+      return 'default';
+  }
 }

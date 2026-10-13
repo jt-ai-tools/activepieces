@@ -1,99 +1,72 @@
 import { createAction, Property } from '@activepieces/pieces-framework';
 import { googleSearchConsoleAuth } from '../auth';
-import { createAuthClient } from '../../';
 import { commonProps } from '../common';
-import dayjs from 'dayjs';
-
+import { gscInputs } from '../common/inputs';
+import { gscOps } from '../common/operations';
+import { gscOutputSchemas } from '../output-schemas';
 
 export const searchAnalytics = createAction({
   auth: googleSearchConsoleAuth,
   name: 'search_analytics',
+  classification: 'SEARCH',
   displayName: 'Search Analytics',
-  description:
-    'Query traffic data for your site using the Google Search Console API.',
+  description: 'Query traffic data for your site using the Google Search Console API.',
+  audience: 'human',
+  aiMetadata: {
+    description:
+      'Queries clicks, impressions, CTR and position for a property picked from a list. Agents use Search Analytics (by Site URL). Read-only and safe to retry.',
+    idempotent: true,
+  },
   props: {
     siteUrl: commonProps.siteUrl,
     startDate: Property.DateTime({
       displayName: 'Start Date',
-      description:
-        'The start date of the date range to query (in YYYY-MM-DD format).',
+      description: 'First day of the range (YYYY-MM-DD), in Pacific Time. Search Console data lags 2-3 days and is kept for about 16 months.',
       required: true,
-      defaultValue: new Date().toISOString().split('T')[0],
     }),
     endDate: Property.DateTime({
       displayName: 'End Date',
-      description:
-        'The end date of the date range to query (in YYYY-MM-DD format).',
+      description: 'Last day of the range (YYYY-MM-DD, inclusive), in Pacific Time. A range that covers only today or yesterday usually has no data yet.',
       required: true,
-      defaultValue: new Date().toISOString().split('T')[0],
     }),
     dimensions: Property.Array({
       displayName: 'Dimensions',
       description:
-        'The dimensions to group results by. For example: ["query", "page", "country", "device", "searchAppearance", "date"].',
+        'The dimensions to group results by, in order. Valid values: "query", "page", "country", "device", "searchAppearance", "date", "hour". Each row of the output gets one column per dimension.',
       required: false,
     }),
-    filters: Property.Array({
-      displayName: 'Filters',
-      description:
-        'Optional filters to apply to the data. Filters can be used to restrict the results to a specific subset.',
-      properties: {
-        dimension: Property.ShortText({
-          displayName: 'Dimension',
-          description:
-            'The dimension to filter by (e.g., query, page, country, device).',
-          required: true,
-        }),
-        operator: Property.ShortText({
-          displayName: 'Operator',
-          description: 'The filter operator to apply (e.g., equals, contains).',
-          required: true,
-        }),
-        expression: Property.ShortText({
-          displayName: 'Expression',
-          description: 'The expression to compare the dimension against.',
-          required: true,
-        }),
-      },
-      required: false,
-    }),
-    aggregationType: Property.ShortText({
-      displayName: 'Aggregation Type',
-      description:
-        'How data is aggregated. Options include "auto", "byPage", "byProperty".',
-      required: false,
-    }),
+    searchType: commonProps.searchType(),
+    filters: commonProps.filters(),
+    aggregationType: commonProps.aggregationType(),
+    dataState: commonProps.dataState(),
     rowLimit: Property.Number({
       displayName: 'Row Limit',
-      description: 'The maximum number of rows to return.',
+      description: 'The maximum number of rows to return, from 1 to 25,000. Defaults to 1,000.',
       required: false,
     }),
     startRow: Property.Number({
       displayName: 'Start Row',
-      description:
-        'The first row to return. Use this parameter to paginate results.',
+      description: 'Zero-based index of the first row to return. Use with Row Limit to page through results. Defaults to 0.',
       required: false,
     }),
   },
+  outputSchema: gscOutputSchemas.searchAnalytics,
   async run(context) {
-    const webmasters = createAuthClient(context.auth.access_token);
-    const filters = context.propsValue.filters as any;
-    const res = await webmasters.searchanalytics.query({
-      siteUrl: context.propsValue.siteUrl,
-      requestBody: {
-        startDate: dayjs(context.propsValue.startDate).format('YYYY-MM-DD'),
-        endDate: dayjs(context.propsValue.endDate).format('YYYY-MM-DD'),
-        dimensions: context.propsValue.dimensions as string[],
-        dimensionFilterGroups: filters.map((filter: any) => ({
-          dimension: filter.dimension,
-          operator: filter.operator,
-          expression: filter.expression,
-        })),
-        aggregationType: context.propsValue.aggregationType,
-        rowLimit: context.propsValue.rowLimit,
-        startRow: context.propsValue.startRow,
-      },
+    const props = context.propsValue;
+    const siteUrl = gscInputs.siteUrl({ value: props.siteUrl });
+    const { startDate, endDate } = gscInputs.requiredDateRange({ startDate: props.startDate, endDate: props.endDate });
+    const query = gscInputs.analyticsQuery({
+      startDate,
+      endDate,
+      dimensions: gscInputs.dimensions({ value: props.dimensions }),
+      searchType: props.searchType,
+      filters: gscInputs.filters({ value: props.filters }),
+      aggregationType: props.aggregationType,
+      dataState: props.dataState,
+      rowLimit: gscInputs.optionalInteger({ value: props.rowLimit, label: 'Row Limit', min: 1, max: gscInputs.HUMAN_MAX_ROW_LIMIT }),
+      startRow: gscInputs.optionalInteger({ value: props.startRow, label: 'Start Row', min: 0, max: gscInputs.MAX_START_ROW }),
     });
-    return res;
+    const result = await gscOps.searchAnalytics({ auth: context.auth, siteUrl, query });
+    return { data: result.data, status: result.status, rows: result.rows, row_count: result.rows.length };
   },
 });

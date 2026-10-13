@@ -1,12 +1,9 @@
-import { securityAccess } from '@activepieces/server-common'
-import {
-    assertNotNullOrUndefined,
-    ListOAuth2AppRequest,
-    OAuthApp,
-    PrincipalType, SeekPage, UpsertOAuth2AppRequest } from '@activepieces/shared'
+import { assertNotNullOrUndefined, SeekPage } from '@activepieces/core-utils'
+import { ListOAuth2AppRequest, OAuthApp, PrincipalType, UpsertOAuth2AppRequest } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { StatusCodes } from 'http-status-codes'
 import { z } from 'zod'
+import { securityAccess } from '../../core/security/authorization/fastify-security'
 import { oauthAppService } from './oauth-app.service'
 
 export const oauthAppModule: FastifyPluginAsyncZod = async (app) => {

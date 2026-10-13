@@ -1,5 +1,4 @@
 import { t } from 'i18next';
-import { Mail } from 'lucide-react';
 
 import { UserAvatar } from '@/components/custom/user-avatar';
 import { Badge } from '@/components/ui/badge';
@@ -9,18 +8,6 @@ import { cn } from '@/lib/utils';
 
 import { EmailStatusType } from './types';
 import { SuggestedUser } from './use-user-suggestions';
-
-type SuggestedUserItemProps =
-  | {
-      type: 'platform-user';
-      user: SuggestedUser;
-      onSelect: (email: string) => void;
-    }
-  | {
-      type: 'email-status';
-      emailStatus: EmailStatusType;
-      onSelect: (email: string) => void;
-    };
 
 export function SuggestedUserItem(props: SuggestedUserItemProps) {
   if (props.type === 'platform-user') {
@@ -42,13 +29,13 @@ function PlatformUserItem({
     if (user.memberStatus === 'has-access') {
       return {
         label: t('Has Access'),
-        className: 'text-primary bg-primary/15',
+        className: 'text-success-11 bg-success-3',
       };
     }
     if (user.memberStatus === 'already-invited') {
       return {
         label: t('Invited'),
-        className: 'text-muted-foreground bg-muted-foreground/15',
+        className: 'text-gray-11 bg-gray-3',
       };
     }
     return { label: formatUtils.convertEnumToHumanReadable(user.platformRole) };
@@ -59,7 +46,7 @@ function PlatformUserItem({
   return (
     <CommandItem
       key={user.id}
-      value={`${user.email} ${user.firstName} ${user.lastName}`}
+      value={user.email}
       onSelect={() => !isDisabled && onSelect(user.email)}
       disabled={isDisabled}
       className={cn('cursor-pointer', isDisabled && 'opacity-60')}
@@ -76,9 +63,7 @@ function PlatformUserItem({
           <span className="text-sm font-medium truncate">
             {user.firstName} {user.lastName}
           </span>
-          <span className="text-xs text-muted-foreground truncate">
-            {user.email}
-          </span>
+          <span className="text-xs text-gray-11 truncate">{user.email}</span>
         </div>
         <Badge
           variant="ghost"
@@ -94,34 +79,36 @@ function PlatformUserItem({
 function EmailStatusSuggestionItem({
   emailStatus,
   onSelect,
+  isPlatformInvite,
 }: {
   emailStatus: EmailStatusType;
   onSelect: (email: string) => void;
+  isPlatformInvite?: boolean;
 }) {
   const getBadgeAndState = () => {
     switch (emailStatus.type) {
-      case 'external':
+      case 'new-user':
         return {
-          label: t('External'),
-          className: 'text-muted-foreground bg-muted-foreground/15',
+          label: isPlatformInvite ? t('New User') : t('New Member'),
+          className: 'text-accent-11 bg-accent-3 border-accent-7',
           disabled: false,
         };
       case 'has-access':
         return {
           label: t('Has Access'),
-          className: 'text-primary bg-primary/15',
+          className: 'text-success-11 bg-success-3',
           disabled: true,
         };
       case 'in-project':
         return {
           label: t('Member'),
-          className: 'text-warning bg-warning/15',
+          className: 'text-warning-11 bg-warning-3',
           disabled: true,
         };
       case 'already-invited':
         return {
           label: t('Invited'),
-          className: 'text-muted-foreground bg-muted-foreground/15',
+          className: 'text-gray-11 bg-gray-3',
           disabled: false,
         };
     }
@@ -138,7 +125,7 @@ function EmailStatusSuggestionItem({
       className={cn('cursor-pointer', disabled && 'opacity-60')}
     >
       <div className="flex items-center gap-2 w-full">
-        {user ? (
+        {user && (
           <UserAvatar
             name={`${user.firstName} ${user.lastName}`}
             email={user.email}
@@ -146,19 +133,13 @@ function EmailStatusSuggestionItem({
             disableTooltip={true}
             imageUrl={user.imageUrl}
           />
-        ) : (
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
-            <Mail className="w-4 h-4 text-muted-foreground" />
-          </div>
         )}
         <div className="flex flex-col flex-1 min-w-0">
           <span className="text-sm font-medium truncate">
             {user ? `${user.firstName} ${user.lastName}` : emailStatus.email}
           </span>
           {user && (
-            <span className="text-xs text-muted-foreground truncate">
-              {user.email}
-            </span>
+            <span className="text-xs text-gray-11 truncate">{user.email}</span>
           )}
         </div>
         <Badge
@@ -171,3 +152,16 @@ function EmailStatusSuggestionItem({
     </CommandItem>
   );
 }
+
+type SuggestedUserItemProps =
+  | {
+      type: 'platform-user';
+      user: SuggestedUser;
+      onSelect: (email: string) => void;
+    }
+  | {
+      type: 'email-status';
+      emailStatus: EmailStatusType;
+      onSelect: (email: string) => void;
+      isPlatformInvite?: boolean;
+    };

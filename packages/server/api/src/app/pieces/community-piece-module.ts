@@ -1,8 +1,9 @@
 import { PieceMetadataModel } from '@activepieces/pieces-framework'
-import { securityAccess } from '@activepieces/server-common'
 import { AddPieceRequestBody, PrincipalType } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { StatusCodes } from 'http-status-codes'
+import { securityAccess } from '../core/security/authorization/fastify-security'
+import { attachMultipartFieldsToBody } from '../helper/multipart-body'
 import { pieceInstallService } from './piece-install-service'
 
 export const communityPiecesModule: FastifyPluginAsyncZod = async (app) => {
@@ -16,6 +17,7 @@ const communityPiecesController: FastifyPluginAsyncZod = async (app) => {
             config: {
                 security: securityAccess.platformAdminOnly([PrincipalType.USER, PrincipalType.SERVICE]),
             },
+            preValidation: attachMultipartFieldsToBody,
             schema: {
                 body: AddPieceRequestBody,
             },

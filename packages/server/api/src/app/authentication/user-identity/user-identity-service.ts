@@ -1,4 +1,6 @@
-import { ActivepiecesError, apId, ErrorCode, isNil, spreadIfDefined, UserIdentity } from '@activepieces/shared'
+import { ActivepiecesError, apId, ErrorCode, isNil, spreadIfDefined } from '@activepieces/core-utils'
+import { cryptoUtils } from '@activepieces/server-utils'
+import { UserIdentity } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { nanoid } from 'nanoid'
 import { repoFactory } from '../../core/db/repo-factory'
@@ -95,6 +97,11 @@ export const userIdentityService = (log: FastifyBaseLogger) => ({
             tokenVersion: nanoid(),
         })
     },
+    async updateNames({ id, firstName, lastName }: UpdateNamesParams): Promise<UserIdentity> {
+        await userIdentityRepository().update(id, { firstName, lastName })
+        return this.getOneOrFail({ id })
+    },
+
     async verify(id: string): Promise<UserIdentity> {
         const user = await userIdentityRepository().findOneByOrFail({ id })
         if (user.verified) {
@@ -110,11 +117,35 @@ export const userIdentityService = (log: FastifyBaseLogger) => ({
             verified: true,
         })
     },
+    // A password sitting on an unverified identity was chosen by whoever typed it,
+    // which is not necessarily the person who reads the inbox. Verifying by emailed
+    // code proves the inbox, so that password must not outlive the check: keeping it
+    // would hand the account to anyone who registered the address first.
+    async verifyAndDiscardPassword(id: string): Promise<UserIdentity> {
+        const user = await userIdentityRepository().findOneByOrFail({ id })
+        if (user.verified) {
+            throw new ActivepiecesError({
+                code: ErrorCode.AUTHORIZATION,
+                params: {
+                    message: 'User is already verified',
+                },
+            })
+        }
+        return userIdentityRepository().save({
+            ...user,
+            verified: true,
+            password: await passwordHasher.hash(await cryptoUtils.generateRandomPassword()),
+            tokenVersion: nanoid(),
+        })
+    },
     async update(id: string, params: UpdateParams): Promise<void> {
         await userIdentityRepository().update(id, {
             ...params,
             ...spreadIfDefined('password', params.password ? await passwordHasher.hash(params.password) : undefined),
         })
+    },
+    async updateLastLoggedInPlatformId({ id, lastLoggedInPlatformId }: UpdateLastLoggedInPlatformIdParams): Promise<void> {
+        await userIdentityRepository().update(id, { lastLoggedInPlatformId })
     },
 })
 
@@ -128,6 +159,12 @@ type GetOneOrFailParams = {
     id: string
 }
 
+type UpdateNamesParams = {
+    id: string
+    firstName: string
+    lastName: string
+}
+
 type UpdatePasswordParams = {
     id: string
     newPassword: string
@@ -138,6 +175,11 @@ type UpdateParams = {
     lastName?: string
     password?: string
     imageUrl?: string | null
+}
+
+type UpdateLastLoggedInPlatformIdParams = {
+    id: string
+    lastLoggedInPlatformId: string
 }
 
 type VerifyIdentityPasswordParams = {

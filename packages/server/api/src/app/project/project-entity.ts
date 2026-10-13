@@ -1,10 +1,12 @@
 import {
     AppConnection,
     Cell,
+    ConcurrencyPool,
     Field,
     File,
     Flow,
     Folder,
+    PieceSet,
     Platform,
     Project,
     Record,
@@ -32,6 +34,8 @@ type ProjectSchema = Project & {
     records: Record[]
     cells: Cell[]
     tableWebhooks: TableWebhook[]
+    pool?: ConcurrencyPool | null
+    pieceSet?: PieceSet | null
 }
 
 export const ProjectEntity = new EntitySchema<ProjectSchema>({
@@ -71,9 +75,35 @@ export const ProjectEntity = new EntitySchema<ProjectSchema>({
             nullable: false,
             default: false,
         },
+        notifyFlowOwnerOnFailure: {
+            type: Boolean,
+            nullable: false,
+            default: false,
+        },
         metadata: {
             type: 'jsonb',
             nullable: true,
+        },
+        poolId: {
+            ...ApIdSchema,
+            nullable: true,
+        },
+        pieceSetId: {
+            ...ApIdSchema,
+            nullable: true,
+        },
+        workerGroupId: {
+            type: String,
+            nullable: true,
+        },
+        executionDataRetentionDays: {
+            type: Number,
+            nullable: true,
+        },
+        sensitive: {
+            type: Boolean,
+            nullable: false,
+            default: false,
         },
     },
     indices: [
@@ -87,6 +117,32 @@ export const ProjectEntity = new EntitySchema<ProjectSchema>({
             columns: ['platformId', 'externalId'],
             where: 'deleted IS NULL',
             unique: true,
+        },
+        {
+            name: 'idx_project_platform_id',
+            columns: ['platformId'],
+            unique: false,
+        },
+        {
+            name: 'idx_project_pool_id',
+            columns: ['poolId'],
+            unique: false,
+        },
+        {
+            name: 'idx_project_piece_set_id',
+            columns: ['pieceSetId'],
+            unique: false,
+        },
+        {
+            name: 'idx_project_worker_group',
+            columns: ['workerGroupId'],
+            unique: false,
+        },
+        {
+            name: 'idx_project_execution_data_retention_days',
+            columns: ['executionDataRetentionDays'],
+            where: '"executionDataRetentionDays" IS NOT NULL',
+            unique: false,
         },
     ],
     relations: {
@@ -158,6 +214,26 @@ export const ProjectEntity = new EntitySchema<ProjectSchema>({
             type: 'one-to-many',
             target: 'table_webhook',
             inverseSide: 'project',
+        },
+        pool: {
+            type: 'many-to-one',
+            target: 'concurrency_pool',
+            onDelete: 'SET NULL',
+            nullable: true,
+            joinColumn: {
+                name: 'poolId',
+                foreignKeyConstraintName: 'fk_project_pool_id',
+            },
+        },
+        pieceSet: {
+            type: 'many-to-one',
+            target: 'piece_set',
+            onDelete: 'SET NULL',
+            nullable: true,
+            joinColumn: {
+                name: 'pieceSetId',
+                foreignKeyConstraintName: 'fk_project_piece_set_id',
+            },
         },
     },
 })

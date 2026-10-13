@@ -1,14 +1,18 @@
+import { isNil } from '@activepieces/core-utils';
 import {
   AuthenticationResponse,
-  isNil,
-  UserPrincipal,
+  Principal,
+  PrincipalType,
 } from '@activepieces/shared';
 import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
 
 import { authenticationApi } from '@/api/authentication-api';
+import { queryClient } from '@/app/query-client';
 
 import { ApStorage } from './ap-browser-storage';
+import { telemetryUtils } from './telemetry-utils';
+
 const tokenKey = 'token';
 const projectIdKey = 'projectId';
 export const authenticationSession = {
@@ -20,7 +24,10 @@ export const authenticationSession = {
       ApStorage.setInstanceToSessionStorage();
     }
     ApStorage.getInstance().setItem(tokenKey, response.token);
-    ApStorage.getInstance().setItem(projectIdKey, response.projectId);
+    if (!isNil(response.projectId)) {
+      ApStorage.getInstance().setItem(projectIdKey, response.projectId);
+    }
+    queryClient.invalidateQueries({ queryKey: ['flags'] });
     window.dispatchEvent(new Event('storage'));
   },
   isJwtExpired(token: string): boolean {
@@ -78,7 +85,18 @@ export const authenticationSession = {
       return null;
     }
     const decodedJwt = getDecodedJwt(token);
-    return decodedJwt.platform.id;
+    if ('platform' in decodedJwt && decodedJwt.platform) {
+      return decodedJwt.platform.id;
+    }
+    return null;
+  },
+  isOnboarding(): boolean {
+    const token = this.getToken();
+    if (isNil(token)) {
+      return false;
+    }
+    const decodedJwt = jwtDecode<{ type: string }>(token);
+    return decodedJwt.type === PrincipalType.ONBOARDING;
   },
   async switchToPlatform(platformId: string) {
     if (authenticationSession.getPlatformId() === platformId) {
@@ -88,7 +106,9 @@ export const authenticationSession = {
       platformId,
     });
     ApStorage.getInstance().setItem(tokenKey, result.token);
-    ApStorage.getInstance().setItem(projectIdKey, result.projectId);
+    if (!isNil(result.projectId)) {
+      ApStorage.getInstance().setItem(projectIdKey, result.projectId);
+    }
     window.location.href = '/';
   },
   switchToProject(projectId: string) {
@@ -110,11 +130,15 @@ export const authenticationSession = {
     ApStorage.getInstance().removeItem(tokenKey);
   },
   logOut() {
+    const hadSession = !isNil(this.getToken());
     this.clearSession();
+    if (hadSession) {
+      telemetryUtils.resetIdentity();
+    }
     window.location.href = '/sign-in';
   },
 };
 
-function getDecodedJwt(token: string): UserPrincipal {
-  return jwtDecode<UserPrincipal>(token);
+function getDecodedJwt(token: string): Principal {
+  return jwtDecode<Principal>(token);
 }

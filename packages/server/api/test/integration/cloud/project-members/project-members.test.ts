@@ -1,13 +1,5 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import {
-    DefaultProjectRole,
-    Permission,
-    PlatformRole,
-    PrincipalType,
-    ProjectRole,
-    RoleType,
-    UpdateProjectMemberRoleRequestBody,
-} from '@activepieces/shared'
+import { Permission, ProjectRole, RoleType } from '@activepieces/core-utils'
+import { DefaultProjectRole, PlatformRole, PrincipalType, UpdateProjectMemberRoleRequestBody } from '@activepieces/shared'
 import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { generateMockToken } from '../../../helpers/auth'
@@ -22,6 +14,7 @@ import {
 } from '../../../helpers/mocks'
 import { describeRolePermissions } from '../../../helpers/permission-test'
 import { createTestContext } from '../../../helpers/test-context'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -105,7 +98,7 @@ describe('Project Member API', () => {
 
             const response = await app?.inject({
                 method: 'POST',
-                url: `/v1/project-members/${mockProjectMember.id}`,
+                url: `/api/v1/project-members/${mockProjectMember.id}`,
                 body: request,
                 headers: { authorization: `Bearer ${testToken}` },
             })
@@ -162,7 +155,7 @@ describe('Project Member API', () => {
 
             const response = await app?.inject({
                 method: 'POST',
-                url: `/v1/project-members/${projectMember.id}`,
+                url: `/api/v1/project-members/${projectMember.id}`,
                 body: request,
                 headers: { authorization: `Bearer ${testToken}` },
             })
@@ -187,7 +180,7 @@ describe('Project Member API', () => {
 
                 const response = await app?.inject({
                     method: 'GET',
-                    url: `/v1/project-members?projectId=${mockProject.id}`,
+                    url: `/api/v1/project-members?projectId=${mockProject.id}`,
                     headers: { authorization: `Bearer ${mockApiKey.value}` },
                 })
                 expect(response?.statusCode).toBe(StatusCodes.OK)
@@ -213,7 +206,7 @@ describe('Project Member API', () => {
 
                 const response = await app?.inject({
                     method: 'GET',
-                    url: `/v1/project-members?projectId=${mockProject2.id}`,
+                    url: `/api/v1/project-members?projectId=${mockProject2.id}`,
                     headers: { authorization: `Bearer ${mockApiKey.value}` },
                 })
                 expect(response?.statusCode).toBe(StatusCodes.FORBIDDEN)
@@ -281,7 +274,7 @@ describe('Project Member API', () => {
 
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/project-members/${mockProjectMember.id}`,
+                url: `/api/v1/project-members/${mockProjectMember.id}`,
                 headers: { authorization: `Bearer ${mockToken}` },
             })
 
@@ -306,7 +299,7 @@ describe('Project Member API', () => {
 
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/project-members/${mockProjectMember.id}`,
+                url: `/api/v1/project-members/${mockProjectMember.id}`,
                 headers: { authorization: `Bearer ${mockApiKey.value}` },
             })
             expect(response?.statusCode).toBe(StatusCodes.NO_CONTENT)
@@ -330,7 +323,7 @@ describe('Project Member API', () => {
 
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/project-members/${mockProjectMember.id}`,
+                url: `/api/v1/project-members/${mockProjectMember.id}`,
                 headers: { authorization: `Bearer ${mockApiKey.value}` },
             })
             expect(response?.statusCode).toBe(StatusCodes.FORBIDDEN)

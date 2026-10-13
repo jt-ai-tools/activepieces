@@ -1,6 +1,9 @@
 import { TriggerStrategy, createTrigger } from '@activepieces/pieces-framework';
 import { slackAuth } from '../auth';
 import { WebClient } from '@slack/web-api';
+import { getBotToken, getTeamId, SlackAuthValue } from '../common/auth-helpers';
+import { appWebhookSetupInfo } from '../common/props';
+import { newTeamCustomEmojiTriggerOutputSchema } from '../output-schemas';
 
 const sampleData = {
 	id: 'heart',
@@ -10,14 +13,21 @@ const sampleData = {
 export const newTeamCustomEmojiTrigger = createTrigger({
 	auth: slackAuth,
 	name: 'new-team-custom-emoji',
+	classification: 'READ',
 	displayName: 'New Team Custom Emoji',
 	description: 'Triggers when a custom emoji has been added to a team.',
-	props: {},
+	aiMetadata: {
+		description:
+			'Fires when a new custom emoji is added to the Slack workspace (an emoji_changed event with the "add" subtype). The event payload includes the emoji id (name) and the image URL of the added emoji.',
+	},
+	props: {
+		info: appWebhookSetupInfo,
+	},
 	type: TriggerStrategy.APP_WEBHOOK,
 	sampleData,
+	outputSchema: newTeamCustomEmojiTriggerOutputSchema,
 	onEnable: async (context) => {
-		// Older OAuth2 has team_id, newer has team.id
-		const teamId = context.auth.data['team_id'] ?? context.auth.data['team']['id'];
+		const teamId = await getTeamId(context.auth as SlackAuthValue);
 		context.app.createListeners({
 			events: ['emoji_changed'],
 			identifierValue: teamId,
@@ -28,7 +38,7 @@ export const newTeamCustomEmojiTrigger = createTrigger({
 	},
 
 	test: async (context) => {
-		const client = new WebClient(context.auth.access_token);
+		const client = new WebClient(getBotToken(context.auth as SlackAuthValue));
 
 		const response = await client.emoji.list();
 
@@ -43,8 +53,7 @@ export const newTeamCustomEmojiTrigger = createTrigger({
 	run: async (context) => {
 		const payloadBody = context.payload.body as PayloadBody;
 
-		// check if it's emoji message
-		if (payloadBody.event.type !== 'emoji_changed' && payloadBody.event.subtype !== 'add') {
+		if (payloadBody.event.type !== 'emoji_changed' || payloadBody.event.subtype !== 'add') {
 			return [];
 		}
 

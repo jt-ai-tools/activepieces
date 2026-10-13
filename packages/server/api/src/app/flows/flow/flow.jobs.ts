@@ -1,13 +1,55 @@
-import { ActivepiecesError, assertNotNullOrUndefined, ErrorCode, FlowOperationStatus, FlowStatusUpdatedResponse, isNil, tryCatch, WebsocketClientEvent } from '@activepieces/shared'
+import { assertNotNullOrUndefined } from '@activepieces/core-utils'
+import { FlowOperationStatus } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
-import { websocketService } from '../../core/websockets.service'
+import { repoFactory } from '../../core/db/repo-factory'
 import { SystemJobData, SystemJobName } from '../../helper/system-jobs/common'
 import { systemJobsSchedule } from '../../helper/system-jobs/system-job'
-import { flowVersionService } from '../flow-version/flow-version.service'
+import { WaitpointEntity } from '../../waitpoints/waitpoint-entity'
+import { flowRunRepo } from '../flow-run/flow-run-service'
+import { flowVersionRepo } from '../flow-version/flow-version.service'
 import { flowExecutionCache } from './flow-execution-cache'
 import { flowSideEffects } from './flow-service-side-effects'
 import { flowRepo } from './flow.repo'
 import { flowService } from './flow.service'
+
+const waitpointRepo = repoFactory(WaitpointEntity)
+
+const BATCH_SIZE = 1000
+const TOMBSTONE_REAP_LIMIT = 50
+
+export async function batchDeleteByFlowId(flowId: string): Promise<void> {
+    while (true) {
+        const runs = await flowRunRepo().find({
+            select: { id: true },
+            where: { flowId },
+            take: BATCH_SIZE,
+        })
+        if (runs.length === 0) break
+        const ids = runs.map(r => r.id)
+        await waitpointRepo()
+            .createQueryBuilder()
+            .delete()
+            .where('"flowRunId" IN (:...ids)', { ids })
+            .execute()
+        await flowRunRepo()
+            .createQueryBuilder()
+            .delete()
+            .where('id IN (:...ids)', { ids })
+            .execute()
+    }
+
+    await flowRepo().update({ id: flowId }, { publishedVersionId: null })
+
+    let deleted: number
+    do {
+        const result = await flowVersionRepo()
+            .createQueryBuilder()
+            .delete()
+            .where('id IN (SELECT id FROM flow_version WHERE "flowId" = :flowId LIMIT :limit)', { flowId, limit: BATCH_SIZE })
+            .execute()
+        deleted = result.affected ?? 0
+    } while (deleted > 0)
+}
 
 export const flowBackgroundJobs = (log: FastifyBaseLogger) => ({
 
@@ -18,7 +60,7 @@ export const flowBackgroundJobs = (log: FastifyBaseLogger) => ({
 
         const flowExists = await flowRepo().existsBy({ id: flow.id })
         if (!flowExists) {
-            log.info({ flowId: flow.id }, '[deleteFlowHandler] Flow already deleted, skipping')
+            log.info({ flow: { id: flow.id } }, '[deleteFlowHandler] Flow already deleted, skipping')
             return
         }
 
@@ -31,75 +73,22 @@ export const flowBackgroundJobs = (log: FastifyBaseLogger) => ({
                 preDeleteDone: true,
             })
         }
+        await batchDeleteByFlowId(flow.id)
         await flowRepo().delete({ id: flow.id })
         await flowExecutionCache(log).invalidate(flow.id)
     },
 
-    updateStatusHandler: async (data: SystemJobData<SystemJobName.UPDATE_FLOW_STATUS>) => {
-        const { id, projectId, newStatus, preUpdateDone } = data
-        const job = await systemJobsSchedule(log).getJob(`update-flow-status-${id}`)
-        assertNotNullOrUndefined(job, 'job')
-
-        const { error } = await tryCatch<unknown, ActivepiecesError>(async () => {
-            const flowToUpdate = await flowService(log).getOneOrThrow({
-                id,
-                projectId,
-            })
-
-            const publishedFlowVersionId = flowToUpdate.publishedVersionId
-            if (flowToUpdate.status !== newStatus) {
-                assertNotNullOrUndefined(publishedFlowVersionId, 'publishedFlowVersionId is required')
-                const publishedFlowVersion = await flowVersionService(log).getFlowVersionOrThrow({
-                    flowId: flowToUpdate.id,
-                    versionId: publishedFlowVersionId,
-                })
-
-                const templateId = flowToUpdate.templateId ?? undefined
-
-                if (!preUpdateDone) {
-                    await flowSideEffects(log).preUpdateStatus({
-                        flowToUpdate,
-                        publishedFlowVersion,
-                        newStatus,
-                        templateId,
-                    })
-                    await job.updateData({
-                        ...data,
-                        preUpdateDone: true,
-                    })
-                }
-
-                await flowRepo().save({
-                    ...flowToUpdate,
-                    status: newStatus,
-                    operationStatus: FlowOperationStatus.NONE,
-                    publishedVersionId: publishedFlowVersion.id,
-                })
-                await flowExecutionCache(log).invalidate(id)
-
-            }
+    reapTombstonedFlows: async () => {
+        const tombstoned = await flowRepo().find({
+            where: { operationStatus: FlowOperationStatus.DELETING },
+            order: { updated: 'ASC' },
+            take: TOMBSTONE_REAP_LIMIT,
         })
-
-
-        if (error) {
-            await flowRepo().update(id, {
-                operationStatus: FlowOperationStatus.NONE,
-            })
+        if (tombstoned.length === 0) {
+            return
         }
-
-        const flow = await flowService(log).getOnePopulatedOrThrow({
-            id,
-            projectId,
-        })
-        const response: FlowStatusUpdatedResponse = {
-            flow,
-            error: isNil(error) || error?.error.code !== ErrorCode.TRIGGER_UPDATE_STATUS ? undefined : error?.error,
-        }
-        websocketService.to(projectId).emit(WebsocketClientEvent.FLOW_STATUS_UPDATED, response)
-
-        if (!isNil(error)) {
-            throw error
-        }
-
+        log.warn({ flowCount: tombstoned.length }, '[reapTombstonedFlows] Re-queueing deletions that never finished')
+        await Promise.all(tombstoned.map((flow) => flowService(log).addDeleteFlowJob(flow)))
     },
+
 })

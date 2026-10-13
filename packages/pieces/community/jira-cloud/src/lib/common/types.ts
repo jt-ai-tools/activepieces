@@ -17,6 +17,12 @@ export type IssueFieldMetaData ={
     allowedValues?:Array<{value:string,id:string,name:string}>
 }
 
+export type JiraSearchResponse = {
+	issues: any[];
+    nextPageToken?: string;
+	names?: Record<string, string>;
+};
+
 export const VALID_CUSTOM_FIELD_TYPES = [
 	'userpicker',
 	'participants',
@@ -37,4 +43,21 @@ export const VALID_CUSTOM_FIELD_TYPES = [
 	'textfield',
 	'url',
 	'project',
+	'people',
 ];
+
+export type ChangelogItem = {
+	field: string;
+	fieldId?: string;
+	from: string | null;
+	fromString: string | null;
+	to: string | null;
+	toString: string | null;
+};
+
+export type ChangelogHistory = {
+	id: string;
+	author?: { accountId: string; displayName: string; emailAddress?: string };
+	created: string;
+	items: ChangelogItem[];
+};

@@ -1,11 +1,12 @@
 import {
+  CreateFieldRequest,
   FieldType,
   SharedTemplate,
   TableTemplate,
   Table,
   UncategorizedFolderId,
 } from '@activepieces/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { authenticationSession } from '@/lib/authentication-session';
@@ -34,23 +35,31 @@ export const tableMutations = {
 };
 
 export const tableHooks = {
-  useTables: (limit?: number) => {
-    const projectId = authenticationSession.getProjectId() ?? '';
-    const [searchParams] = useSearchParams();
-    return useQuery({
-      queryKey: ['tables', searchParams.toString(), projectId],
-      queryFn: () =>
-        tablesApi.list({
-          projectId,
-          cursor: searchParams.get('cursor') ?? undefined,
-          limit: limit
-            ? limit
-            : searchParams.get('limit')
-            ? parseInt(searchParams.get('limit')!)
-            : undefined,
-          name: searchParams.get('name') ?? undefined,
-        }),
+  createTableWithDefaults: async ({
+    name,
+    folderId,
+    projectId,
+  }: {
+    name: string;
+    folderId?: string;
+    projectId: string;
+  }): Promise<Table> => {
+    const table = await tablesApi.create({
+      projectId,
+      name,
+      folderId:
+        !folderId || folderId === UncategorizedFolderId ? undefined : folderId,
     });
+    const field = await fieldsApi.create({
+      name: 'Name',
+      type: FieldType.TEXT,
+      tableId: table.id,
+    });
+    await recordsApi.create({
+      records: [[{ fieldId: field.id, value: '' }]],
+      tableId: table.id,
+    });
+    return table;
   },
   useCreateTable: (folderId: string) => {
     const projectId = authenticationSession.getProjectId() ?? '';
@@ -59,28 +68,11 @@ export const tableHooks = {
     const [searchParams] = useSearchParams();
     return useMutation({
       mutationFn: async (data: { name: string }) => {
-        const table = await tablesApi.create({
-          projectId,
+        return tableHooks.createTableWithDefaults({
           name: data.name,
-          folderId: folderId === UncategorizedFolderId ? undefined : folderId,
+          folderId,
+          projectId,
         });
-        const field = await fieldsApi.create({
-          name: 'Name',
-          type: FieldType.TEXT,
-          tableId: table.id,
-        });
-        await recordsApi.create({
-          records: [
-            ...Array.from({ length: 1 }, (_) => [
-              {
-                fieldId: field.id,
-                value: '',
-              },
-            ]),
-          ],
-          tableId: table.id,
-        });
-        return table;
       },
       onSuccess: (table) => {
         queryClient.invalidateQueries({
@@ -100,18 +92,18 @@ export const tableHooks = {
     template: SharedTemplate;
     existingTableId: string;
     maxRecords?: number;
-  }): Promise<Table> => {
-    const tables = template.tables || [];
-    if (tables.length === 0) {
-      throw new Error('Template has no tables');
-    }
-    if (tables.length > 1) {
+  }): Promise<ImportedTable> => {
+    const tables = template.tables ?? [];
+    if (tables.length !== 1) {
       throw new Error(
         'Template must contain exactly one table when importing into existing table',
       );
     }
-
-    const tableTemplate = tables[0];
+    const [tableTemplate] = tables;
+    const fieldsToCreate = parseFieldsToCreate({
+      tableTemplate,
+      tableId: existingTableId,
+    });
 
     const [, existingFields] = await Promise.all([
       tablesApi.clear(existingTableId),
@@ -126,18 +118,9 @@ export const tableHooks = {
       name: tableTemplate.name,
     });
 
-    await Promise.all(
-      tableTemplate.fields.map((fieldState) =>
-        fieldsApi.create({
-          name: fieldState.name,
-          type: fieldState.type as any,
-          tableId: existingTableId,
-          data: fieldState.data as any,
-          externalId: fieldState.externalId,
-        }),
-      ),
-    );
+    await Promise.all(fieldsToCreate.map((field) => fieldsApi.create(field)));
 
+    let importedRecordsCount = 0;
     if (tableTemplate.data && tableTemplate.data.rows.length > 0) {
       const createdFields = await fieldsApi.list({ tableId: existingTableId });
 
@@ -150,7 +133,7 @@ export const tableHooks = {
         maxRecords ?? 1000,
       );
 
-      await recordsApi.create({
+      const importedRecords = await recordsApi.create({
         tableId: existingTableId,
         records: recordsToImport.map((record) =>
           record
@@ -167,47 +150,51 @@ export const tableHooks = {
             .filter((cell) => cell !== null),
         ),
       });
+      importedRecordsCount = importedRecords.length;
     }
 
-    return tablesApi.getById(existingTableId);
+    return tablesApi
+      .getById(existingTableId)
+      .then((table) => ({ table, importedRecordsCount }));
   },
   importTablesFromTemplates: async ({
     templates,
     projectId,
     maxRecords,
+    folderId,
   }: {
     templates: SharedTemplate[];
     projectId: string;
     maxRecords?: number;
-  }): Promise<Table[]> => {
+    folderId?: string;
+  }): Promise<ImportedTable[]> => {
     if (templates.length === 0) {
       return [];
     }
+
+    const targetFolderId =
+      !folderId || folderId === UncategorizedFolderId ? undefined : folderId;
 
     const allTablesToImport: Array<{
       table: Table;
       tableTemplate: TableTemplate;
     }> = [];
 
-    for (const template of templates) {
-      const tables = template.tables || [];
-      if (tables.length === 0) {
-        continue;
-      }
+    for (const tableTemplate of templates.flatMap(
+      (template) => template.tables ?? [],
+    )) {
+      const table = await tablesApi.create({
+        projectId,
+        name: tableTemplate.name,
+        externalId: tableTemplate.externalId,
+        fields: tableTemplate.fields,
+        folderId: targetFolderId,
+      });
 
-      for (const tableTemplate of tables) {
-        const table = await tablesApi.create({
-          projectId,
-          name: tableTemplate.name,
-          externalId: tableTemplate.externalId,
-          fields: tableTemplate.fields,
-        });
-
-        allTablesToImport.push({
-          table,
-          tableTemplate,
-        });
-      }
+      allTablesToImport.push({
+        table,
+        tableTemplate,
+      });
     }
 
     const importPromises = allTablesToImport.map(
@@ -224,7 +211,7 @@ export const tableHooks = {
             maxRecords ?? 1000,
           );
 
-          await recordsApi.create({
+          const importedRecords = await recordsApi.create({
             tableId: table.id,
             records: recordsToImport.map((record) =>
               record
@@ -241,12 +228,34 @@ export const tableHooks = {
                 .filter((cell) => cell !== null),
             ),
           });
+          return { table, importedRecordsCount: importedRecords.length };
         }
 
-        return table;
+        return { table, importedRecordsCount: 0 };
       },
     );
 
     return await Promise.all(importPromises);
   },
+};
+
+function parseFieldsToCreate({
+  tableTemplate,
+  tableId,
+}: {
+  tableTemplate: TableTemplate;
+  tableId: string;
+}): CreateFieldRequest[] {
+  return CreateFieldRequest.array().parse(
+    tableTemplate.fields.map((field, position) => ({
+      ...field,
+      tableId,
+      position,
+    })),
+  );
+}
+
+type ImportedTable = {
+  table: Table;
+  importedRecordsCount: number;
 };

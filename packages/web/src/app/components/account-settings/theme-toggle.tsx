@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 
 export const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
+  const { preference, setPreference } = useTheme();
 
   return (
     <div className="space-y-2">
@@ -20,8 +20,8 @@ export const ThemeToggle = () => {
         <Palette className="w-4 h-4" />
         {t('Theme')}
       </Label>
-      <Select value={theme} onValueChange={setTheme}>
-        <SelectTrigger className="h-9">
+      <Select value={preference} onValueChange={setPreference}>
+        <SelectTrigger>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -48,5 +48,3 @@ export const ThemeToggle = () => {
     </div>
   );
 };
-
-export default ThemeToggle;

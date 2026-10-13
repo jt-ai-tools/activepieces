@@ -1,13 +1,13 @@
+import { existsSync } from 'node:fs'
 import path from 'path'
-import importFresh from '@activepieces/import-fresh-webpack'
+import { isNil, STEP_NAME_REGEX } from '@activepieces/core-utils'
 import { LATEST_CONTEXT_VERSION } from '@activepieces/pieces-framework'
-import { CodeAction, EngineGenericError, FlowActionType, FlowRunStatus, GenericStepOutput, isNil, StepOutputStatus } from '@activepieces/shared'
+import { CodeAction, EngineGenericError, ExecutionError, ExecutionErrorType, FlowActionType, GenericStepOutput, StepOutputStatus } from '@activepieces/shared'
 import { initCodeSandbox } from '../core/code/code-sandbox'
-import { CodeModule } from '../core/code/code-sandbox-common'
 import { continueIfFailureHandler, runWithExponentialBackoff } from '../helper/error-handling'
-import { progressService } from '../services/progress.service'
+import { flowRunProgressReporter } from '../helper/flow-run-progress-reporter'
 import { utils } from '../utils'
-import { ActionHandler, BaseExecutor } from './base-executor'
+import { ActionHandler, BaseExecutor, failStep } from './base-executor'
 
 export const codeExecutor: BaseExecutor<CodeAction> = {
     async handle({
@@ -24,55 +24,66 @@ export const codeExecutor: BaseExecutor<CodeAction> = {
 }
 
 const executeAction: ActionHandler<CodeAction> = async ({ action, executionState, constants }) => {
-    const stepStartTime = performance.now() 
-    const { censoredInput, resolvedInput } = await constants.getPropsResolver(LATEST_CONTEXT_VERSION).resolve<Record<string, unknown>>({
-        unresolvedInput: action.settings.input,
-        executionState,
-    })
-
+    const stepStartTime = performance.now()
     const stepOutput = GenericStepOutput.create({
-        input: censoredInput,
+        input: {},
         type: FlowActionType.CODE,
         status: StepOutputStatus.RUNNING,
     })
-    
+
     const { data: executionStateResult, error: executionStateError } = await utils.tryCatchAndThrowOnEngineError((async () => {
-        await progressService.sendUpdate({
+        const { censoredInput, resolvedInput } = await constants.getPropsResolver({ contextVersion: LATEST_CONTEXT_VERSION }).resolve<Record<string, unknown>>({
+            unresolvedInput: action.settings.input,
+            executionState,
+        })
+        stepOutput.input = censoredInput
+
+        await flowRunProgressReporter.sendUpdate({
             engineConstants: constants,
-            flowExecutorContext: executionState.upsertStep(action.name, stepOutput),
+            flowExecutorContext: await executionState.upsertStep(action.name, stepOutput),
             stepNameToUpdate: action.name,
         })
-    
-        if (isNil(constants.runEnvironment)) {
+
+        if (!constants.actionRunMode && isNil(constants.runEnvironment)) {
             throw new EngineGenericError('RunEnvironmentNotSetError', 'Run environment is not set')
         }
 
-        const artifactPath = path.resolve(`${constants.baseCodeDirectory}/${constants.flowVersionId}/${action.name}/index.js`)
-        const codeModule: CodeModule = await importFresh(artifactPath)
-        const codeSandbox = await initCodeSandbox()
-    
+        if (!STEP_NAME_REGEX.test(action.name)) {
+            // A malformed step name is bad user input, not an engine failure: fail the step
+            // (USER) instead of raising an ENGINE error that would page oncall. Ingress + the
+            // code-cache sink guard already block this upstream; this is the runtime backstop.
+            throw new ExecutionError('InvalidStepName', `Invalid code step name: "${action.name}"`, ExecutionErrorType.USER)
+        }
+        const useDeno = action.settings.useDeno === true
+        const stepDir = path.resolve(`${constants.baseCodeDirectory}/${constants.flowVersionId}/${action.name}`)
+        const artifactPath = useDeno
+            ? resolveDenoArtifactPath(stepDir)
+            : path.join(stepDir, 'index.js')
+        const codeSandbox = await initCodeSandbox({ useDeno })
+
         const output = await codeSandbox.runCodeModule({
-            codeModule,
+            codeFilePath: artifactPath,
             inputs: resolvedInput,
         })
-    
-        return executionState.upsertStep(action.name, stepOutput.setOutput(output).setStatus(StepOutputStatus.SUCCEEDED).setDuration(performance.now() - stepStartTime)).incrementStepsExecuted()
+
+        const succeeded = stepOutput.setOutput(output).setStatus(StepOutputStatus.SUCCEEDED).setDuration(performance.now() - stepStartTime)
+        return (await executionState.upsertStep(action.name, succeeded)).incrementStepsExecuted()
     }))
 
     if (executionStateError) {
-        const failedStepOutput = stepOutput
-            .setStatus(StepOutputStatus.FAILED)
-            .setErrorMessage(utils.formatError(executionStateError))
-            .setDuration(performance.now() - stepStartTime)
-
-        return executionState
-            .upsertStep(action.name, failedStepOutput)
-            .setVerdict({ status: FlowRunStatus.FAILED, failedStep: {
-                name: action.name,
-                displayName: action.displayName,
-                message: utils.formatError(executionStateError),
-            } })
+        return failStep({
+            action,
+            executionState,
+            stepOutput,
+            error: executionStateError,
+            durationMs: performance.now() - stepStartTime,
+        })
     }
 
     return executionStateResult
+}
+
+function resolveDenoArtifactPath(stepDir: string): string {
+    const transpiledPath = path.join(stepDir, 'index.cjs')
+    return existsSync(transpiledPath) ? transpiledPath : path.join(stepDir, 'index.ts')
 }

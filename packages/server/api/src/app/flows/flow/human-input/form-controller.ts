@@ -1,11 +1,8 @@
-import { securityAccess } from '@activepieces/server-common'
-import {
-    ApId,
-    OptionalBooleanFromQuery,
-    USE_DRAFT_QUERY_PARAM_NAME,
-} from '@activepieces/shared'
+import { ApId, OptionalBooleanFromQuery } from '@activepieces/core-utils'
+import { USE_DRAFT_QUERY_PARAM_NAME } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { securityAccess } from '../../../core/security/authorization/fastify-security'
 import { humanInputService } from './human-input.service'
 
 export const formController: FastifyPluginAsyncZod = async (app) => {

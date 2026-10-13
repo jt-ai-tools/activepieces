@@ -1,14 +1,5 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
-import {
-    apId,
-    AppConnectionScope,
-    AppConnectionType,
-    PackageType,
-    PlatformRole,
-    PrincipalType,
-    UpdateGlobalConnectionValueRequestBody,
-    UpsertGlobalConnectionRequestBody,
-} from '@activepieces/shared'
+import { apId } from '@activepieces/core-utils'
+import { AppConnectionScope, AppConnectionType, PackageType, PlatformRole, PrincipalType, UpdateGlobalConnectionValueRequestBody, UpsertGlobalConnectionRequestBody } from '@activepieces/shared'
 import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { generateMockToken } from '../../../helpers/auth'
@@ -18,6 +9,7 @@ import {
     mockAndSaveBasicSetup,
     mockBasicUser,
 } from '../../../helpers/mocks'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -78,7 +70,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -133,7 +125,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -183,7 +175,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -211,7 +203,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -242,7 +234,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -289,7 +281,7 @@ describe('GlobalConnection API', () => {
 
             const upsertResponse = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -299,7 +291,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/global-connections/${connectionId}`,
+                url: `/api/v1/global-connections/${connectionId}`,
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -350,7 +342,7 @@ describe('GlobalConnection API', () => {
 
             const upsertResponse = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockOwnerToken}`,
                 },
@@ -371,7 +363,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/global-connections/${connectionId}`,
+                url: `/api/v1/global-connections/${connectionId}`,
                 headers: {
                     authorization: `Bearer ${mockUserToken}`,
                 },
@@ -419,7 +411,7 @@ describe('GlobalConnection API', () => {
 
             const upsertResponse = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -435,7 +427,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'POST',
-                url: `/v1/global-connections/${connectionId}`,
+                url: `/api/v1/global-connections/${connectionId}`,
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -491,7 +483,7 @@ describe('GlobalConnection API', () => {
 
             const upsertResponse = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockOwnerToken}`,
                 },
@@ -515,7 +507,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'POST',
-                url: `/v1/global-connections/${connectionId}`,
+                url: `/api/v1/global-connections/${connectionId}`,
                 headers: {  
                     authorization: `Bearer ${mockUserToken}`,
                 },
@@ -564,7 +556,7 @@ describe('GlobalConnection API', () => {
 
             const upsertResponse = await app?.inject({
                 method: 'POST',
-                url: '/v1/global-connections',
+                url: '/api/v1/global-connections',
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },
@@ -581,7 +573,7 @@ describe('GlobalConnection API', () => {
             // act
             const response = await app?.inject({
                 method: 'POST',
-                url: `/v1/global-connections/${connectionId}`,
+                url: `/api/v1/global-connections/${connectionId}`,
                 headers: {
                     authorization: `Bearer ${mockToken}`,
                 },

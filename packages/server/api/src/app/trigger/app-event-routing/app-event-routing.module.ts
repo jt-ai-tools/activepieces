@@ -1,46 +1,38 @@
+import { ActivepiecesError, apId, assertNotNullOrUndefined, ErrorCode, isNil } from '@activepieces/core-utils'
 import { facebookLeads } from '@activepieces/piece-facebook-leads'
 import { intercom } from '@activepieces/piece-intercom'
+import { microsoftTeamsBot } from '@activepieces/piece-microsoft-teams-bot'
 import { slack } from '@activepieces/piece-slack'
 import { square } from '@activepieces/piece-square'
 import { Piece, PieceAuthProperty } from '@activepieces/pieces-framework'
-import {
-    rejectedPromiseHandler,
-    securityAccess,
-} from '@activepieces/server-common'
-import {
-    ActivepiecesError,
-    apId,
-    assertNotNullOrUndefined,
-    ErrorCode,
-    FlowStatus,
-    isNil,
-    LATEST_JOB_DATA_SCHEMA_VERSION,
-    RunEnvironment,
-    WorkerJobType,
-} from '@activepieces/shared'
+import { FlowStatus, LATEST_JOB_DATA_SCHEMA_VERSION, RunEnvironment, WorkerJobType } from '@activepieces/shared'
 import { FastifyRequest } from 'fastify'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { StatusCodes } from 'http-status-codes'
-import { domainHelper } from '../../ee/custom-domains/domain-helper'
+import { securityAccess } from '../../core/security/authorization/fastify-security'
 import { flowService } from '../../flows/flow/flow.service'
+import { domainHelper } from '../../helper/domain-helper'
+import { rejectedPromiseHandler } from '../../helper/promise-handler'
 import { projectService } from '../../project/project-service'
-import { WebhookFlowVersionToRun, webhookHandler } from '../../webhooks/webhook-handler'
-import { jobQueue } from '../../workers/queue/job-queue'
-import { JobType } from '../../workers/queue/queue-manager'
+import { WebhookFlowVersionToRun, webhookService } from '../../webhooks/webhook.service'
+import { jobQueue, JobType } from '../../workers/job-queue/job-queue'
+import { payloadOffloader } from '../../workers/payload-offloader'
 import { triggerSourceService } from '../trigger-source/trigger-source-service'
 import { appEventRoutingService } from './app-event-routing.service'
 
-const appWebhooks: Record<string, Piece<PieceAuthProperty | undefined>> = {
+const appWebhooks: Record<string, Piece<PieceAuthProperty | PieceAuthProperty[] | undefined>> = {
     slack,
     square,
     'facebook-leads': facebookLeads,
     intercom,
+    'microsoft-teams-bot': microsoftTeamsBot,
 }
 const pieceNames: Record<string, string> = {
     slack: '@activepieces/piece-slack',
     square: '@activepieces/piece-square',
     'facebook-leads': '@activepieces/piece-facebook-leads',
     intercom: '@activepieces/piece-intercom',
+    'microsoft-teams-bot': '@activepieces/piece-microsoft-teams-bot',
 }
 
 export const appEventRoutingModule: FastifyPluginAsyncZod = async (app) => {
@@ -128,8 +120,16 @@ export const appEventRoutingController: FastifyPluginAsyncZod = async (
                 if (isNil(flow)) {
                     return
                 }
-                const flowVersionIdToRun = await webhookHandler.getFlowVersionIdToRun(WebhookFlowVersionToRun.LOCKED_FALL_BACK_TO_LATEST, flow)
+                const isSimulating = await triggerSourceService(request.log).existsByFlowId({
+                    flowId: listener.flowId,
+                    simulate: true,
+                })
+                const flowVersionIdToRun = await webhookService.getFlowVersionIdToRun(
+                    isSimulating ? WebhookFlowVersionToRun.LATEST : WebhookFlowVersionToRun.LOCKED_FALL_BACK_TO_LATEST,
+                    flow,
+                )
                 const platformId = await projectService(request.log).getPlatformId(listener.projectId)
+                const jobPayload = await payloadOffloader.offloadPayload(request.log, payload, listener.projectId, platformId)
                 return jobQueue(request.log).add({
                     id: requestId,
                     type: JobType.ONE_TIME,
@@ -138,14 +138,11 @@ export const appEventRoutingController: FastifyPluginAsyncZod = async (
                         projectId: listener.projectId,
                         schemaVersion: LATEST_JOB_DATA_SCHEMA_VERSION,
                         requestId,
-                        payload,
+                        payload: jobPayload,
                         flowId: listener.flowId,
                         jobType: WorkerJobType.EXECUTE_WEBHOOK,
-                        runEnvironment: RunEnvironment.PRODUCTION,
-                        saveSampleData: await triggerSourceService(request.log).existsByFlowId({
-                            flowId: listener.flowId,
-                            simulate: true,
-                        }),
+                        runEnvironment: isSimulating ? RunEnvironment.TESTING : RunEnvironment.PRODUCTION,
+                        saveSampleData: isSimulating,
                         flowVersionIdToRun,
                         execute: flow.status === FlowStatus.ENABLED,
                     },

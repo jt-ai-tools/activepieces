@@ -1,4 +1,3 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 import { PlatformRole, PrincipalType } from '@activepieces/shared'
 import { faker } from '@faker-js/faker'
 import { FastifyInstance } from 'fastify'
@@ -10,6 +9,7 @@ import {
     mockAndSaveBasicSetup,
     mockBasicUser,
 } from '../../../helpers/mocks'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -40,7 +40,7 @@ describe('Signing Key API', () => {
             const mockSigningKeyName = faker.lorem.word()
             const response = await app?.inject({
                 method: 'POST',
-                url: '/v1/signing-keys',
+                url: '/api/v1/signing-keys',
                 body: {
                     displayName: mockSigningKeyName,
                 },
@@ -87,7 +87,7 @@ describe('Signing Key API', () => {
             const mockSigningKeyName = faker.lorem.word()
             const response = await app?.inject({
                 method: 'POST',
-                url: '/v1/signing-keys',
+                url: '/api/v1/signing-keys',
                 body: {
                     displayName: mockSigningKeyName,
                 },
@@ -122,7 +122,7 @@ describe('Signing Key API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: `/v1/signing-keys/${mockSigningKey.id}`,
+                url: `/api/v1/signing-keys/${mockSigningKey.id}`,
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -168,7 +168,7 @@ describe('Signing Key API', () => {
             // act
             const response = await app?.inject({
                 method: 'DELETE',
-                url: `/v1/signing-keys/${mockSigningKey.id}`,
+                url: `/api/v1/signing-keys/${mockSigningKey.id}`,
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },
@@ -204,7 +204,7 @@ describe('Signing Key API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/signing-keys',
+                url: '/api/v1/signing-keys',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },

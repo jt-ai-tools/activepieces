@@ -1,28 +1,11 @@
-import { AppSystemProp } from '@activepieces/server-common'
-import {
-    ActivepiecesError,
-    apId,
-    Cell,
-    chunk,
-    CreateRecordsRequest,
-    Cursor,
-    ErrorCode,
-    Field,
-    Filter,
-    FilterOperator,
-    isNil,
-    PopulatedRecord,
-    SeekPage,
-    TableWebhookEventType,
-    UpdateRecordRequest,
-} from '@activepieces/shared'
+import { ActivepiecesError, apId, chunk, Cursor, ErrorCode, isNil, SeekPage } from '@activepieces/core-utils'
+import { Cell, CreateRecordsRequest, Field, FieldType, Filter, FilterOperator, PopulatedRecord, TableWebhookEventType, UpdateRecordRequest } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { EntityManager, In } from 'typeorm'
 import { repoFactory } from '../../core/db/repo-factory'
 import { transaction } from '../../core/db/transaction'
 import { system } from '../../helper/system/system'
-import { WebhookFlowVersionToRun } from '../../webhooks/webhook-handler'
-import { webhookService } from '../../webhooks/webhook.service'
+import { AppSystemProp } from '../../helper/system/system-props'
 import { FieldEntity } from '../field/field.entity'
 import { fieldService } from '../field/field.service'
 import { tableService } from '../table/table.service'
@@ -38,9 +21,10 @@ export const recordService = {
     async create({
         request,
         projectId,
+        fields,
     }: CreateParams): Promise<PopulatedRecord[]> {
         await this.validateCount({ projectId, tableId: request.tableId }, request.records.length)
-        const existingFields = await fieldService.getAll({
+        const existingFields = fields ?? await fieldService.getAll({
             tableId: request.tableId,
             projectId,
         })
@@ -78,7 +62,7 @@ export const recordService = {
                 created: 'ASC',
             },
         })
-        return formatRecordsAndFetchField({ records: insertedRecords, tableId: request.tableId, projectId })
+        return formatRecordsAndFetchField({ records: insertedRecords, tableId: request.tableId, projectId, fields: existingFields })
     },
 
     async list({
@@ -86,8 +70,9 @@ export const recordService = {
         projectId,
         filters,
         limit,
+        fields: prefetchedFields,
     }: ListParams): Promise<SeekPage<PopulatedRecord>> {
-        const fields = await fieldService.getAll({
+        const fields = prefetchedFields ?? await fieldService.getAll({
             tableId,
             projectId,
         })
@@ -108,23 +93,32 @@ export const recordService = {
                 recordId: In(records.map((record) => record.id)),
             },
         })
-        records.map((record) => {
-            record.cells = cells.filter((cell) => cell.recordId === record.id)
-        })
+        const cellsByRecordId = new Map<string, typeof cells>()
+        for (const cell of cells) {
+            const group = cellsByRecordId.get(cell.recordId)
+            if (group) {
+                group.push(cell)
+            }
+            else {
+                cellsByRecordId.set(cell.recordId, [cell])
+            }
+        }
+        for (const record of records) {
+            record.cells = cellsByRecordId.get(record.id) ?? []
+        }
+        const fieldTypeById = new Map(fields.map((field) => [field.id, field.type]))
         const filteredOutRecords = records.filter((record) => {
             if (!filters || filters.length === 0) {
                 return true
             }
             return filters.every((filter) => {
                 const cell = record.cells.find(c => c.fieldId === filter.fieldId)
-                if (!cell) {
-                    return filter.operator === FilterOperator.NOT_EXISTS
-                }
-                return doesCellValueMatchFilters(cell, [filter])
+                    ?? { fieldId: filter.fieldId, value: '' }
+                return doesCellValueMatchFilter({ cell, filter, fieldType: fieldTypeById.get(filter.fieldId) })
             })
         })
 
-        const populatedRecords = await formatRecordsAndFetchField({ records: filteredOutRecords, tableId, projectId })
+        const populatedRecords = await formatRecordsAndFetchField({ records: filteredOutRecords, tableId, projectId, fields })
 
         return {
             data: populatedRecords.slice(0, limit),
@@ -195,7 +189,7 @@ export const recordService = {
                         recordId: id,
                         fieldId: cellData.fieldId,
                         projectId,
-                        value: cellData.value,
+                        value: cellData.value ?? '',
                         id: apId(),
                     }
                 })
@@ -234,102 +228,44 @@ export const recordService = {
     async delete({
         ids,
         projectId,
-    }: DeleteParams): Promise<PopulatedRecord[]> {
-        const firstRecord = await recordRepo().findOne({
-            where: { id: ids[0], projectId },
-            select: ['tableId'],
-        })
-        if (isNil(firstRecord)) {
+        tableId,
+    }: DeleteParams): Promise<DeleteRecordsResult> {
+        const uniqueIds = [...new Set(ids)]
+        if (uniqueIds.length === 0) {
+            return { deletedCount: 0, records: [] }
+        }
+        const maxRecordsPerTable = system.getNumberOrThrow(AppSystemProp.MAX_RECORDS_PER_TABLE)
+        if (uniqueIds.length > maxRecordsPerTable) {
             throw new ActivepiecesError({
-                code: ErrorCode.ENTITY_NOT_FOUND,
-                params: { entityType: 'Record', entityId: ids[0] },
+                code: ErrorCode.VALIDATION,
+                params: {
+                    message: `Max records per delete request reached: ${maxRecordsPerTable}`,
+                },
             })
         }
-
-        const records = await recordRepo().find({
-            where: { id: In(ids), projectId, tableId: firstRecord.tableId },
-            relations: ['cells'],
-        })
-
-        await recordRepo().delete({
-            id: In(ids),
+        const { deletedIds, records } = await deleteRecordsAndReturnWebhookPayloads({
             projectId,
-            tableId: firstRecord.tableId,
+            tableId,
+            recordIds: uniqueIds,
         })
-
-        if (records.length === 0) {
-            return []
+        if (deletedIds.length === 0) {
+            throw new ActivepiecesError({
+                code: ErrorCode.ENTITY_NOT_FOUND,
+                params: { entityType: 'Record', entityId: uniqueIds[0] },
+            })
         }
-
-        return formatRecordsAndFetchField({ records, tableId: firstRecord.tableId, projectId })
+        return {
+            deletedCount: deletedIds.length,
+            records,
+        }
     },
 
     async deleteAll({
         tableId,
         projectId,
     }: DeleteAllParams): Promise<PopulatedRecord[]> {
-        const deletedRecords = await transaction(async (entityManager: EntityManager) => {
-            const records = await entityManager.getRepository(RecordEntity).find({
-                where: { projectId, tableId },
-                relations: ['cells'],
-            })
-
-            const recordIds = records.map((record) => record.id)
-
-            if (recordIds.length > 0) {
-                await entityManager.getRepository(RecordEntity).delete({
-                    id: In(recordIds),
-                    projectId,
-                    tableId,
-                })
-            }
-
-            return records
-        })
-
-        if (deletedRecords.length === 0) {
-            return []
-        }
-
-        return formatRecordsAndFetchField({ records: deletedRecords, tableId, projectId })
-    },
-
-    async triggerWebhooks({
-        projectId,
-        tableId,
-        eventType,
-        data,
-        logger,
-        authorization,
-    }: TriggerWebhooksParams): Promise<void> {
-        const webhooks = await tableService.getWebhooks({
-            projectId,
-            id: tableId,
-            events: [eventType],
-        })
-
-        if (webhooks.length === 0) {
-            return
-        }
-        await Promise.all(webhooks.map((webhook) => {
-            return webhookService.handleWebhook({
-                async: true,
-                flowId: webhook.flowId,
-                flowVersionToRun: WebhookFlowVersionToRun.LOCKED_FALL_BACK_TO_LATEST,
-                saveSampleData: false,
-                data: async (_projectId: string) => ({
-                    method: 'POST',
-                    headers: {
-                        authorization,
-                    },
-                    body: data,
-                    queryParams: {},
-                }),
-                execute: true,
-                logger,
-                failParentOnFailure: true,
-            })
-        }))
+        const { records } = await deleteRecordsAndReturnWebhookPayloads({ projectId, tableId })
+        return records
     },
 
     async count({ projectId, tableId }: CountParams): Promise<number> {
@@ -350,10 +286,219 @@ export const recordService = {
     },
 }
 
+function prepareRecordInsertions(
+    records: Array<Array<{ fieldId: string, value: string | null }>>,
+    tableId: string,
+    projectId: string,
+    baseDate: Date,
+): RecordInsertion[] {
+    return records.map((_, index) => {
+        const created = new Date(baseDate.getTime() + index).toISOString()
+        return {
+            tableId,
+            projectId,
+            created,
+            id: apId(),
+        }
+    })
+}
+
+function prepareCellInsertions(
+    records: Array<Array<{ fieldId: string, value: string | null }>>,
+    recordInsertions: RecordInsertion[],
+    projectId: string,
+): CellInsertion[] {
+    return records.flatMap((recordData, index) =>
+        recordData.map((cellData) => {
+            return {
+                recordId: recordInsertions[index].id,
+                fieldId: cellData.fieldId,
+                projectId,
+                value: cellData.value ?? '',
+                id: apId(),
+            }
+        }),
+    )
+}
+
+async function loadRecordsForDeleteWebhook({
+    projectId,
+    tableId,
+    recordIds,
+}: {
+    projectId: string
+    tableId: string
+    recordIds?: string[]
+}): Promise<RecordSchema[]> {
+    const webhooks = await tableService.getWebhooks({
+        projectId,
+        id: tableId,
+        events: [TableWebhookEventType.RECORD_DELETED],
+    })
+    if (webhooks.length === 0) {
+        return []
+    }
+    return recordRepo().find({
+        where: isNil(recordIds) ? { projectId, tableId } : { id: In(recordIds), projectId, tableId },
+        relations: ['cells'],
+    })
+}
+
+async function deleteRecordsReturningIds({
+    projectId,
+    tableId,
+    recordIds,
+}: {
+    projectId: string
+    tableId: string
+    recordIds?: string[]
+}): Promise<string[]> {
+    const result = await recordRepo()
+        .createQueryBuilder()
+        .delete()
+        .where(isNil(recordIds) ? { projectId, tableId } : { id: In(recordIds), projectId, tableId })
+        .returning('id')
+        .execute()
+    const deletedRows: unknown = result.raw
+    if (!Array.isArray(deletedRows)) {
+        return []
+    }
+    return deletedRows.filter(isRowWithId).map((row) => row.id)
+}
+
+function isRowWithId(row: unknown): row is { id: string } {
+    return typeof row === 'object' && !isNil(row) && typeof Reflect.get(row, 'id') === 'string'
+}
+
+async function deleteRecordsAndReturnWebhookPayloads({
+    projectId,
+    tableId,
+    recordIds,
+}: {
+    projectId: string
+    tableId: string
+    recordIds?: string[]
+}): Promise<{ deletedIds: string[], records: PopulatedRecord[] }> {
+    const snapshot = await loadRecordsForDeleteWebhook({ projectId, tableId, recordIds })
+    const deletedIds = await deleteRecordsReturningIds({ projectId, tableId, recordIds })
+    const deletedIdSet = new Set(deletedIds)
+    const deletedRecords = snapshot.filter((record) => deletedIdSet.has(record.id))
+    return {
+        deletedIds,
+        records: await formatRecordsAndFetchField({ records: deletedRecords, tableId, projectId }),
+    }
+}
+
+async function formatRecordsAndFetchField({ records, tableId, projectId, fields: prefetchedFields }: { records: RecordSchema[], tableId: string, projectId: string, fields?: Field[] }): Promise<PopulatedRecord[]> {
+    if (records.length === 0) {
+        return []
+    }
+    const fields = prefetchedFields ?? await fieldService.getAll({
+        tableId,
+        projectId,
+    })
+    return formatRecords(records, fields)
+}
+
+function formatRecords(records: RecordSchema[], fields: Field[]): PopulatedRecord[] {
+    const fieldsNamesMap: Record<string, string> = fields.reduce((acc, field) => {
+        acc[field.id] = field.name
+        return acc
+    }, {} as Record<string, string>)
+    return records.map((record) => {
+        const cells = record.cells.reduce<PopulatedRecord['cells']>((acc, cell) => {
+            acc[cell.fieldId] = {
+                fieldName: fieldsNamesMap[cell.fieldId],
+                value: cell.value,
+                updated: cell.updated,
+                created: cell.created,
+            }
+            return acc
+        }, {})
+        for (const field of fields) {
+            if (!(field.id in cells)) {
+                cells[field.id] = {
+                    fieldName: field.name,
+                    value: null,
+                    updated: record.updated,
+                    created: record.created,
+                }
+            }
+        }
+        return {
+            ...record,
+            cells,
+        }
+    })
+}
+
+function doesCellValueMatchFilter({ cell, filter, fieldType }: DoesCellValueMatchFilterParams): boolean {
+    const compareOrdered = isDateFieldType(fieldType) ? dateFilterValidator : numberFilterValidator
+    switch (filter.operator) {
+        case FilterOperator.EXISTS: {
+            return cell.value !== null && cell.value !== ''
+        }
+        case FilterOperator.NOT_EXISTS: {
+            return cell.value === null || cell.value === ''
+        }
+        case FilterOperator.EQ: {
+            return cell.value === filter.value
+        }
+        case FilterOperator.NEQ: {
+            return cell.value !== filter.value
+        }
+        case FilterOperator.GT: {
+            return compareOrdered({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue > filterValue })
+        }
+        case FilterOperator.GTE: {
+            return compareOrdered({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue >= filterValue })
+        }
+        case FilterOperator.LT: {
+            return compareOrdered({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue < filterValue })
+        }
+        case FilterOperator.LTE: {
+            return compareOrdered({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue <= filterValue })
+        }
+        case FilterOperator.CO: {
+            if (typeof cell.value === 'string') {
+                return cell.value.toLowerCase().includes(filter.value.toLowerCase())
+            }
+            return false
+        }
+    }
+}
+
+const numberFilterValidator = ({ cellValue, filterValue, cb }: OrderedFilterValidatorParams) => {
+    if (typeof cellValue === 'string' || typeof cellValue === 'number') {
+        const cv = parseFloat(String(cellValue))
+        const fv = parseFloat(filterValue)
+        if (isNaN(cv) || isNaN(fv)) {
+            return false
+        }
+        return cb({ cellValue: cv, filterValue: fv })
+    }
+    return false
+}
+
+const dateFilterValidator = ({ cellValue, filterValue, cb }: OrderedFilterValidatorParams) => {
+    if (typeof cellValue !== 'string') {
+        return false
+    }
+    const cv = Date.parse(cellValue)
+    const fv = Date.parse(filterValue)
+    if (isNaN(cv) || isNaN(fv)) {
+        return false
+    }
+    return cb({ cellValue: cv, filterValue: fv })
+}
+
+const isDateFieldType = (fieldType: FieldType | undefined): boolean => fieldType === FieldType.DATE || fieldType === FieldType.DATETIME
+
 type CreateParams = {
     request: CreateRecordsRequest
     projectId: string
     logger: FastifyBaseLogger
+    fields?: Field[]
 }
 
 type ListParams = {
@@ -362,6 +507,7 @@ type ListParams = {
     cursorRequest: Cursor | null
     limit: number
     filters: Filter[] | null
+    fields?: Field[]
 }
 
 type GetByIdParams = {
@@ -378,6 +524,12 @@ type UpdateParams = {
 type DeleteParams = {
     ids: string[]
     projectId: string
+    tableId: string
+}
+
+type DeleteRecordsResult = {
+    deletedCount: number
+    records: PopulatedRecord[]
 }
 
 type DeleteAllParams = {
@@ -385,14 +537,6 @@ type DeleteAllParams = {
     projectId: string
 }
 
-type TriggerWebhooksParams = {
-    projectId: string
-    tableId: string
-    eventType: TableWebhookEventType
-    data: Record<string, unknown>
-    logger: FastifyBaseLogger
-    authorization: string
-}
 type CountParams = {
     projectId: string
     tableId: string
@@ -413,124 +557,14 @@ type CellInsertion = {
     value: string
 }
 
-function prepareRecordInsertions(
-    records: Array<Array<{ fieldId: string, value: string }>>,
-    tableId: string,
-    projectId: string,
-    baseDate: Date,
-): RecordInsertion[] {
-    return records.map((_, index) => {
-        const created = new Date(baseDate.getTime() + index).toISOString()
-        return {
-            tableId,
-            projectId,
-            created,
-            id: apId(),
-        }
-    })
+type DoesCellValueMatchFilterParams = {
+    cell: Pick<Cell, 'value'>
+    filter: Filter
+    fieldType: FieldType | undefined
 }
 
-function prepareCellInsertions(
-    records: Array<Array<{ fieldId: string, value: string }>>,
-    recordInsertions: RecordInsertion[],
-    projectId: string,
-): CellInsertion[] {
-    return records.flatMap((recordData, index) =>
-        recordData.map((cellData) => {
-            return {
-                recordId: recordInsertions[index].id,
-                fieldId: cellData.fieldId,
-                projectId,
-                value: cellData.value,
-                id: apId(),
-            }
-        }),
-    )
+type OrderedFilterValidatorParams = {
+    cellValue: unknown
+    filterValue: string
+    cb: ({ cellValue, filterValue }: { cellValue: number, filterValue: number }) => boolean
 }
-
-async function formatRecordsAndFetchField({ records, tableId, projectId }: { records: RecordSchema[], tableId: string, projectId: string }): Promise<PopulatedRecord[]> {
-    const fields = await fieldService.getAll({
-        tableId,
-        projectId,
-    })
-    return formatRecords(records, fields)
-}
-
-function formatRecords(records: RecordSchema[], fields: Field[]): PopulatedRecord[] {
-    const fieldsNamesMap: Record<string, string> = fields.reduce((acc, field) => {
-        acc[field.id] = field.name
-        return acc
-    }, {} as Record<string, string>)
-    return records.map((record) => {
-        return {
-            ...record,
-            cells: record.cells.reduce<PopulatedRecord['cells']>((acc, cell) => {
-                acc[cell.fieldId] = {
-                    fieldName: fieldsNamesMap[cell.fieldId],
-                    value: cell.value,
-                    updated: cell.updated,
-                    created: cell.created,
-                }
-                return acc
-            }, {}),
-        }
-    })
-}
-
-function doesCellValueMatchFilters(cell: Cell, filters: Filter[]): boolean {
-    if (filters.length === 0) {
-        return true
-    }
-    return filters.every((filter) => {
-        if (filter.fieldId !== cell.fieldId) {
-            return true
-        }
-        switch (filter.operator) {
-            case FilterOperator.EXISTS: {
-                return cell.value !== null && cell.value !== ''
-            }
-            case FilterOperator.NOT_EXISTS: {
-                return cell.value === null || cell.value === ''
-            }
-            case FilterOperator.EQ: {
-                return cell.value === filter.value
-            }
-            case FilterOperator.NEQ: {
-                return cell.value !== filter.value
-            }
-            case FilterOperator.GT: {
-                return numberFilterValidator({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue > filterValue })
-            }
-            case FilterOperator.GTE: {
-                return numberFilterValidator({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue >= filterValue })
-            }
-            case FilterOperator.LT: {
-                return numberFilterValidator({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue < filterValue })
-            }
-            case FilterOperator.LTE: {
-                return numberFilterValidator({ cellValue: cell.value, filterValue: filter.value, cb: ({ cellValue, filterValue }) => cellValue <= filterValue })
-            }
-            case FilterOperator.CO: {
-                if (typeof cell.value === 'string') {
-                    return cell.value.toLowerCase().includes(filter.value.toLowerCase())
-                }
-                return false
-            }
-        }
-    })
-
-}
-
-const numberFilterValidator = ({ cellValue, filterValue, cb }: { cellValue: unknown, filterValue: string, cb: ({ cellValue, filterValue }: { cellValue: number, filterValue: number }) => boolean }) => {
-    if (typeof cellValue === 'string' || typeof cellValue === 'number') {
-        const cv = parseFloat(cellValue as string)
-        const fv = parseFloat(filterValue)
-        if (isNaN(cv) || isNaN(fv)) {
-            return false
-        }
-        return cb({ cellValue: cv, filterValue: fv })
-    }
-    return false
-}
-
-

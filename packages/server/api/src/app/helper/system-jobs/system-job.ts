@@ -1,14 +1,20 @@
-import { apDayjs, apDayjsDuration } from '@activepieces/server-common'
-import { assertNotNullOrUndefined, isNil, spreadIfDefined, tryCatch } from '@activepieces/shared'
-import { Job, JobsOptions, Queue, Worker } from 'bullmq'
+import { isNil, tryCatch } from '@activepieces/core-utils'
+import { apDayjs, apDayjsDuration, createLogger, wideEvent } from '@activepieces/server-utils'
+import { DelayedError, Job, JobsOptions, JobState, Queue, Worker } from 'bullmq'
+import { Dayjs } from 'dayjs'
 import { FastifyBaseLogger } from 'fastify'
 import { redisConnections } from '../../database/redis-connections'
-import { JobSchedule, SystemJobData, SystemJobName, SystemJobSchedule } from './common'
+import { jobFailureLogger } from '../../workers/job-queue/job-failure-logger'
+import { exceptionHandler } from '../exception-handler'
+import { SystemJobData, SystemJobName, SystemJobSchedule, UpsertJobResult } from './common'
 import { systemJobHandlers } from './job-handlers'
 
 const FIFTEEN_MINUTES = apDayjsDuration(15, 'minute').asMilliseconds()
 const ONE_MONTH = apDayjsDuration(1, 'month').asSeconds()
 const SYSTEM_JOB_QUEUE = 'system-job-queue'
+const RE_QUEUE_DELAY_MS = apDayjsDuration(1, 'minute').asMilliseconds()
+const RE_QUEUE_MAX_AGE_MS = apDayjsDuration(15, 'minute').asMilliseconds()
+const INSTANT_BURST_THEN_EXPONENTIAL = 'instantBurstThenExponential'
 
 export let systemJobsQueue: Queue<SystemJobData, unknown, SystemJobName>
 let systemJobWorker: Worker<SystemJobData, unknown, SystemJobName>
@@ -31,55 +37,119 @@ export const systemJobsSchedule = (log: FastifyBaseLogger): SystemJobSchedule =>
         }
 
         systemJobsQueue = new Queue(SYSTEM_JOB_QUEUE, queueConfig)
+        await systemJobsQueue.waitUntilReady()
 
-        systemJobWorker = new Worker(
-            SYSTEM_JOB_QUEUE,
-            async (job) => {
-                log.debug({ jobName: job.name }, '[systemJob#worker] Executing job')
-
-                const jobHandler = systemJobHandlers.getJobHandler(job.name)
-                await jobHandler(job.data)
-            },
-            {
-                connection: await redisConnections.create(),
-                concurrency: 1,
-            },
-        )
-
-        await Promise.all([
-            systemJobsQueue.waitUntilReady(),
-            systemJobWorker.waitUntilReady(),
-        ])
-        const { error } = await tryCatch(async () => removeDeprecatedJobs())
+        const { error } = await tryCatch(async () => removeDeprecatedJobs(log))
         if (!isNil(error)) {
-            log.error({ err: error }, '[systemJob#init] Error removing deprecated jobs')
+            log.error({ error }, '[systemJob#init] Error removing deprecated jobs')
         }
     },
 
-    async upsertJob({ job, schedule, customConfig }): Promise<void> {
+    async startWorker(): Promise<void> {
+        systemJobWorker = new Worker(
+            SYSTEM_JOB_QUEUE,
+            async (job, token) => {
+                if (!systemJobHandlers.hasHandler(job.name)) {
+                    const createdAt = Number.isFinite(job.timestamp) ? job.timestamp : Date.now()
+                    const ageMs = Date.now() - createdAt
+                    if (ageMs > RE_QUEUE_MAX_AGE_MS) {
+                        throw new Error(`No handler for system job "${job.name}" after ${Math.round(ageMs / 1000)}s; likely a retired job name`)
+                    }
+                    log.info({ job: { id: job.id, type: job.name } }, '[systemJob#worker] No handler on this pod; re-queueing (rolling deploy with mixed versions)')
+                    await job.moveToDelayed(Date.now() + RE_QUEUE_DELAY_MS, token)
+                    throw new DelayedError()
+                }
+                log.debug({ jobName: job.name }, '[systemJob#worker] Executing job')
+                const jobLogger = createLogger({
+                    event: 'system-job.execute',
+                    job: { id: job.id, type: job.name },
+                })
+                return wideEvent.run({
+                    logger: jobLogger,
+                    fn: () => processSystemJob(job)
+                        .then(() => wideEvent.set({ outcome: 'success' }))
+                        .catch((error: unknown) => {
+                            wideEvent.error(error)
+                            wideEvent.set({ outcome: 'failed' })
+                            throw error
+                        })
+                        .finally(() => jobLogger.emit()),
+                })
+            },
+            {
+                connection: await redisConnections.create(),
+                concurrency: 5,
+                settings: {
+                    backoffStrategy: instantBurstThenExponentialBackoff,
+                },
+            },
+        )
+
+        systemJobWorker.on('failed', (job, err) => {
+            const attemptsUsed = job?.attemptsMade ?? 0
+            const maxAttempts = job?.opts?.attempts ?? 1
+            if (attemptsUsed >= maxAttempts) {
+                jobFailureLogger.logJobFailed({
+                    queueName: SYSTEM_JOB_QUEUE,
+                    jobId: job?.id,
+                    jobType: job?.name ?? 'unknown',
+                    error: err,
+                    log,
+                })
+                exceptionHandler.handle(err, log)
+            }
+        })
+
+        await systemJobWorker.waitUntilReady()
+    },
+
+    async upsertJob({ job, schedule, customConfig }): Promise<UpsertJobResult> {
         log.info({ jobName: job.name }, '[systemJob#upsertJob] Upserting job')
-        const existingJob = await getJobByNameAndJobId(job.name, job.jobId)
-
-        const patternChanged = !isNil(existingJob) && schedule.type === 'repeated' ? schedule.cron !== existingJob.opts.repeat?.pattern : false
-
-        if (patternChanged && !isNil(existingJob) && !isNil(existingJob.opts.repeat) && !isNil(existingJob.name)) {
-            log.info({ jobName: job.name }, '[systemJob#upsertJob] Pattern changed, removing job from queue')
-            await systemJobsQueue.removeRepeatable(existingJob.name as SystemJobName, existingJob.opts.repeat)
+        if (schedule.type === 'repeated') {
+            const schedulers = await systemJobsQueue.getJobSchedulers()
+            const legacySchedulers = schedulers.filter(scheduler => scheduler.name === job.name && (scheduler.id ?? scheduler.key) !== job.name)
+            for (const scheduler of legacySchedulers) {
+                log.info({ jobName: job.name, stalePattern: scheduler.pattern }, '[systemJob#upsertJob] Removing scheduler with a non-canonical key')
+                await systemJobsQueue.removeJobScheduler(scheduler.id ?? scheduler.key)
+            }
+            await systemJobsQueue.upsertJobScheduler(job.name, { pattern: schedule.cron, tz: 'UTC' }, { name: job.name, data: job.data, opts: customConfig })
+            return { status: 'scheduler-upserted' }
         }
+        const existingJob = await getJobByNameAndJobId(job.name, job.jobId)
         if (!isNil(existingJob) && await existingJob.isFailed()) {
             log.info({ jobName: job.name }, '[systemJob#upsertJob] Retrying failed job')
             await existingJob.retry()
+            return { status: 'retried' }
         }
-        if (isNil(existingJob) || patternChanged) {
+        if (isNil(existingJob)) {
             log.info({ jobName: job.name }, '[systemJob#upsertJob] Adding job to queue')
-            const jobOptions = configureJobOptions({ schedule, jobId: job.jobId, customConfig })
-            await systemJobsQueue.add(job.name, job.data, jobOptions)
-            return
+            await systemJobsQueue.add(job.name, job.data, configureJobOptions({ date: schedule.date, jobId: job.jobId, customConfig }))
+            return { status: 'added' }
         }
+        log.warn({ job: { id: job.jobId, type: job.name }, existingDelayMs: existingJob.opts.delay },
+            '[systemJob#upsertJob] A one-time job already exists under this id; kept its schedule')
+        return { status: 'kept' }
     },
 
     async getJob<T extends SystemJobName>(jobId: string) {
         return await systemJobsQueue.getJob(jobId) as Job<SystemJobData<T>> | undefined
+    },
+
+    async getJobState(jobId: string): Promise<JobState | 'unknown'> {
+        return systemJobsQueue.getJobState(jobId)
+    },
+
+    async removeJob({ jobId }): Promise<void> {
+        const { data: removed, error } = await tryCatch(async () => systemJobsQueue.remove(jobId))
+        if (!isNil(error)) {
+            log.warn({ job: { id: jobId }, error }, '[systemJob#removeJob] Could not remove job')
+            return
+        }
+        if (removed === 0) {
+            log.info({ job: { id: jobId } }, '[systemJob#removeJob] Job is running, left to finish')
+            return
+        }
+        log.debug({ job: { id: jobId } }, '[systemJob#removeJob] Job removed or already gone')
     },
 
     async close(): Promise<void> {
@@ -88,69 +158,91 @@ export const systemJobsSchedule = (log: FastifyBaseLogger): SystemJobSchedule =>
         }
 
         await Promise.all([
-            systemJobWorker.close(),
             systemJobsQueue.close(),
+            systemJobWorker?.close(),
         ])
     },
 })
 
-async function removeDeprecatedJobs(): Promise<void> {
+async function processSystemJob(job: Job<SystemJobData, unknown, SystemJobName>): Promise<void> {
+    const jobHandler = systemJobHandlers.getJobHandler(job.name)
+    await jobHandler(job.data)
+}
+
+function instantBurstThenExponentialBackoff(attemptsMade: number, type?: string): number {
+    if (type !== INSTANT_BURST_THEN_EXPONENTIAL) {
+        throw new Error(`Unknown system-job backoff type "${type ?? '<unset>'}"; register the strategy or use a built-in type`)
+    }
+    const INSTANT_BURST_SIZE = 5
+    const EXPONENTIAL_BASE_MS = apDayjsDuration(1, 'minute').asMilliseconds()
+    const EXPONENTIAL_CAP_MS = apDayjsDuration(1, 'hour').asMilliseconds()
+    if (attemptsMade <= INSTANT_BURST_SIZE) return 0
+    const exponentialStep = attemptsMade - INSTANT_BURST_SIZE
+    return Math.min(EXPONENTIAL_BASE_MS * 2 ** (exponentialStep - 1), EXPONENTIAL_CAP_MS)
+}
+
+async function removeDeprecatedJobs(log: FastifyBaseLogger): Promise<void> {
     const deprecatedJobs = [
         'trigger-data-cleaner',
         'logs-cleanup-trigger',
         'usage-report',
         'archive-old-issues',
         'platform-usage-report',
-        'hard-delete-project',
         'seven-days-in-trial',
         'issue-reminder',
+        'update-flow-status',
+        'expire-pending-sso-domains',
+        'console-usage-report',
+        'flow-run-tracking',
+        'chat-funnel-sync',
+        'trial-tracker',
+        'ai-credit-update-check',
+        'bundle-piece',
     ]
+    const knownJobNames = Object.values(SystemJobName) as string[]
+    const isDeprecated = (name: string): boolean => !knownJobNames.includes(name) && deprecatedJobs.some(d => name.startsWith(d))
+
     const allSystemJobs = await systemJobsQueue.getJobSchedulers()
-    const deprecatedJobsFromQueue = allSystemJobs.filter(f => !isNil(f) && !isNil(f.id) && !isNil(f.name) && (deprecatedJobs.includes(f.name) || deprecatedJobs.some(d => f.name.startsWith(d))))
-    for (const job of deprecatedJobsFromQueue) {
-        await systemJobsQueue.removeJobScheduler(job.id ?? job.key)
-    }
+    const deprecatedSchedulers = allSystemJobs.filter(f => !isNil(f.name) && isDeprecated(f.name))
+    const legacySchedulers = allSystemJobs.filter(f =>
+        knownJobNames.includes(f.name) && f.key.includes('::'),
+    )
+    const schedulerResults = await Promise.allSettled(
+        [...deprecatedSchedulers, ...legacySchedulers].map(job =>
+            systemJobsQueue.removeJobScheduler(job.id ?? job.key),
+        ),
+    )
+
     const oneTimeJobs = await systemJobsQueue.getJobs()
-    const oneTimeJobsFromQueue = oneTimeJobs.filter(f => !isNil(f) && !isNil(f.id) && !isNil(f.name) && (deprecatedJobs.includes(f.name) || deprecatedJobs.some(d => f.name.startsWith(d))))
-    for (const job of oneTimeJobsFromQueue) {
-        assertNotNullOrUndefined(job.id, 'Job id is required')
-        await job.remove()
+    const deprecatedOneTimeJobs = oneTimeJobs.filter(f => !isNil(f) && !isNil(f.id) && !isNil(f.name) && isDeprecated(f.name))
+    const oneTimeJobResults = await Promise.allSettled(
+        deprecatedOneTimeJobs.map(job => job.remove()),
+    )
+
+    for (const result of [...schedulerResults, ...oneTimeJobResults]) {
+        if (result.status === 'rejected') {
+            log.warn({ error: result.reason }, '[systemJob#removeDeprecatedJobs] Failed to remove a deprecated job')
+        }
     }
 }
 
-const configureJobOptions = ({ schedule, jobId, customConfig }: { schedule: JobSchedule, jobId?: string, customConfig?: JobsOptions }): JobsOptions => {
+const configureJobOptions = ({ date, jobId, customConfig }: { date: Dayjs, jobId: string, customConfig?: JobsOptions }): JobsOptions => {
     const config: JobsOptions = customConfig ?? {}
-
-    switch (schedule.type) {
-        case 'one-time': {
-            const now = apDayjs()
-            config.delay = schedule.date.diff(now, 'milliseconds')
-            break
-        }
-        case 'repeated': {
-            config.repeat = {
-                pattern: schedule.cron,
-                tz: 'UTC',
-            }
-            break
-        }
-    }
-
+    config.delay = date.diff(apDayjs(), 'milliseconds')
     return {
         ...config,
-        ...spreadIfDefined('jobId', jobId),
+        jobId,
     }
 }
 
-const getJobByNameAndJobId = async (name: string, jobId?: string): Promise<Job | undefined> => {
-    const allSystemJobs = await systemJobsQueue.getJobs()
-    return allSystemJobs.find(job => {
-        if (isNil(job)) {
-            return false
-        }
-        if (!isNil(jobId)) {
-            return job.name === name && job.id === jobId
-        }
-        return job.name === name
-    })
+const getJobByNameAndJobId = async (name: string, jobId: string): Promise<Job | undefined> => {
+    const job = await systemJobsQueue.getJob(jobId)
+    if (!isNil(job) && job.name === name) {
+        return job
+    }
+    return undefined
 }
+
+export const SystemJobBackoff = {
+    instantBurstThenExponential: INSTANT_BURST_THEN_EXPONENTIAL,
+} as const

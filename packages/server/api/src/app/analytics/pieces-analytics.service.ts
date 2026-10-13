@@ -1,4 +1,5 @@
-import { FlowActionType, FlowStatus, flowStructureUtil, FlowTriggerType, isNil, PieceAction, PieceTrigger } from '@activepieces/shared'
+import { isNil } from '@activepieces/core-utils'
+import { FlowActionType, FlowStatus, flowStructureUtil, FlowTriggerType, PieceAction, PieceTrigger } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { repoFactory } from     '../core/db/repo-factory'
 import { FlowEntity } from '../flows/flow/flow.entity'
@@ -74,6 +75,7 @@ export const piecesAnalyticsService = (log: FastifyBaseLogger) => ({
             job: {
                 name: SystemJobName.PIECES_ANALYTICS,
                 data: {},
+                jobId: SystemJobName.PIECES_ANALYTICS,
             },
             schedule: {
                 type: 'repeated',

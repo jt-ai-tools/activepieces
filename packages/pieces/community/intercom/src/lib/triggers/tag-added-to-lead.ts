@@ -2,18 +2,24 @@ import { createTrigger, TriggerStrategy } from '@activepieces/pieces-framework';
 import { intercomAuth } from '../auth';
 import { intercomClient } from '../common';
 import { tagIdProp } from '../common/props';
+import { contactTagTriggerOutputSchema } from '../output-schemas';
 
 export const tagAddedToLeadTrigger = createTrigger({
 	name: 'tag-added-to-lead',
+	classification: 'READ',
 	displayName: 'Tag Added to Lead',
 	description: 'Triggers when a tag is added to a lead.',
+	aiMetadata: {
+		description: 'Fires when a tag is applied to a lead contact in Intercom. An optional Tag input limits the trigger to a specific tag; if left empty it fires for any tag added to a lead. Outputs the affected lead contact and the tag that was added.',
+	},
 	props: {
 		tagId: tagIdProp('Tag', false),
 	},
 	auth: intercomAuth,
+	outputSchema: contactTagTriggerOutputSchema,
 	type: TriggerStrategy.APP_WEBHOOK,
 	async onEnable(context) {
-		const client = intercomClient(context.auth);
+		const client = await intercomClient(context.auth);
 		const response = await client.admins.identify();
 
 		if (!response.app?.id_code) {
@@ -25,11 +31,11 @@ export const tagAddedToLeadTrigger = createTrigger({
 			identifierValue: response['app']['id_code'],
 		});
 	},
-	async onDisable(context) {
-		// implement webhook deletion logic
+	async onDisable() {
+		return;
 	},
 	async test(context) {
-		const client = intercomClient(context.auth);
+		const client = await intercomClient(context.auth);
 
 		if (context.propsValue.tagId) {
 			const response = await client.contacts.search({

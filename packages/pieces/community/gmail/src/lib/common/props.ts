@@ -1,35 +1,35 @@
-import { Property, OAuth2PropertyValue } from '@activepieces/pieces-framework';
+import { Property } from '@activepieces/pieces-framework';
 import { GmailRequests } from './data';
 import { GmailLabel } from './models';
-import { gmailAuth } from '../auth';
-import { google } from 'googleapis';
-import { OAuth2Client } from 'googleapis-common';
+import { gmailAuth, createGoogleClient, GmailAuthValue } from '../auth';
+import { gmail as googleGmail } from '@googleapis/gmail';
 
 export const GmailProps = {
   from: Property.ShortText({
-    displayName: 'Email sender',
-    description:
-      'Optional filteration, leave empty to filter based on the email sender',
+    displayName: 'From',
+    description: 'Only emails sent from this address.',
+    placeholder: 'sender@example.com',
     required: false,
     defaultValue: '',
   }),
   to: Property.ShortText({
-    displayName: 'Email recipient',
-    description:
-      'Optional filteration, leave empty to filter based on the email recipient',
+    displayName: 'To',
+    description: 'Only emails sent to this address.',
+    placeholder: 'you@example.com',
     required: false,
     defaultValue: '',
   }),
   subject: Property.ShortText({
-    displayName: 'Email subject',
-    description: 'The email subject',
+    displayName: 'Subject',
+    description: 'Only emails whose subject contains this text.',
+    placeholder: 'Invoice',
     required: false,
     defaultValue: '',
   }),
   category: Property.StaticDropdown({
     displayName: 'Category',
     description:
-      'Optional filteration, leave unselected to filter based on the email category',
+      'Only emails in this inbox tab, such as Primary or Promotions.',
     required: false,
     options: {
       disabled: false,
@@ -44,34 +44,48 @@ export const GmailProps = {
       ],
     },
   }),
-  label: Property.Dropdown<GmailLabel, false, typeof gmailAuth>({
-    auth: gmailAuth,
-    displayName: 'Label',
-    description:
-      'Optional filteration, leave unselected to filter based on the email label',
-    required: false,
-    defaultValue: '',
-    refreshers: [],
-    options: async ({ auth }) => {
-      if (!auth) {
-        return {
-          disabled: true,
-          options: [],
-          placeholder: 'please authenticate first',
-        };
-      }
+  label: <R extends boolean = false>(overrides: {
+    displayName?: string;
+    description?: string;
+    required: R;
+    icon?: string;
+  }) =>
+    Property.Dropdown<GmailLabel, R, typeof gmailAuth>({
+      auth: gmailAuth,
+      displayName: overrides.displayName ?? 'Label',
+      description: overrides.description ?? 'Only emails carrying this label.',
+      required: overrides.required,
+      icon: overrides.icon,
+      defaultValue: '',
+      refreshers: [],
+      options: async ({ auth }) => {
+        if (!auth) {
+          return {
+            disabled: true,
+            options: [],
+            placeholder: 'Please connect your Gmail account first',
+          };
+        }
 
-      const response = await GmailRequests.getLabels(auth);
+        try {
+          const response = await GmailRequests.getLabels(auth);
 
-      return {
-        disabled: false,
-        options: response.body.labels.map((label) => ({
-          label: label.name,
-          value: label,
-        })),
-      };
-    },
-  }),
+          return {
+            disabled: false,
+            options: response.body.labels.map((label) => ({
+              label: label.name,
+              value: label,
+            })),
+          };
+        } catch (error) {
+          return {
+            disabled: true,
+            options: [],
+            placeholder: 'Could not load labels. Check your connection.',
+          };
+        }
+      },
+    }),
   unread: (required = false) =>
     Property.Checkbox({
       displayName: 'Is unread?',
@@ -82,7 +96,7 @@ export const GmailProps = {
   message: Property.Dropdown({
     displayName: 'Message',
     description:
-      'Select a message from the list or enter a message ID manually.',
+      'Pick a recent message, or map its ID from a trigger or Find Email.',
     required: true,
     auth: gmailAuth,
     refreshers: [],
@@ -91,19 +105,18 @@ export const GmailProps = {
         return {
           disabled: true,
           options: [],
-          placeholder: 'Please authenticate first',
+          placeholder: 'Please connect your Gmail account first',
         };
       }
 
       try {
-        const authValue = auth as OAuth2PropertyValue;
-        const authClient = new OAuth2Client();
-        authClient.setCredentials(authValue);
+        const authValue = auth as GmailAuthValue;
+        const authClient = await createGoogleClient(authValue);
 
-        const gmail = google.gmail({ version: 'v1', auth: authClient });
+        const gmail = googleGmail({ version: 'v1', auth: authClient });
 
         const response = await GmailRequests.getRecentMessages(
-          auth as OAuth2PropertyValue,
+          authValue,
           20 // Get last 20 messages
         );
 
@@ -170,7 +183,7 @@ export const GmailProps = {
   }),
   thread: Property.Dropdown({
     displayName: 'Thread',
-    description: 'Select a thread from the list or enter a thread ID manually',
+    description: 'Pick a recent thread, or paste a thread ID.',
     required: true,
     refreshers: [],
     auth: gmailAuth,
@@ -179,19 +192,18 @@ export const GmailProps = {
         return {
           disabled: true,
           options: [],
-          placeholder: 'Please authenticate first',
+          placeholder: 'Please connect your Gmail account first',
         };
       }
 
       try {
-        const authValue = auth as OAuth2PropertyValue;
-        const authClient = new OAuth2Client();
-        authClient.setCredentials(authValue);
+        const authValue = auth as GmailAuthValue;
+        const authClient = await createGoogleClient(authValue);
 
-        const gmail = google.gmail({ version: 'v1', auth: authClient });
+        const gmail = googleGmail({ version: 'v1', auth: authClient });
 
         const response = await GmailRequests.getRecentThreads(
-          auth as OAuth2PropertyValue,
+          authValue,
           15 // Get last 15 threads
         );
 
@@ -210,7 +222,7 @@ export const GmailProps = {
             .slice(0, 10)
             .map(async (thread: { id: string; snippet?: string }) => {
               try {
-                const details = await await gmail.users.threads.get({
+                const details = await gmail.users.threads.get({
                   metadataHeaders: ['Subject'],
                   format: 'metadata',
                   id: thread.id,

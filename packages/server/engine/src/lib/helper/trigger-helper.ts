@@ -1,12 +1,12 @@
-import { inspect } from 'node:util'
-import { PiecePropertyMap, StaticPropsValue, TriggerStrategy } from '@activepieces/pieces-framework'
-import { assertEqual, AUTHENTICATION_PROPERTY_NAME, EngineGenericError, EventPayload, ExecuteTriggerOperation, ExecuteTriggerResponse, FlowTrigger, InvalidCronExpressionError, isNil, PieceTrigger, PropertySettings, ScheduleOptions, TriggerHookType, TriggerSourceScheduleType } from '@activepieces/shared'
+import { assertEqual, isNil } from '@activepieces/core-utils'
+import { PiecePropertyMap, SetScheduleRequest, StaticPropsValue, TriggerStrategy } from '@activepieces/pieces-framework'
+import { AUTHENTICATION_PROPERTY_NAME, EngineGenericError, EventPayload, ExecuteTriggerResponse, FlowTrigger, InvalidCronExpressionError, InvalidScheduleIntervalError, PieceTrigger, PropertySettings, ScheduleOptions, TriggerHookType, TriggerSourceScheduleType } from '@activepieces/shared'
 import { isValidCron } from 'cron-validator'
-import { EngineConstants } from '../handler/context/engine-constants'
+import { EngineConstants, ResolvedExecuteTriggerOperation } from '../handler/context/engine-constants'
 import { FlowExecutorContext } from '../handler/context/flow-execution-context'
-import { createFlowsContext } from '../services/flows.service'
-import { createFilesService } from '../services/step-files.service'
-import { createContextStore } from '../services/storage.service'
+import { createFileUploader } from '../piece-context/file-uploader'
+import { createFlowsContext } from '../piece-context/flows'
+import { createContextStore } from '../piece-context/store'
 import { utils } from '../utils'
 import { propsProcessor } from '../variables/props-processor'
 import { createPropsResolver } from '../variables/props-resolver'
@@ -68,6 +68,7 @@ export const triggerHelper = {
                 engineToken: constants.engineToken,
                 target: 'triggers',
                 contextVersion: piece.getContextInfo?.().version,
+                pieceName,
             }),
         }
         await pieceTrigger.onStart(context)
@@ -111,7 +112,18 @@ export const triggerHelper = {
                     appListeners.push({ events, identifierValue, identifierKey })
                 },
             },
-            setSchedule(request: ScheduleOptions) {
+            setSchedule(request: SetScheduleRequest) {
+                if ('intervalMs' in request) {
+                    const parsed = ScheduleOptions.safeParse({
+                        type: TriggerSourceScheduleType.INTERVAL,
+                        intervalMs: request.intervalMs,
+                    })
+                    if (!parsed.success) {
+                        throw new InvalidScheduleIntervalError(request.intervalMs)
+                    }
+                    scheduleOptions = parsed.data
+                    return
+                }
                 if (!isValidCron(request.cronExpression)) {
                     throw new InvalidCronExpressionError(request.cronExpression)
                 }
@@ -128,6 +140,7 @@ export const triggerHelper = {
                 flowVersionId: params.flowVersion.id,
             }),
             webhookUrl: params.webhookUrl,
+            isRepublish: params.isRepublish,
             auth: processedInput[AUTHENTICATION_PROPERTY_NAME],
             propsValue: processedInput,
             payload: params.triggerPayload ?? {},
@@ -146,6 +159,7 @@ export const triggerHelper = {
                 engineToken: constants.engineToken,
                 target: 'triggers',
                 contextVersion: piece.getContextInfo?.().version,
+                pieceName,
             }),
         }
         switch (params.hookType) {
@@ -163,46 +177,31 @@ export const triggerHelper = {
             case TriggerHookType.RENEW: {
                 assertEqual(pieceTrigger.type, TriggerStrategy.WEBHOOK, 'triggerType', 'WEBHOOK')
                 await pieceTrigger.onRenew(context)
-                return {
-                    success: true,
-                }
+                return {}
             }
             case TriggerHookType.HANDSHAKE: {
                 const { data: handshakeResponse, error: handshakeResponseError } = await utils.tryCatchAndThrowOnEngineError(() => pieceTrigger.onHandshake(context))
 
                 if (handshakeResponseError) {
-                    console.error(handshakeResponseError)
-                    return {
-                        success: false,
-                        message: `Error while testing trigger: ${inspect(handshakeResponseError)}`,
-                    }
+                    throw handshakeResponseError
                 }
                 return {
-                    success: true,
                     response: handshakeResponse,
                 }
             }
             case TriggerHookType.TEST: {
                 const { data: testResponse, error: testResponseError } = await utils.tryCatchAndThrowOnEngineError(() => pieceTrigger.test({
                     ...context,
-                    files: createFilesService({
+                    files: createFileUploader({
                         apiUrl: constants.internalApiUrl,
                         engineToken: params.engineToken!,
-                        stepName: triggerName,
-                        flowId: params.flowVersion.flowId,
                     }),
                 }))
 
                 if (testResponseError) {
-                    console.error(testResponseError)
-                    return {
-                        success: false,
-                        message: `Error while testing trigger: ${inspect(testResponseError)}`,
-                        output: [],
-                    }
+                    throw testResponseError
                 }
                 return {
-                    success: true,
                     output: testResponse,
                 }
             }
@@ -225,43 +224,28 @@ export const triggerHelper = {
                     })
 
                     if (verifiedError) {
-                        return {
-                            success: false,
-                            message: `Error while verifying webhook: ${inspect(verifiedError)}`,
-                            output: [],
-                        }
+                        throw verifiedError
                     }
-                    if (isNil(verified)) {
-                        return {
-                            success: false,
-                            message: 'Webhook is not verified',
-                            output: [],
-                        }
+                    if (verified !== true) {
+                        throw new Error('Webhook is not verified')
                     }
                 }
 
                 const { data: triggerRunResult, error: triggerRunError } = await utils.tryCatchAndThrowOnEngineError(async () => {
                     const items = await pieceTrigger.run({
                         ...context,
-                        files: createFilesService({
+                        files: createFileUploader({
                             apiUrl: constants.internalApiUrl,
                             engineToken: params.engineToken!,
-                            flowId: params.flowVersion.flowId,
-                            stepName: triggerName,
                         }),
                     })
                     return {
-                        success: true,
                         output: items,
                     }
                 })
 
                 if (triggerRunError) {
-                    return {
-                        success: false,
-                        message: triggerRunError.message,
-                        output: [],
-                    }
+                    throw triggerRunError
                 }
                 return triggerRunResult
             }
@@ -270,7 +254,7 @@ export const triggerHelper = {
 }
 
 type ExecuteTriggerParams = {
-    params: ExecuteTriggerOperation<TriggerHookType>
+    params: ResolvedExecuteTriggerOperation<TriggerHookType>
     constants: EngineConstants
 }
 
@@ -288,6 +272,7 @@ async function prepareTriggerExecution({ pieceName, pieceVersion, triggerName, i
         engineToken,
         contextVersion: piece.getContextInfo?.().version,
         stepNames,
+        pieceName,
     }).resolve<StaticPropsValue<PiecePropertyMap>>({
         unresolvedInput: input,
         executionState: FlowExecutorContext.empty(),

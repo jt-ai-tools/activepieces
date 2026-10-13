@@ -1,11 +1,13 @@
 import { microsoftSharePointAuth } from '../auth';
 import {
   createTrigger,
+  OAuth2PropertyValue,
   TriggerStrategy,
   Property,
   DropdownOption,
   PiecePropValueSchema,
 } from '@activepieces/pieces-framework';
+import { getGraphBaseUrl } from '../common/microsoft-cloud';
 import { microsoftSharePointCommon } from '../common';
 import { Client, PageCollection } from '@microsoft/microsoft-graph-client';
 import { DriveItem } from '@microsoft/microsoft-graph-types';
@@ -15,8 +17,12 @@ const clientState = 'activepieces_sharepoint_subfolder_trigger';
 export const newFileInSubfoldersTrigger = createTrigger({
   auth: microsoftSharePointAuth,
   name: 'new_file_in_subfolders',
+  classification: 'READ',
   displayName: 'New File in Subfolders',
   description: 'Fires when a new file is added anywhere in the first-level subfolders of a folder. Note: This trigger will not monitor subfolders created after the flow is activated.',
+  aiMetadata: {
+    description: 'Fires when a new file is added to any of the immediate (first-level) subfolders of a chosen parent folder in a SharePoint drive. Each event represents one newly added file. Only subfolders that existed when the flow was activated are monitored; subfolders created later are not watched.',
+  },
   props: {
     siteId: microsoftSharePointCommon.siteId,
     driveId: microsoftSharePointCommon.driveId,
@@ -37,10 +43,12 @@ export const newFileInSubfoldersTrigger = createTrigger({
         const authValue = auth as PiecePropValueSchema<
           typeof microsoftSharePointAuth
         >;
+        const cloud = (authValue as OAuth2PropertyValue).props?.['cloud'] as string | undefined;
         const client = Client.initWithMiddleware({
           authProvider: {
             getAccessToken: () => Promise.resolve(authValue.access_token),
           },
+          baseUrl: getGraphBaseUrl(cloud),
         });
         const options: DropdownOption<string>[] = [
           { label: 'Root Folder', value: 'root' },
@@ -80,10 +88,12 @@ export const newFileInSubfoldersTrigger = createTrigger({
   async onEnable(context) {
     const { siteId, driveId, parentFolderId } = context.propsValue;
     
+    const cloud = context.auth.props?.['cloud'] as string | undefined;
     const client = Client.initWithMiddleware({
       authProvider: {
         getAccessToken: () => Promise.resolve(context.auth.access_token),
       },
+      baseUrl: getGraphBaseUrl(cloud),
     });
 
     try {
@@ -121,10 +131,12 @@ export const newFileInSubfoldersTrigger = createTrigger({
   async onDisable(context) {
     const subscriptionIds = await context.store.get<string[]>('subscriptionIds');
     if (subscriptionIds && subscriptionIds.length > 0) {
+        const cloud = context.auth.props?.['cloud'] as string | undefined;
         const client = Client.initWithMiddleware({
             authProvider: {
               getAccessToken: () => Promise.resolve(context.auth.access_token),
             },
+            baseUrl: getGraphBaseUrl(cloud),
         });
         const deletionPromises = subscriptionIds.map(id =>
             client.api(`/subscriptions/${id}`).delete().catch(err => console.error(`Failed to delete subscription ${id}:`, err))
@@ -147,12 +159,14 @@ export const newFileInSubfoldersTrigger = createTrigger({
       return [];
     }
 
+    const cloud = context.auth.props?.['cloud'] as string | undefined;
     const client = Client.initWithMiddleware({
         authProvider: {
           getAccessToken: () => Promise.resolve(context.auth.access_token),
         },
+        baseUrl: getGraphBaseUrl(cloud),
     });
-      
+
     const newFilePayloads = [];
     for (const notification of validNotifications) {
         try {

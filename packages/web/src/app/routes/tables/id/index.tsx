@@ -1,4 +1,5 @@
-import { ApFlagId, Permission } from '@activepieces/shared';
+import { Permission } from '@activepieces/core-utils';
+import { ApFlagId } from '@activepieces/shared';
 import { nanoid } from 'nanoid';
 import { useRef, useEffect } from 'react';
 import DataGrid, { DataGridHandle } from 'react-data-grid';
@@ -10,6 +11,7 @@ import {
   ApTableFooter,
   ApTableHeader,
   useTableState,
+  useTableLock,
   useTableColumns,
   mapRecordsToRows,
   Row,
@@ -34,6 +36,8 @@ const ApTableEditorPage = () => {
     createRecord,
     fields,
     records,
+    setLockedByOtherUser,
+    reorderField,
   ] = useTableState((state) => [
     state.selectedRecords,
     state.setSelectedRecords,
@@ -42,18 +46,29 @@ const ApTableEditorPage = () => {
     state.createRecord,
     state.fields,
     state.records,
+    state.setLockedByOtherUser,
+    state.reorderField,
   ]);
 
+  // the lock lives in the table state provider, above the take-over refresh
+  // remount boundary, so refreshing never releases the just-acquired lock
+  const { lockedBy, takeOver } = useTableLock();
+
+  useEffect(() => {
+    setLockedByOtherUser(!!lockedBy);
+  }, [lockedBy, setLockedByOtherUser]);
+
   const gridRef = useRef<DataGridHandle>(null);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const { data: maxRecords } = flagsHooks.useFlag<number>(
     ApFlagId.MAX_RECORDS_PER_TABLE,
   );
   const userHasTableWritePermission = useAuthorization().checkAccess(
     Permission.WRITE_TABLE,
   );
+  const canEdit = userHasTableWritePermission && !lockedBy;
   const isAllowedToCreateRecord =
-    userHasTableWritePermission && maxRecords && records.length < maxRecords;
+    canEdit && maxRecords && records.length < maxRecords;
 
   const createEmptyRecord = () => {
     createRecord({
@@ -92,6 +107,15 @@ const ApTableEditorPage = () => {
   const columns = useTableColumns(createEmptyRecord);
   const rows = mapRecordsToRows(records, fields);
 
+  const handleColumnsReorder = (sourceKey: string, targetKey: string) => {
+    const sourceIndex = fields.findIndex((field) => field.uuid === sourceKey);
+    const targetIndex = fields.findIndex((field) => field.uuid === targetKey);
+    if (sourceIndex === -1 || targetIndex === -1) {
+      return;
+    }
+    reorderField(sourceIndex, targetIndex);
+  };
+
   const handleBack = () => {
     navigate(`/projects/${projectId}/automations`);
   };
@@ -99,12 +123,16 @@ const ApTableEditorPage = () => {
   return (
     <div className="w-full flex flex-col justify-start items-start h-full">
       <div className="flex items-center justify-between w-full pr-4 border-b">
-        <ApTableHeader onBack={handleBack} />
+        <ApTableHeader
+          onBack={handleBack}
+          lockedBy={lockedBy}
+          takeOver={takeOver}
+        />
       </div>
 
-      <div className="flex w-full flex-col flex-1 h-full">
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1">
+      <div className="flex w-full flex-col flex-1 min-h-0">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 min-h-0">
             <DataGrid
               ref={gridRef}
               columns={columns}
@@ -112,13 +140,12 @@ const ApTableEditorPage = () => {
               rowKeyGetter={(row: Row) => row.id}
               selectedRows={selectedRecords}
               onSelectedRowsChange={setSelectedRecords}
+              onColumnsReorder={handleColumnsReorder}
               className={cn(
-                'scroll-smooth w-full !h-full bg-muted/30 !border-0',
-                theme === 'dark' ? 'rdg-dark' : 'rdg-light',
+                'scroll-smooth w-full !h-full bg-gray-2 !border-0',
+                resolvedTheme === 'dark' ? 'rdg-dark' : 'rdg-light',
               )}
-              bottomSummaryRows={
-                userHasTableWritePermission ? [{ id: 'new-record' }] : []
-              }
+              bottomSummaryRows={canEdit ? [{ id: 'new-record' }] : []}
               rowHeight={ROW_HEIGHT_MAP[RowHeight.DEFAULT]}
               headerRowHeight={ROW_HEIGHT_MAP[RowHeight.DEFAULT]}
               summaryRowHeight={

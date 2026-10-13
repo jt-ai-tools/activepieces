@@ -1,11 +1,8 @@
-import { AuthFormTemplate } from '@/features/authentication';
+import { Navigate, useLocation } from 'react-router-dom';
 
 const SignUpPage: React.FC = () => {
-  return (
-    <div className="mx-auto flex h-screen flex-col items-center justify-center gap-2">
-      <AuthFormTemplate form={'signup'} />
-    </div>
-  );
+  const location = useLocation();
+  return <Navigate to={`/sign-in${location.search}`} replace />;
 };
 
 SignUpPage.displayName = 'SignUpPage';

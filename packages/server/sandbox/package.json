@@ -1,6 +1,6 @@
 {
   "name": "@activepieces/sandbox",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "typings": "./dist/src/index.d.ts",
@@ -10,16 +10,22 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@activepieces/server-common": "workspace:*",
+    "@activepieces/core-utils": "workspace:*",
+    "@activepieces/server-utils": "workspace:*",
     "@activepieces/shared": "workspace:*",
-    "tslib": "2.6.2",
-    "fastify": "5.7.3",
-    "socket.io": "4.8.1",
+    "esbuild": "0.25.0",
+    "nanoid": "3.3.18",
+    "socket.io": "4.7.5",
     "tree-kill": "1.2.2",
-    "nanoid": "3.3.8"
+    "tslib": "2.6.2",
+    "write-file-atomic": "5.0.1"
   },
   "devDependencies": {
-    "vitest": "3.0.8",
-    "socket.io-client": "4.8.1"
+    "deno": "2.9.3",
+    "sucrase": "3.35.1",
+    "@types/write-file-atomic": "4.0.3",
+    "@types/node": "24.11.0",
+    "socket.io-client": "4.8.1",
+    "vitest": "3.2.6"
   }
 }

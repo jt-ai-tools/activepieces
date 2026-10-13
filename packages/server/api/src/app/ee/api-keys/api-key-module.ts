@@ -1,11 +1,9 @@
-import { securityAccess } from '@activepieces/server-common'
-import {
-    ApId,
-    ApiKeyResponseWithoutValue,
-    ApiKeyResponseWithValue, assertNotNullOrUndefined, CreateApiKeyRequest, PrincipalType, SeekPage } from '@activepieces/shared'
+import { ApId, assertNotNullOrUndefined, SeekPage } from '@activepieces/core-utils'
+import { ApiKeyResponseWithoutValue, ApiKeyResponseWithValue, CreateApiKeyRequest, PrincipalType } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { StatusCodes } from 'http-status-codes'
 import { z } from 'zod'
+import { securityAccess } from '../../core/security/authorization/fastify-security'
 import { platformMustHaveFeatureEnabled } from '../authentication/ee-authorization'
 import { apiKeyService } from './api-key-service'
 

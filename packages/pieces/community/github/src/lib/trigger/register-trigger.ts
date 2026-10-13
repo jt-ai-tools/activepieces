@@ -1,4 +1,9 @@
-import { createTrigger, TriggerStrategy } from '@activepieces/pieces-framework';
+import {
+  createTrigger,
+  MarkdownVariant,
+  Property,
+  TriggerStrategy,
+} from '@activepieces/pieces-framework';
 import { githubApiCall, githubCommon } from '../common';
 import { githubAuth } from '../auth';
 import { HttpMethod } from '@activepieces/pieces-common';
@@ -7,19 +12,30 @@ export const githubRegisterTrigger = ({
   name,
   displayName,
   description,
+  activityNote,
   sampleData,
 }: {
   name: string;
   displayName: string;
   description: string;
+  activityNote: string;
   sampleData: object;
 }) =>
   createTrigger({
     auth: githubAuth,
     name: `trigger_${name}`,
+    classification: 'READ',
     displayName,
     description,
+    aiMetadata: {
+      description:
+        'Fires on activity for a configured GitHub event type on a chosen repository (one of: pull request, star, issue, push, discussion, or discussion comment, depending on which trigger variant is used). Represents a repository webhook event delivering the raw GitHub event payload.',
+    },
     props: {
+      activityNote: Property.MarkDown({
+        value: activityNote,
+        variant: MarkdownVariant.INFO,
+      }),
       repository: githubCommon.repositoryDropdown,
     },
     sampleData,
@@ -28,7 +44,7 @@ export const githubRegisterTrigger = ({
       const { repo, owner } = context.propsValue.repository!;
 
       const response = await githubApiCall<{ id: number }>({
-        accessToken: context.auth.access_token,
+        auth: context.auth,
         method: HttpMethod.POST,
         resourceUri: `/repos/${owner}/${repo}/hooks`,
         body: {
@@ -55,15 +71,13 @@ export const githubRegisterTrigger = ({
       );
       if (response !== null && response !== undefined) {
         await githubApiCall({
-          accessToken: context.auth.access_token,
+          auth: context.auth,
           method: HttpMethod.DELETE,
           resourceUri: `/repos/${response.owner}/${response.repo}/hooks/${response.webhookId}`,
         });
       }
     },
     async run(context) {
-      console.debug('payload received', context.payload.body);
-
       if (isVerificationCall(context.payload.body as Record<string, unknown>)) {
         return [];
       }

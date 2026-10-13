@@ -1,8 +1,5 @@
-import {
-  ProjectRelease,
-  ProjectReleaseType,
-  Permission,
-} from '@activepieces/shared';
+import { Permission } from '@activepieces/core-utils';
+import { ProjectRelease, ProjectReleaseType } from '@activepieces/shared';
 import { ColumnDef } from '@tanstack/react-table';
 import { t } from 'i18next';
 import {
@@ -50,7 +47,7 @@ const ProjectReleasesPage = () => {
   const doesUserHavePermissionToWriteRelease = checkAccess(
     Permission.WRITE_PROJECT_RELEASE,
   );
-  const { data, isLoading, refetch } =
+  const { data, isLoading, isError, refetch } =
     projectReleaseQueries.useProjectReleases();
   const { data: projects } = projectCollectionUtils.useAll();
   const columns: ColumnDef<RowDataWithActions<ProjectRelease>>[] = [
@@ -174,7 +171,6 @@ const ProjectReleasesPage = () => {
         toolbarButtons={[
           <PushEverythingDialog key="push">
             <Button
-              className="h-9"
               variant="outline"
               disabled={!doesUserHavePermissionToWriteRelease}
             >
@@ -188,7 +184,7 @@ const ProjectReleasesPage = () => {
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
-                  className="h-9 w-full"
+                  className="w-full"
                   disabled={!doesUserHavePermissionToWriteRelease}
                 >
                   {t('Create Release')}
@@ -231,6 +227,9 @@ const ProjectReleasesPage = () => {
         ]}
         page={data}
         isLoading={isLoading}
+        isError={isError}
+        errorStateEntity={t('releases')}
+        onRetry={refetch}
         onRowClick={(row) => {
           navigate(`/releases/${row.id}`);
         }}

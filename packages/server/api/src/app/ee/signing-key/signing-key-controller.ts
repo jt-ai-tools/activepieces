@@ -1,15 +1,9 @@
-import { securityAccess } from '@activepieces/server-common'
-import { ActivepiecesError, AddSigningKeyRequestBody,
-    ApId,
-    ApplicationEventName,
-    assertNotNullOrUndefined,
-    ErrorCode,
-    isNil,
-    PrincipalType,
-} from '@activepieces/shared'
+import { ActivepiecesError, ApId, assertNotNullOrUndefined, ErrorCode, isNil } from '@activepieces/core-utils'
+import { AddSigningKeyRequestBody, ApplicationEventName, PrincipalType } from '@activepieces/shared'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { StatusCodes } from 'http-status-codes'
 import { z } from 'zod'
+import { securityAccess } from '../../core/security/authorization/fastify-security'
 import { applicationEvents } from '../../helper/application-events'
 import { signingKeyService } from './signing-key-service'
 

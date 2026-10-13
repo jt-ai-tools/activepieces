@@ -1,14 +1,5 @@
-import {
-    DefaultProjectRole,
-    Platform,
-    PlatformPlan,
-    PlatformRole,
-    PrincipalType,
-    Project,
-    ProjectRole,
-    User,
-    UserIdentity,
-} from '@activepieces/shared'
+import { ProjectRole } from '@activepieces/core-utils'
+import { DefaultProjectRole, Platform, PlatformPlan, PlatformRole, PrincipalType, Project, User, UserIdentity } from '@activepieces/shared'
 import { FastifyInstance, InjectOptions } from 'fastify'
 import { generateMockToken } from './auth'
 import { db } from './db'
@@ -103,7 +94,7 @@ function buildContext(app: FastifyInstance, data: ContextData): TestContext {
         return (url: string, bodyOrQuery?: Record<string, unknown>, opts?: RequestOptions) => {
             const inject: InjectOptions = {
                 method: method as InjectOptions['method'],
-                url,
+                url: `/api${url}`,
                 headers: {
                     authorization: `Bearer ${data.token}`,
                 },

@@ -1,16 +1,47 @@
-import { createAction, Property } from '@activepieces/pieces-framework';
+import { createAction, MarkdownVariant, Property } from '@activepieces/pieces-framework';
 import { areSheetIdsValid, createGoogleClient, Dimension, objectToArray, ValueInputOption } from '../common/common';
 import { googleSheetsAuth } from '../common/common';
 import { getWorkSheetName } from '../triggers/helpers';
-import { google } from 'googleapis';
-import {  isString } from '@activepieces/shared';
+import { sheets as googleSheets } from '@googleapis/sheets';
+import {  isString } from '@activepieces/pieces-framework';
 import { commonProps, isFirstRowHeaderProp, rowValuesProp } from '../common/props';
+import { updateRowActionOutputSchema } from '../output-schemas';
 
 export const updateRowAction = createAction({
   auth: googleSheetsAuth,
   name: 'update_row',
+  classification: 'WRITE',
   description: 'Update the data in an existing row.',
+  audience: 'human',
+  aiMetadata: {
+    description:
+      'Overwrites the cell values of one existing row, identified by its row number, in a selected worksheet. Use when an agent already knows the target row (e.g. from a Find or Get action) and wants to change its contents. Idempotent — re-running with the same row number and values leaves the sheet in the same state; empty values skip (do not clear) those cells.',
+    idempotent: true,
+  },
   displayName: 'Update Row',
+  propertyGroups: [
+    {
+      key: 'spreadsheet',
+      display: 'section',
+      label: 'Spreadsheet',
+      icon: 'file',
+      props: ['spreadsheetId', 'sheetId'],
+    },
+    {
+      key: 'target_row',
+      display: 'section',
+      label: 'Row',
+      icon: 'markdown',
+      props: ['row_id'],
+    },
+    {
+      key: 'changes',
+      display: 'section',
+      label: 'Changes',
+      icon: 'text',
+      props: ['empty_fields_info', 'first_row_headers', 'values'],
+    },
+  ],
   props: {
     ...commonProps,
     row_id: Property.Number({
@@ -18,9 +49,14 @@ export const updateRowAction = createAction({
       description: 'The row number to update',
       required: true,
     }),
+    empty_fields_info: Property.MarkDown({
+      value: 'Empty fields keep their current value.',
+      variant: MarkdownVariant.INFO,
+    }),
     first_row_headers: isFirstRowHeaderProp(),
     values: rowValuesProp(),
   },
+  outputSchema: updateRowActionOutputSchema,
   async run(context) {
     const inputSpreadsheetId = context.propsValue.spreadsheetId;
     const inputSheetId = context.propsValue.sheetId;
@@ -37,7 +73,7 @@ export const updateRowAction = createAction({
 
     const authClient = await createGoogleClient(context.auth);
 
-    const sheets = google.sheets({ version: 'v4', auth: authClient });
+    const sheets = googleSheets({ version: 'v4', auth: authClient });
 
     const sheetName = await getWorkSheetName(
       context.auth,

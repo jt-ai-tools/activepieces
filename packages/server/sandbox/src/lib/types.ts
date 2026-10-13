@@ -1,98 +1,127 @@
-import { ChildProcess } from 'child_process'
-import { EngineOperation, EngineOperationType, EngineResponse, EngineSocketEvent } from '@activepieces/shared'
+import { type ApLogger } from '@activepieces/server-utils'
+import { EngineOperation, EngineOperationType, EngineResponse, FailedStep, FlowVersion, FlowVersionState, NetworkMode, PiecePackage, SourceCode, WorkerToApiContract } from '@activepieces/shared'
 
-export type SandboxMount = {
-    hostPath: string
-    sandboxPath: string
-    optional?: boolean
+// Two roles:
+//   - Resolver (worker-side, owns the only apiClient): turns a job into a fully-materialized
+//     `ProvisionInput` — resolve the flowVersion, piece metadata, and the flow bundle,
+//     disabling the flow on a missing piece. Always runs before `execute`.
+//   - Runtime: the in-process single sandbox box. It never reaches the app; it materializes the passed
+//     ProvisionInput, runs one engine operation, and releases (or invalidates on throw).
+
+export type Resolver = {
+    resolve(input: ResolveInput): Promise<ResolveResult>
 }
 
-export type SandboxResourceLimits = {
-    memoryBytes: number
-    cpuMsPerSec: number
-    timeLimitSeconds: number
-}
-
-export type CreateSandboxProcessParams = {
-    sandboxId: string
-    command: string[]
-    mounts: SandboxMount[]
-    env: Record<string, string>
-    resourceLimits: SandboxResourceLimits
-}
-
-export type SandboxProcessMaker = {
-    create: (params: CreateSandboxProcessParams) => Promise<ChildProcess>
-}
-
-export type Sandbox = {
-    id: string
-    start: (options: SandboxStartOptions) => Promise<void>
-    execute: (operationType: EngineOperationType, operation: EngineOperation, options: SandboxOptions) => Promise<SandboxResult>
-    shutdown: () => Promise<void>
-}
-
-export type SandboxStartOptions = {
-    flowVersionId: string | undefined
+export type ResolveInput = {
     platformId: string
-    mounts: SandboxMount[]
+    internalApiUrl: string
+    engineToken: string
+    flow?: { id: string, versionId: string, projectId: string }
+    pieces?: PiecePackage[]
+    codes?: CodeArtifact[]
 }
 
-export type SandboxInitOptions = {
-    env: Record<string, string>
-    memoryLimitMb: number
-    cpuMsPerSec: number
-    timeLimitSeconds: number
-    reusable: boolean
-    command?: string[]
+export type ResolveResult =
+    | { kind: 'ready', provision: ProvisionInput, flowVersion?: FlowVersion }
+    | { kind: 'flow-not-found' }
+    | { kind: 'disabled', failedStep?: FailedStep }
+
+export type Runtime = {
+    // Materialize provision, run one engine operation, return its result. Owns the box lifecycle
+    // internally: acquire -> run -> release on success / invalidate on throw. Re-raises the sandbox
+    // ActivepiecesError codes (timeout / memory / log-size) that handlers already catch.
+    execute(params: ExecuteParams): Promise<RuntimeExecutionResult>
+    getActiveExecutors(): RuntimeExecutorInfo[]
+    prewarm(params: PreWarmSandboxParams): Promise<void>
+    shutdown(log: ApLogger): Promise<void>
 }
 
-export type SandboxResult = {
-    engine: EngineResponse<unknown>
-    stdOut: string
-    stdError: string
-}
-
-export type SandboxOptions = {
+export type ExecuteParams = {
+    workerIndex: number
+    log: ApLogger
+    operationType: EngineOperationType
+    operation: EngineOperation
     timeoutInSeconds: number
+    expiresAt?: number
+    provision: ProvisionInput
 }
 
-export type SandboxEventListener = (event: EngineSocketEvent, payload: unknown) => Promise<void>
-
-export type SandboxSocketEventHandler = {
-    handle: (log: SandboxLogger, event: EngineSocketEvent, payload: unknown) => Promise<void>
+export type PreWarmSandboxParams = {
+    log: ApLogger
+    apiClient?: WorkerToApiContract
+    internalApiUrl?: string
+    // Warm just this flow (e.g. on publish) instead of the platform's whole active set.
+    flow?: { id: string, versionId: string, projectId: string }
 }
 
-export type SandboxWebsocketServer = {
-    init: (log: SandboxLogger, port?: number) => void
-    attachListener: (sandboxId: string, listener: SandboxEventListener) => void
-    removeListener: (sandboxId: string) => void
-    isConnected: (sandboxId: string) => boolean
-    send: (sandboxId: string, operation: EngineOperation, operationType: EngineOperationType) => void
-    waitForConnection: (sandboxId: string) => Promise<void>
-    shutdown: () => Promise<void>
+// The Resolver's output and the pool's input. The pool fetches each piece from
+// `${internalApiUrl}v1/engine/pieces/bundle` (engine token as a Bearer header), following the redirect
+// to npm / signed-S3 (or the streamed custom archive), saves it as a local .tgz, and `bun install`s
+// that file. No bytes cross the worker socket and the pool never imports WorkerToApiContract; the URL
+// is the worker's own app URL (ends in `/api/`), the one it already reaches the app on. See ADR 0002.
+export type ProvisionInput = {
+    platformId: string
+    flowVersionId?: string
+    pieces: PiecePackage[]
+    codes: CodeArtifact[]
+    internalApiUrl: string
+    engineToken: string
 }
 
-export type SandboxFactory = (log: SandboxLogger, sandboxId: string) => Sandbox
-
-export type SandboxPool = {
-    init: (log: SandboxLogger, options: SandboxPoolInitOptions) => void
-    allocate: (log: SandboxLogger) => Promise<Sandbox>
-    release: (sandbox: Sandbox | undefined, log?: SandboxLogger) => Promise<void>
-    drain: () => Promise<void>
-    getTotalSandboxes: () => number
-    getFreeSandboxes: () => number
+export type RuntimeExecutionResult = EngineResponse<unknown> & {
+    logs: string | undefined
+    timings: RuntimePhaseTimings
 }
 
-export type SandboxPoolInitOptions = {
-    concurrency: number
-    reusable: boolean
-    getGeneration: () => number
+export type RuntimePhaseTimings = {
+    provisionMs: number
+    bootMs: number
+    runMs: number
 }
 
-export type SandboxLogger = {
-    info: (obj: unknown, msg?: string) => void
-    debug: (obj: unknown, msg?: string) => void
-    error: (obj: unknown, msg?: string) => void
-    warn: (obj: unknown, msg?: string) => void
+export type RuntimeExecutorInfo = {
+    sandboxId: string
+    boxId: number
+    pid: number
+    busy: boolean
+}
+
+// A code step to provision. Part of the generic provision contract (ProvisionInput.codes), so it
+// lives here rather than in the local-pool code-builder that consumes it.
+export type CodeArtifact = {
+    name: string
+    sourceCode: SourceCode
+    flowVersionId: string
+    flowVersionState: FlowVersionState
+    useDeno: boolean
+}
+
+// Structural subset of WorkerSettingsResponse used by the local-pool runtime tree.
+// Field names intentionally match WorkerSettingsResponse so workerSettings.getSettings is
+// directly assignable to () => SandboxSettings without wrapping.
+// ENVIRONMENT and EXECUTION_MODE are strings (matching the Zod schema) — comparisons
+// against ApEnvironment / ExecutionMode enum values still work because enum values are strings.
+export type SandboxSettings = {
+    EXECUTION_MODE: string
+    DEV_PIECES: string[]
+    ENVIRONMENT: string
+    REUSE_SANDBOX: string | undefined
+    FLOW_TIMEOUT_SECONDS: number
+    MAX_FILE_SIZE_MB: number
+    MAX_FLOW_RUN_LOG_SIZE_MB: number
+    FLOW_RUN_LOG_INPUT_TRUNCATE_THRESHOLD_KB?: number | undefined
+    FLOW_RUN_LOG_SLICE_THRESHOLD_KB?: number | undefined
+    NETWORK_MODE: NetworkMode
+    SANDBOX_MEMORY_LIMIT: string
+    SANDBOX_PROPAGATED_ENV_VARS: string[]
+    SSRF_ALLOW_LIST: string[]
+    ENFORCE_CONNECTION_PIECE_BINDING: boolean
+    WORKER_GROUP_ID?: string | undefined
+    PROJECT_WORKER?: boolean | undefined
+}
+
+export type SandboxDeps = {
+    basePath: string
+    getSettings: () => SandboxSettings
+    log: ApLogger
 }

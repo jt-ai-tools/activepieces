@@ -1,4 +1,3 @@
-import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 import { PlatformRole, PrincipalType } from '@activepieces/shared'
 import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
@@ -9,6 +8,7 @@ import {
     mockBasicUser,
 } from '../../../helpers/mocks'
 import { createTestContext } from '../../../helpers/test-context'
+import { setupTestEnvironment, teardownTestEnvironment } from '../../../helpers/test-setup'
 
 let app: FastifyInstance | null = null
 
@@ -91,7 +91,7 @@ describe('Audit Event API', () => {
             // act
             const response = await app?.inject({
                 method: 'GET',
-                url: '/v1/audit-events',
+                url: '/api/v1/audit-events',
                 headers: {
                     authorization: `Bearer ${testToken}`,
                 },

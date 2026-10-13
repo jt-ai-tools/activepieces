@@ -1,34 +1,28 @@
-import { Flow, FlowId, FlowStatus, PlatformId, ProjectId } from '@activepieces/shared'
-import { Job, JobsOptions } from 'bullmq'
+import { FlowId, FlowRunId, PlatformId, ProjectId } from '@activepieces/core-utils'
+import { Flow } from '@activepieces/shared'
+import { Job, JobsOptions, JobState } from 'bullmq'
 import { Dayjs } from 'dayjs'
 
 export enum SystemJobName {
     PIECES_ANALYTICS = 'pieces-analytics',
     PIECES_SYNC = 'pieces-sync',
     FILE_CLEANUP_TRIGGER = 'file-cleanup-trigger',
-    TRIAL_TRACKER = 'trial-tracker',
     RUN_TELEMETRY = 'run-telemetry',
     DELETE_FLOW = 'delete-flow',
-    UPDATE_FLOW_STATUS = 'update-flow-status',
-    AI_CREDIT_UPDATE_CHECK = 'ai-credit-update-check',
     HARD_DELETE_PROJECT = 'hard-delete-project',
+    HARD_DELETE_PLATFORM = 'hard-delete-platform',
+    BILLING_USAGE_REPORT = 'billing-usage-report',
+    RESUME_DELAY_WAITPOINT = 'resume-delay-waitpoint',
+    TOOL_SEARCH_REINDEX = 'tool-search-reindex',
+    CHAT_STALE_SWEEP = 'chat-stale-sweep',
+    WAITPOINT_DEADLINE_SWEEP = 'waitpoint-deadline-sweep',
+    RUN_BACKGROUND_MIGRATIONS = 'run-background-migrations',
+    AUDIT_LOG_RETENTION = 'audit-log-retention',
 }
 
 type DeleteFlowDurableSystemJobData =  {
     flow: Flow
     preDeleteDone: boolean
-}
-
-type UpdateFlowStatusDurableSystemJobData =  {
-    id: FlowId
-    projectId: ProjectId
-    newStatus: FlowStatus
-    preUpdateDone: boolean
-}
-
-type AiCreditUpdateCheckSystemJobData = {
-    apiKeyHash: string
-    platformId: string
 }
 
 type HardDeleteProjectSystemJobData = {
@@ -37,16 +31,37 @@ type HardDeleteProjectSystemJobData = {
     preDeletedFlowIds: FlowId[]
 }
 
+type HardDeletePlatformSystemJobData = {
+    platformId: PlatformId
+}
+
+type ResumeDelayWaitpointSystemJobData = {
+    flowRunId: FlowRunId
+    projectId: ProjectId
+    waitpointId: string
+}
+
+// Scope shape kept inline (structurally equal to tool-search's ReindexScope) so this generic
+// job framework does not depend on the tool-search feature module.
+type ToolSearchReindexSystemJobData = {
+    scope: { type: 'all' } | { type: 'platform', platformId: PlatformId }
+}
+
 type SystemJobDataMap = {
     [SystemJobName.PIECES_ANALYTICS]: Record<string, never>
     [SystemJobName.PIECES_SYNC]: Record<string, never>
     [SystemJobName.FILE_CLEANUP_TRIGGER]: Record<string, never>
     [SystemJobName.RUN_TELEMETRY]: Record<string, never>
-    [SystemJobName.TRIAL_TRACKER]: Record<string, never>
     [SystemJobName.DELETE_FLOW]: DeleteFlowDurableSystemJobData
-    [SystemJobName.UPDATE_FLOW_STATUS]: UpdateFlowStatusDurableSystemJobData
-    [SystemJobName.AI_CREDIT_UPDATE_CHECK]: AiCreditUpdateCheckSystemJobData
     [SystemJobName.HARD_DELETE_PROJECT]: HardDeleteProjectSystemJobData
+    [SystemJobName.HARD_DELETE_PLATFORM]: HardDeletePlatformSystemJobData
+    [SystemJobName.BILLING_USAGE_REPORT]: Record<string, never>
+    [SystemJobName.RESUME_DELAY_WAITPOINT]: ResumeDelayWaitpointSystemJobData
+    [SystemJobName.TOOL_SEARCH_REINDEX]: ToolSearchReindexSystemJobData
+    [SystemJobName.CHAT_STALE_SWEEP]: Record<string, never>
+    [SystemJobName.WAITPOINT_DEADLINE_SWEEP]: Record<string, never>
+    [SystemJobName.RUN_BACKGROUND_MIGRATIONS]: Record<string, never>
+    [SystemJobName.AUDIT_LOG_RETENTION]: Record<string, never>
 }
 
 export type SystemJobData<T extends SystemJobName = SystemJobName> = T extends SystemJobName ? SystemJobDataMap[T] : never
@@ -54,7 +69,7 @@ export type SystemJobData<T extends SystemJobName = SystemJobName> = T extends S
 export type SystemJobDefinition<T extends SystemJobName> = {
     name: T
     data: SystemJobData<T>
-    jobId?: string
+    jobId: string
 }
 
 export type SystemJobHandler<T extends SystemJobName = SystemJobName> = (data: SystemJobData<T>) => Promise<void>
@@ -79,7 +94,19 @@ type UpsertJobParams<T extends SystemJobName> = {
 
 export type SystemJobSchedule = {
     init(): Promise<void>
-    upsertJob<T extends SystemJobName>(params: UpsertJobParams<T>): Promise<void>
+    startWorker(): Promise<void>
+    upsertJob<T extends SystemJobName>(params: UpsertJobParams<T>): Promise<UpsertJobResult>
     getJob<T extends SystemJobName>(jobId: string): Promise<Job<SystemJobData<T>> | undefined>
+    getJobState(jobId: string): Promise<JobState | 'unknown'>
+    removeJob(params: { jobId: string }): Promise<void>
     close(): Promise<void>
+}
+
+export const systemJobIds = {
+    resumeDelay: ({ waitpointId }: { waitpointId: string }): string => `resume-delay-${waitpointId}`,
+    legacyResumeDelay: ({ flowRunId }: { flowRunId: FlowRunId }): string => `resume-delay-${flowRunId}`,
+}
+
+export type UpsertJobResult = {
+    status: 'added' | 'kept' | 'retried' | 'scheduler-upserted'
 }

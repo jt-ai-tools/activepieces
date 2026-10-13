@@ -1,5 +1,6 @@
-import { ApiKeyResponseWithValue } from '@activepieces/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { platformHooks } from '@/hooks/platform-hooks';
 
 import { apiKeyApi } from '../api/api-key-api';
 
@@ -8,13 +9,16 @@ export const apiKeyKeys = {
 };
 
 export const apiKeyQueries = {
-  useApiKeys: () =>
-    useQuery({
+  useApiKeys: () => {
+    const { platform } = platformHooks.useCurrentPlatform();
+    return useQuery({
       queryKey: apiKeyKeys.all,
       gcTime: 0,
       staleTime: 0,
       queryFn: () => apiKeyApi.list(),
-    }),
+      enabled: platform.plan.apiKeysEnabled,
+    });
+  },
 };
 
 export const apiKeyMutations = {
@@ -34,8 +38,4 @@ export const apiKeyMutations = {
       },
     });
   },
-};
-
-type CreateApiKeyRequest = {
-  displayName: string;
 };

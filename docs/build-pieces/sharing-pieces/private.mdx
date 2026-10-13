@@ -15,7 +15,7 @@ Friendly Tip: There is a CLI to easily upload it to your platform. Please check 
 
 <Steps>
     <Step title="Build Piece">
-        Build the piece using the following command. Make sure to replace `${name}` with your piece name.
+        Build the piece using the following command. Make sure to replace `${name}` with your piece folder name.
 
         ```bash
         npm run pieces -- build --name=${name}
@@ -26,7 +26,7 @@ Friendly Tip: There is a CLI to easily upload it to your platform. Please check 
         </Info>
     </Step>
     <Step title="Upload Tarball">
-        Upload the generated tarball inside `dist/packages/pieces/${name}`from Activepieces Platform Admin -> Pieces
+        Upload the generated tarball from `packages/pieces/custom/${name}/dist` from Activepieces Platform Admin -> Pieces
     
         ![Manage Pieces](/resources/screenshots/install-piece.png)
 

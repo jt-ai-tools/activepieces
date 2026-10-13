@@ -1,71 +1,42 @@
-import { PlatformRole, ApFlagId } from '@activepieces/shared';
-import { t } from 'i18next';
+import { ApEdition, ApFlagId } from '@activepieces/shared';
+import { Navigate } from 'react-router-dom';
 
-import { CenteredPage } from '@/app/components/centered-page';
-import { SUPPORTED_AI_PROVIDERS } from '@/features/agents';
-import {
-  aiProviderQueries,
-  aiProviderMutations,
-} from '@/features/platform-admin';
 import { flagsHooks } from '@/hooks/flags-hooks';
-import { userHooks } from '@/hooks/user-hooks';
 
-import LockedFeatureGuard from '../../../../components/locked-feature-guard';
+import { CapabilitiesTab } from './capabilities-tab';
+import { ProvidersTab } from './providers-tab';
+import { TiersTab } from './tiers-tab';
 
-import { AIProviderCard } from './universal-pieces/ai-provider-card';
+export default function AIProvidersPage({ section }: AIProvidersPageProps) {
+  return <AICenter section={section} />;
+}
 
-export default function AIProvidersPage() {
-  const { data: providers, refetch } = aiProviderQueries.useAiProviders();
-  const { data: currentUser } = userHooks.useCurrentUser();
-  const { data: flags } = flagsHooks.useFlags();
-  const allowWrite = flags?.[ApFlagId.CAN_CONFIGURE_AI_PROVIDER] === true;
+function AICenter({ section }: { section: AISection }) {
+  const { data: edition } = flagsHooks.useFlag<ApEdition>(ApFlagId.EDITION);
 
-  const { mutate: deleteProvider, isPending: isDeleting } =
-    aiProviderMutations.useDeleteAiProvider({
-      onSuccess: () => refetch(),
-    });
+  if (section === 'capabilities' && edition === ApEdition.COMMUNITY) {
+    return <Navigate to="/platform/ai" replace />;
+  }
 
   return (
-    <LockedFeatureGuard
-      featureKey="UNIVERSAL_AI"
-      locked={currentUser?.platformRole !== PlatformRole.ADMIN}
-      lockTitle={t('Unlock AI')}
-      lockDescription={t(
-        'Set your AI providers so your users enjoy a seamless building experience with our universal AI pieces',
-      )}
-    >
-      <CenteredPage
-        title={t('AI Providers')}
-        description={
-          allowWrite
-            ? t(
-                'Set provider credentials that will be used by universal AI pieces, i.e Text AI.',
-              )
-            : t(
-                'Available AI providers that will be used by universal AI pieces, i.e Text AI.',
-              )
-        }
-      >
-        <div className="flex flex-col gap-4">
-          {SUPPORTED_AI_PROVIDERS.map((providerDef) => {
-            const config = providers?.find(
-              (p) => p.provider === providerDef.provider,
-            );
-
-            return (
-              <AIProviderCard
-                key={providerDef.provider}
-                providerInfo={providerDef}
-                providerConfig={config}
-                isDeleting={isDeleting}
-                onDelete={(id) => deleteProvider(id)}
-                onSave={() => refetch()}
-                allowWrite={allowWrite}
-              />
-            );
-          })}
-        </div>
-      </CenteredPage>
-    </LockedFeatureGuard>
+    <div className="flex w-full flex-1 min-h-0 flex-col overflow-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col px-8 py-6">
+        {section === 'providers' ? (
+          <div className="flex flex-1 flex-col">
+            <ProvidersTab />
+          </div>
+        ) : section === 'tiers' ? (
+          <TiersTab />
+        ) : (
+          <CapabilitiesTab />
+        )}
+      </div>
+    </div>
   );
 }
+
+type AISection = 'providers' | 'capabilities' | 'tiers';
+
+type AIProvidersPageProps = {
+  section: AISection;
+};

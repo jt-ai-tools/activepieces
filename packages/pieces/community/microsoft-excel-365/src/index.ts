@@ -3,7 +3,7 @@ import {
   createPiece,
   OAuth2PropertyValue,
 } from '@activepieces/pieces-framework';
-import { PieceCategory } from '@activepieces/shared';
+import { PieceCategory } from '@activepieces/pieces-framework';
 
 import { addWorksheetAction } from './lib/actions/add-worksheet';
 import { appendRowAction } from './lib/actions/append-row';
@@ -26,7 +26,9 @@ import { updateRowAction } from './lib/actions/update-row';
 import { clearRangeAction } from './lib/actions/clear-cells-by-range';
 import { clearColumnAction } from './lib/actions/clear-column-by-index';
 import { clearRowAction } from './lib/actions/clear-row-by-id';
+import { deleteRowAction } from './lib/actions/delete-row';
 import { createWorksheetAction } from './lib/actions/create-worksheet';
+import { copyWorksheetAction } from './lib/actions/copy-worksheet';
 import { findRowAction } from './lib/actions/find-row';
 import { getRangeAction } from './lib/actions/get-cells-in-range';
 import { getRowAction } from './lib/actions/get-row-by-id';
@@ -85,7 +87,9 @@ export const microsoftExcel = createPiece({
 		clearColumnAction,
 		clearRangeAction,
 		clearRowAction,
+		deleteRowAction,
 		createWorksheetAction,
+		copyWorksheetAction,
 		findRowAction,
 		findWorkbookAction,
 		findWorksheetAction,
@@ -94,7 +98,10 @@ export const microsoftExcel = createPiece({
 		getWorksheetAction,
 		renameWorksheetAction,
 		createCustomApiCallAction({
-			baseUrl: () => excelCommon.baseUrl,
+			baseUrl: (auth) => {
+				const cloud = (auth as OAuth2PropertyValue).props?.['cloud'] as string | undefined;
+				return excelCommon.getBaseUrl(cloud);
+			},
 			auth: excelAuth,
 			authMapping: async (auth) => ({
 				Authorization: `Bearer ${(auth as OAuth2PropertyValue).access_token}`,

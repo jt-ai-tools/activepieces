@@ -1,10 +1,10 @@
-import { securityAccess } from '@activepieces/server-common'
-import { ActivepiecesError, AnalyticsReportRequest, ErrorCode, LeaderboardRequest, PrincipalType, UserIdentityProvider } from '@activepieces/shared'
+import { ActivepiecesError, ErrorCode } from '@activepieces/core-utils'
+import { AnalyticsReportRequest, PrincipalType } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
-import { userIdentityService } from '../authentication/user-identity/user-identity-service'
+import { securityAccess } from '../core/security/authorization/fastify-security'
 import { platformMustHaveFeatureEnabled } from '../ee/authentication/ee-authorization'
-import { userService } from '../user/user-service'
+import { userIdentityHelper } from '../helper/user-identity-helper'
 import { piecesAnalyticsService } from './pieces-analytics.service'
 import { platformAnalyticsReportService } from './platform-analytics-report.service'
 
@@ -20,27 +20,20 @@ const platformAnalyticsController: FastifyPluginAsyncZod = async (app) => {
         const { platform, id } = request.principal
         await assertUserIsNotEmbedded(id, request.log)
         const { timePeriod } = request.query
-        return platformAnalyticsReportService(request.log).getOrGenerateReport(platform.id, timePeriod)
+        return platformAnalyticsReportService(request.log).getReportForUser({
+            platformId: platform.id,
+            userId: id,
+            timePeriod,
+        })
     })
 
     app.post('/refresh', RefreshPlatformAnalyticsRequest, async (request) => {
         const { platform, id } = request.principal
         await assertUserIsNotEmbedded(id, request.log)
-        return platformAnalyticsReportService(request.log).refreshReport(platform.id)
-    })
-
-    app.get('/project-leaderboard', ProjectLeaderboardRequest, async (request) => {
-        const { platform, id } = request.principal
-        await assertUserIsNotEmbedded(id, request.log)
-        const { timePeriod } = request.query
-        return platformAnalyticsReportService(request.log).getProjectLeaderboard(platform.id, timePeriod)
-    })
-
-    app.get('/user-leaderboard', UserLeaderboardRequest, async (request) => {
-        const { platform, id } = request.principal
-        await assertUserIsNotEmbedded(id, request.log)
-        const { timePeriod } = request.query
-        return platformAnalyticsReportService(request.log).getUserLeaderboard(platform.id, timePeriod)
+        return platformAnalyticsReportService(request.log).refreshReportForUser({
+            platformId: platform.id,
+            userId: id,
+        })
     })
 
     app.post('/mark-outdated', MarkAsOutdatedRequest, async (request) => {
@@ -52,9 +45,8 @@ const platformAnalyticsController: FastifyPluginAsyncZod = async (app) => {
 }
 
 async function assertUserIsNotEmbedded(userId: string, log: FastifyBaseLogger): Promise<void> {
-    const user = await userService(log).getOneOrFail({ id: userId })
-    const userIdentity = await userIdentityService(log).getOneOrFail({ id: user.identityId })
-    if (userIdentity.provider === UserIdentityProvider.JWT) {
+    const isEmbedded = await userIdentityHelper(log).isUserEmbedded(userId)
+    if (isEmbedded) {
         throw new ActivepiecesError({
             code: ErrorCode.AUTHORIZATION,
             params: { message: 'User is not allowed to access this resource' },
@@ -71,24 +63,6 @@ const RefreshPlatformAnalyticsRequest = {
 const PlatformAnalyticsRequest = {
     schema: {
         querystring: AnalyticsReportRequest,
-    },
-    config: {
-        security: securityAccess.publicPlatform([PrincipalType.USER]),
-    },
-}
-
-const ProjectLeaderboardRequest = {
-    schema: {
-        querystring: LeaderboardRequest,
-    },
-    config: {
-        security: securityAccess.publicPlatform([PrincipalType.USER]),
-    },
-}
-
-const UserLeaderboardRequest = {
-    schema: {
-        querystring: LeaderboardRequest,
     },
     config: {
         security: securityAccess.publicPlatform([PrincipalType.USER]),

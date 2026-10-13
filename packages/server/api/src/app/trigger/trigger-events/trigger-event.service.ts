@@ -1,24 +1,6 @@
-import {
-    ActivepiecesError,
-    apId,
-    Cursor,
-    ErrorCode,
-    FileCompression,
-    FileType,
-    FlowId,
-    FlowTrigger,
-    FlowTriggerType,
-    getPieceMajorAndMinorVersion,
-    PieceTrigger,
-    PopulatedFlow,
-    ProjectId,
-    SeekPage,
-    TriggerEventWithPayload,
-    TriggerHookType,
-    WorkerJobType,
-} from '@activepieces/shared'
+import { ActivepiecesError, apId, Cursor, ErrorCode, FlowId, isNil, ProjectId, SeekPage } from '@activepieces/core-utils'
+import { EngineResponse, EngineResponseStatus, ExecuteTriggerResponse, FileCompression, FileType, FlowTrigger, FlowTriggerType, getPieceMajorAndMinorVersion, PieceTrigger, PopulatedFlow, TriggerEventWithPayload, TriggerHookType, WorkerJobType } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
-import { EngineHelperTriggerResult, OperationResponse } from 'worker'
 import { repoFactory } from '../../core/db/repo-factory'
 import { fileService } from '../../file/file.service'
 import { flowService } from '../../flows/flow/flow.service'
@@ -76,7 +58,7 @@ export const triggerEventService = (log: FastifyBaseLogger) => ({
         switch (trigger.type) {
             case FlowTriggerType.PIECE: {
 
-                const engineResponse = await userInteractionWatcher(log).submitAndWaitForResponse<OperationResponse<EngineHelperTriggerResult<TriggerHookType.TEST>>>({
+                const engineResponse = await userInteractionWatcher.submitAndWaitForResponse<EngineResponse<ExecuteTriggerResponse<TriggerHookType.TEST>>>({
                     hookType: TriggerHookType.TEST,
                     flowId: flow.id,
                     flowVersionId: flow.version.id,
@@ -84,21 +66,21 @@ export const triggerEventService = (log: FastifyBaseLogger) => ({
                     projectId,
                     jobType: WorkerJobType.EXECUTE_TRIGGER_HOOK,
                     platformId,
-                })
+                }, log)
+                if (engineResponse.status !== EngineResponseStatus.OK || isNil(engineResponse.response)) {
+                    throw new ActivepiecesError({
+                        code: ErrorCode.TEST_TRIGGER_FAILED,
+                        params: {
+                            message: engineResponse.error ?? 'The worker skipped the trigger test hook',
+                        },
+                    })
+                }
                 await triggerEventRepo().delete({
                     projectId,
                     flowId: flow.id,
                 })
-                if (!engineResponse.result.success) {
-                    throw new ActivepiecesError({
-                        code: ErrorCode.TEST_TRIGGER_FAILED,
-                        params: {
-                            message: engineResponse.result.message!,
-                        },
-                    })
-                }
 
-                for (const output of engineResponse.result.output) {
+                for (const output of engineResponse.response.output) {
                     await this.saveEvent({
                         projectId,
                         flowId: flow.id,
@@ -110,7 +92,7 @@ export const triggerEventService = (log: FastifyBaseLogger) => ({
                     projectId,
                     flow,
                     cursor: null,
-                    limit: engineResponse.result.output.length,
+                    limit: engineResponse.response.output.length,
                 })
             }
             case FlowTriggerType.EMPTY:

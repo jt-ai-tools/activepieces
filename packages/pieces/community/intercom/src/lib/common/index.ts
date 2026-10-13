@@ -1,109 +1,56 @@
-import { getAccessTokenOrThrow } from '@activepieces/pieces-common';
-import { IntercomClient } from 'intercom-client';
+import type { IntercomClient } from 'intercom-client';
 import {
-  OAuth2PropertyValue,
-  OAuth2Props,
-  Property,
-} from '@activepieces/pieces-framework';
-import { intercomAuth } from '../auth';
+	getIntercomBaseUrl,
+	getIntercomRegion,
+	getIntercomToken,
+	IntercomAuthValue,
+	intercomSdkFetcher,
+} from './client';
+import { adminDropdown, contactDropdown } from './props';
 
-export const intercomClient = (auth: OAuth2PropertyValue<OAuth2Props>) => {
-  const client = new IntercomClient({
-    token: getAccessTokenOrThrow(auth),
-    environment: `https://api.${auth.props?.['region']}.io`,
-  });
-  return client;
+export {
+	getIntercomBaseUrl,
+	getIntercomRegion,
+	getIntercomToken,
+	intercomRequest,
+	IntercomApiError,
+	INTERCOM_API_VERSION,
+} from './client';
+export type { IntercomAuthValue } from './client';
+
+export const intercomClient = async (auth: IntercomAuthValue): Promise<IntercomClient> => {
+	const { IntercomClient } = await import('intercom-client');
+	return new IntercomClient({
+		token: getIntercomToken(auth),
+		environment: getIntercomBaseUrl(getIntercomRegion(auth)),
+		fetcher: intercomSdkFetcher,
+	});
 };
 
 export const commonProps = {
-  admins: <R extends boolean>(options: { displayName: string; required: R }) =>
-    Property.Dropdown<string, R, typeof intercomAuth>({
-      auth: intercomAuth,
-      displayName: options.displayName,
-      required: options.required,
-      options: async ({ auth }) => {
-        if (!auth) {
-          return {
-            options: [],
-            disabled: true,
-            placeholder: 'Please connect your account first',
-          };
-        }
-        const client = intercomClient(auth as OAuth2PropertyValue);
-        const adminsResponse = await client.admins.list();
-
-        return {
-          options: adminsResponse.admins.map((c) => {
-            const res = { value: c.id, label: '' };
-            if (c.name) {
-              res.label = c.name;
-            } else if (c.email) {
-              res.label = c.email;
-            } else {
-              res.label = c.id;
-            }
-            return res;
-          }),
-        };
-      },
-      refreshers: [],
-    }),
-  contacts: <R extends boolean>(options: {
-    displayName: string;
-    required: R;
-  }) =>
-    Property.Dropdown<string, R, typeof intercomAuth>({
-      auth: intercomAuth,
-      displayName: options.displayName,
-      required: options.required,
-      options: async ({ auth }) => {
-        if (!auth) {
-          return {
-            options: [],
-            disabled: true,
-            placeholder: 'Please connect your account first',
-          };
-        }
-        const client = intercomClient(auth);
-        const contactsResponse = await client.contacts.list({});
-
-        return {
-          options: contactsResponse.data.map((c) => {
-            const res = { value: c.id, label: '' };
-            if (c.name) {
-              res.label = c.name;
-            } else if (c.email) {
-              res.label = c.email;
-            } else {
-              res.label = c.id;
-            }
-            return res;
-          }),
-        };
-      },
-      refreshers: [],
-    }),
+	admins: adminDropdown,
+	contacts: contactDropdown,
 };
 
 export type Operator =
-  | '='
-  | '!='
-  | 'IN'
-  | 'NIN'
-  | '<'
-  | '>'
-  | '~'
-  | '!~'
-  | '^'
-  | '$';
+	| '='
+	| '!='
+	| 'IN'
+	| 'NIN'
+	| '<'
+	| '>'
+	| '~'
+	| '!~'
+	| '^'
+	| '$';
 
 export type TriggerPayload = {
-  type: string;
-  app_id: string;
-  id: string;
-  topic: string;
-  data: {
-    type: string;
-    item: Record<string, any>;
-  };
+	type: string;
+	app_id: string;
+	id: string;
+	topic: string;
+	data: {
+		type: string;
+		item: Record<string, unknown>;
+	};
 };

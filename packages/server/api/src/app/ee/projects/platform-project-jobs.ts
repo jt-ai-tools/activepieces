@@ -1,4 +1,5 @@
-import { AppConnectionScope, assertNotNullOrUndefined } from '@activepieces/shared'
+import { assertNotNullOrUndefined } from '@activepieces/core-utils'
+import { AppConnectionScope } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { ArrayContains } from 'typeorm'
 import { appConnectionsRepo } from '../../app-connection/app-connection-service/app-connection-service'
@@ -6,10 +7,12 @@ import { repoFactory } from '../../core/db/repo-factory'
 import { transaction } from '../../core/db/transaction'
 import { flowExecutionCache } from '../../flows/flow/flow-execution-cache'
 import { flowSideEffects } from '../../flows/flow/flow-service-side-effects'
+import { batchDeleteByFlowId } from '../../flows/flow/flow.jobs'
 import { flowRepo } from '../../flows/flow/flow.repo'
 import { SystemJobData, SystemJobName } from '../../helper/system-jobs/common'
 import { systemJobsSchedule } from '../../helper/system-jobs/system-job'
 import { ProjectEntity } from '../../project/project-entity'
+import { deleteProjectLinkedEntities } from '../platform/platform-teardown-jobs'
 
 const projectRepo = repoFactory(ProjectEntity)
 
@@ -29,7 +32,7 @@ export const platformProjectBackgroundJobs = (log: FastifyBaseLogger) => ({
             }
             const flowExists = await flowRepo().existsBy({ id: flow.id })
             if (!flowExists) {
-                log.info({ flowId: flow.id }, '[hardDeleteProjectHandler] Flow already deleted, skipping preDelete')
+                log.info({ flow: { id: flow.id } }, '[hardDeleteProjectHandler] Flow already deleted, skipping preDelete')
                 continue
             }
             await flowSideEffects(log).preDelete({ flowToDelete: flow })
@@ -38,6 +41,15 @@ export const platformProjectBackgroundJobs = (log: FastifyBaseLogger) => ({
                 preDeletedFlowIds: [...preDeletedFlowIds, flow.id],
             })
         }
+
+        const flowIds = allFlows.map(flow => flow.id)
+
+        for (const flowId of flowIds) {
+            await batchDeleteByFlowId(flowId)
+            await flowRepo().delete({ id: flowId })
+        }
+
+        await deleteProjectLinkedEntities({ projectId })
 
         await transaction(async (entityManager) => {
             await appConnectionsRepo(entityManager).delete({
@@ -50,6 +62,6 @@ export const platformProjectBackgroundJobs = (log: FastifyBaseLogger) => ({
             })
         })
 
-        await flowExecutionCache(log).invalidate(...allFlows.map(flow => flow.id))
+        await flowExecutionCache(log).invalidate(...flowIds)
     },
 })

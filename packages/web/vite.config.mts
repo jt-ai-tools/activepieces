@@ -10,12 +10,10 @@ import customHtmlPlugin from './vite-plugins/html-plugin';
 
 export default defineConfig(({ command, mode }) => {
   const isDev = command === 'serve' || mode === 'development';
+  const emitSourcemap = process.env.AP_BUILD_SOURCEMAP === 'true';
 
-  const AP_TITLE = isDev ? 'Activepieces' : '${AP_APP_TITLE}';
-
-  const AP_FAVICON = isDev
-    ? 'https://activepieces.com/favicon.ico'
-    : '${AP_FAVICON_URL}';
+  const AP_TITLE = 'Activepieces';
+  const AP_FAVICON = 'https://activepieces.com/favicon.ico';
 
   return {
     root: __dirname,
@@ -27,11 +25,72 @@ export default defineConfig(({ command, mode }) => {
           target: 'http://127.0.0.1:3000',
           secure: false,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
           headers: {
             Host: '127.0.0.1:4200',
           },
           ws: true,
+        },
+        '/ingest': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+        },
+        '^/mcp(/|$)': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+          headers: {
+            'X-Forwarded-Host': 'localhost:4200',
+          },
+          rewrite: (p: string) => p,
+        },
+        '/.well-known': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+          headers: {
+            'X-Forwarded-Host': 'localhost:4200',
+          },
+        },
+        '/register': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+          headers: {
+            'X-Forwarded-Host': 'localhost:4200',
+          },
+        },
+        '/authorize': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+          headers: {
+            'X-Forwarded-Host': 'localhost:4200',
+          },
+        },
+        '/token': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+          headers: {
+            'X-Forwarded-Host': 'localhost:4200',
+          },
+        },
+        '/revoke': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+          headers: {
+            'X-Forwarded-Host': 'localhost:4200',
+          },
+        },
+        '/userinfo': {
+          target: 'http://127.0.0.1:3000',
+          secure: false,
+          changeOrigin: true,
+          headers: {
+            'X-Forwarded-Host': 'localhost:4200',
+          },
         },
       },
       port: 4200,
@@ -43,11 +102,17 @@ export default defineConfig(({ command, mode }) => {
       host: 'localhost',
     },
     resolve: {
+      dedupe: [
+        '@codemirror/state',
+        '@codemirror/view',
+        '@codemirror/language',
+        '@codemirror/commands',
+      ],
       alias: {
         '@': path.resolve(__dirname, './src'),
         '@activepieces/shared': path.resolve(
           __dirname,
-          '../../packages/shared/src',
+          '../../packages/core/shared/src',
         ),
         'ee-embed-sdk': path.resolve(
           __dirname,
@@ -56,6 +121,22 @@ export default defineConfig(({ command, mode }) => {
         '@activepieces/pieces-framework': path.resolve(
           __dirname,
           '../../packages/pieces/framework/src',
+        ),
+        '@activepieces/core-utils': path.resolve(
+          __dirname,
+          '../../packages/core/utils/src',
+        ),
+        '@activepieces/core-formula': path.resolve(
+          __dirname,
+          '../../packages/core/formula/src',
+        ),
+        '@activepieces/core-piece-types': path.resolve(
+          __dirname,
+          '../../packages/core/piece-types/src',
+        ),
+        '@activepieces/core-execution': path.resolve(
+          __dirname,
+          '../../packages/core/execution/src',
         ),
       },
     },
@@ -84,6 +165,7 @@ export default defineConfig(({ command, mode }) => {
       outDir: '../../dist/packages/web',
       emptyOutDir: true,
       reportCompressedSize: true,
+      sourcemap: emitSourcemap ? 'hidden' : false,
       commonjsOptions: {
         transformMixedEsModules: true,
       },

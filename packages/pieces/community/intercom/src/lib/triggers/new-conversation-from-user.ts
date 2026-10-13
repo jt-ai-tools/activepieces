@@ -1,16 +1,22 @@
 import { createTrigger, TriggerStrategy } from '@activepieces/pieces-framework';
 import { intercomAuth } from '../auth';
 import { intercomClient, TriggerPayload } from '../common';
+import { conversationTriggerOutputSchema } from '../output-schemas';
 
 export const newConversationFromUser = createTrigger({
 	name: 'newConversationFromUser',
+	classification: 'READ',
 	displayName: 'New Conversation',
 	description: 'Triggers when a conversation is created by a user or lead (not an admin).',
+	aiMetadata: {
+		description: 'Fires when a contact (user or lead) starts a new conversation in Intercom, such as opening the Messenger or sending an inbound message. Does not fire for conversations initiated by an admin or teammate. Outputs the new conversation object, including its source message, contacts, assignee, state, tags, and any linked ticket.',
+	},
 	props: {},
 	auth: intercomAuth,
+	outputSchema: conversationTriggerOutputSchema,
 	type: TriggerStrategy.APP_WEBHOOK,
 	async onEnable(context) {
-		const client = intercomClient(context.auth);
+		const client = await intercomClient(context.auth);
 		const response = await client.admins.identify();
 
 		if (!response.app?.id_code) {
@@ -22,11 +28,11 @@ export const newConversationFromUser = createTrigger({
 			identifierValue: response['app']['id_code'],
 		});
 	},
-	async onDisable(context) {
-		// implement webhook deletion logic
+	async onDisable() {
+		return;
 	},
 	async test(context) {
-		const client = intercomClient(context.auth);
+		const client = await intercomClient(context.auth);
 
 		const response = await client.conversations.list({ per_page: 10 });
 

@@ -54,7 +54,7 @@ export const getIcecreamFlavor = createAction({
       method: HttpMethod.GET,
       url: 'https://cloud.activepieces.com/api/v1/webhooks/RGjv57ex3RAHOgs0YK6Ja/sync',
       headers: {
-        Authorization: context.auth, // Pass API key in headers
+        Authorization: context.auth.secret_text, // Pass API key in headers
       },
     });
     return res.body;
@@ -71,6 +71,10 @@ The `props` property is an object that defines the properties that the action re
 The `run` function is the function that is called when the action is executed. It takes a single argument, context, which contains the values of the action's properties.
 
 The `run` function utilizes the httpClient.sendRequest function to make a GET request, fetching a random ice cream flavor. It incorporates API key authentication in the request headers. Finally, it returns the response body.
+
+<Tip>
+You can describe how an action's output is presented in the builder, including readable labels for outputs keyed by opaque IDs or returned as arrays, by declaring an [Output Schema](/build-pieces/piece-reference/output-schema).
+</Tip>
 
 ## Expose The Definition
 
@@ -94,9 +98,9 @@ export const gelato = createPiece({
 
 # Testing
 
-By default, the development setup only builds specific components. Open the file `packages/server/api/.env` and include "gelato" in the `AP_DEV_PIECES`.
+By default, the development setup only builds specific components. Open the file `.env.dev` and include "gelato" in the `AP_DEV_PIECES`.
 
-For more details, check out the [Piece Development](./development-setup) section.
+For more details, check out the [Piece Development](/build-pieces/building-pieces/development-setup#pieces-development) section.
 
 Once you edit the environment variable, restart the backend. The piece will be rebuilt. After this process, you'll need to **refresh** the frontend to see the changes.
 

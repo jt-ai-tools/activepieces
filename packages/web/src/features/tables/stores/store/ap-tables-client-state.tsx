@@ -26,7 +26,11 @@ export type ClientField = {
   name: string;
 } & (
   | {
-      type: FieldType.DATE | FieldType.NUMBER | FieldType.TEXT;
+      type:
+        | FieldType.DATE
+        | FieldType.DATETIME
+        | FieldType.NUMBER
+        | FieldType.TEXT;
     }
   | {
       type: FieldType.STATIC_DROPDOWN;
@@ -75,9 +79,12 @@ export type TableState = {
   deleteField: (fieldIndex: number) => void;
   renameTable: (newName: string) => void;
   renameField: (fieldIndex: number, newName: string) => void;
+  reorderField: (fieldIndex: number, targetIndex: number) => void;
   setRecords: (records: PopulatedRecord[]) => void;
   setAgentRunId: (recordId: string, agentRunId: string | null) => void;
   toggleStatus: () => void;
+  lockedByOtherUser: boolean;
+  setLockedByOtherUser: (locked: boolean) => void;
   serverFields: Field[];
   serverRecords: PopulatedRecord[];
 };
@@ -126,7 +133,13 @@ export const createApTableStore = (
         }),
       setSelectedCell: (
         selectedCell: { rowIdx: number; columnIdx: number } | null,
-      ) => set({ selectedCell }),
+      ) =>
+        set((state) =>
+          state.selectedCell?.rowIdx === selectedCell?.rowIdx &&
+          state.selectedCell?.columnIdx === selectedCell?.columnIdx
+            ? state
+            : { selectedCell },
+        ),
       fields: fields.map((field) => {
         if (field.type === FieldType.STATIC_DROPDOWN) {
           return {
@@ -156,10 +169,23 @@ export const createApTableStore = (
         recordData: Pick<ClientRecordData, 'values'>,
       ) => {
         serverState.updateRecord(recordIndex, recordData);
+        const updatedFieldIndexes = new Set(
+          recordData.values.map((cell) => cell.fieldIndex),
+        );
         return set((state) => {
           return {
             records: state.records.map((record, index) =>
-              index === recordIndex ? { ...record, ...recordData } : record,
+              index === recordIndex
+                ? {
+                    ...record,
+                    values: [
+                      ...record.values.filter(
+                        (cell) => !updatedFieldIndexes.has(cell.fieldIndex),
+                      ),
+                      ...recordData.values,
+                    ].sort((a, b) => a.fieldIndex - b.fieldIndex),
+                  }
+                : record,
             ),
           };
         });
@@ -199,7 +225,15 @@ export const createApTableStore = (
           return {
             records: state.records.map((record) => ({
               ...record,
-              values: record.values.filter((_, index) => index !== fieldIndex),
+              values: record.values
+                .filter((cell) => cell.fieldIndex !== fieldIndex)
+                .map((cell) => ({
+                  ...cell,
+                  fieldIndex:
+                    cell.fieldIndex > fieldIndex
+                      ? cell.fieldIndex - 1
+                      : cell.fieldIndex,
+                })),
             })),
             fields: state.fields.filter((_, index) => index !== fieldIndex),
           };
@@ -215,9 +249,38 @@ export const createApTableStore = (
           };
         });
       },
+      reorderField: (fieldIndex: number, targetIndex: number) => {
+        if (fieldIndex === targetIndex) {
+          return;
+        }
+        serverState.reorderField(fieldIndex, targetIndex);
+        return set((state) => {
+          const reorderedFields = [...state.fields];
+          const [movedField] = reorderedFields.splice(fieldIndex, 1);
+          reorderedFields.splice(targetIndex, 0, movedField);
+          const newIndexByUuid = new Map(
+            reorderedFields.map((field, index) => [field.uuid, index]),
+          );
+          const oldToNewIndex = state.fields.map(
+            (field) => newIndexByUuid.get(field.uuid) ?? 0,
+          );
+          return {
+            fields: reorderedFields,
+            records: state.records.map((record) => ({
+              ...record,
+              values: record.values
+                .map((cell) => ({
+                  ...cell,
+                  fieldIndex: oldToNewIndex[cell.fieldIndex],
+                }))
+                .sort((a, b) => a.fieldIndex - b.fieldIndex),
+            })),
+          };
+        });
+      },
       setRecords: (records: PopulatedRecord[]) => {
         serverState.setRecords(records);
-        return set((state) => {
+        return set(() => {
           return {
             records: mapRecorddToClientRecordsData(records, serverState.fields),
           };
@@ -250,6 +313,9 @@ export const createApTableStore = (
           };
         });
       },
+      lockedByOtherUser: false,
+      setLockedByOtherUser: (locked: boolean) =>
+        set({ lockedByOtherUser: locked }),
       serverFields: serverState.fields,
       serverRecords: serverState.records,
     };

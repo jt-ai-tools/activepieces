@@ -2,12 +2,16 @@ import { intercomAuth } from '../auth';
 import { createAction, Property } from '@activepieces/pieces-framework';
 import { intercomClient } from '../common';
 import dayjs from 'dayjs';
+import { contactOutputSchema } from '../output-schemas';
 
 export const createUserAction = createAction({
 	auth: intercomAuth,
 	name: 'create-user',
+	classification: 'WRITE',
 	displayName: 'Create User',
 	description: 'Creates a new user.',
+	audience: 'both',
+	aiMetadata: { description: 'Create a new user-role contact in Intercom from email and optional name, external user ID, signup time, and custom attributes. Always creates a record and does not check for an existing match, so it is not idempotent and repeated calls may produce duplicates. To update-if-exists instead, use Create/Update User.', idempotent: false },
 	props: {
 		email: Property.ShortText({
 			displayName: 'Email',
@@ -30,8 +34,9 @@ export const createUserAction = createAction({
 			required: false,
 		}),
 	},
+	outputSchema: contactOutputSchema,
 	async run(context) {
-		const client = intercomClient(context.auth);
+		const client = await intercomClient(context.auth);
 
 		const response = await client.contacts.create({
 			role: 'user',

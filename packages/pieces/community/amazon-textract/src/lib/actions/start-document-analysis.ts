@@ -9,6 +9,7 @@ import { createTextractClient, formatTextractError } from '../common';
 export const startDocumentAnalysis = createAction({
   auth: amazonTextractAuth,
   name: 'start-document-analysis',
+  classification: 'READ',
   displayName: 'Start Document Analysis',
   description:
     'Start an asynchronous analysis job for a multi-page document stored in S3. Returns a job ID that you can pass to the "Get Document Analysis Results" action to retrieve the extracted data once the job completes.',
@@ -19,8 +20,8 @@ export const startDocumentAnalysis = createAction({
       required: true,
     }),
     s3Key: Property.ShortText({
-      displayName: 'S3 Object Key',
-      description: 'The S3 object key (path) of the document to analyze. Supports multi-page PDFs and TIFF files.',
+      displayName: 'S3 File Path',
+      description: 'The path to the document in your S3 bucket (e.g. "reports/multi-page.pdf"). Supports multi-page PDFs and TIFF files.',
       required: true,
     }),
     featureTypes: Property.StaticMultiSelectDropdown({
@@ -37,19 +38,19 @@ export const startDocumentAnalysis = createAction({
       defaultValue: [FeatureType.TABLES, FeatureType.FORMS],
     }),
     clientRequestToken: Property.ShortText({
-      displayName: 'Idempotency Token',
+      displayName: 'Deduplication Token (Optional)',
       description:
-        'Optional. A unique token to ensure the request is not processed more than once. If the same token is reused within 5 minutes, the original job ID is returned.',
+        'A unique string you choose (e.g. "job-invoice-2024-01"). If you submit the same token within 5 minutes, AWS returns the original job ID instead of starting a new job — preventing duplicate work.',
       required: false,
     }),
     outputS3Bucket: Property.ShortText({
-      displayName: 'Output S3 Bucket',
-      description: 'Optional. S3 bucket where Textract will save the analysis output.',
+      displayName: 'Output S3 Bucket (Optional)',
+      description: 'S3 bucket where Textract will save the raw analysis output. Leave blank to retrieve results using "Get Document Analysis Results" instead.',
       required: false,
     }),
     outputS3Prefix: Property.ShortText({
-      displayName: 'Output S3 Prefix',
-      description: 'Optional. S3 key prefix for the output files.',
+      displayName: 'Output Folder Path (Optional)',
+      description: 'Folder path within the output bucket where results will be saved (e.g. "textract-output/"). Only used if Output S3 Bucket is set.',
       required: false,
     }),
   },

@@ -1,9 +1,10 @@
-import { AppSystemProp, networkUtils } from '@activepieces/server-common'
-import RateLimitPlugin from '@fastify/rate-limit'
+import RateLimitPlugin, { RateLimitOptions } from '@fastify/rate-limit'
 import FastifyPlugin from 'fastify-plugin'
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { redisConnections } from '../../database/redis-connections'
+import { networkUtils } from '../../helper/network-utils'
 import { system } from '../../helper/system/system'
+import { AppSystemProp } from '../../helper/system/system-props'
 
 const API_RATE_LIMIT_AUTHN_ENABLED = system.getBoolean(
     AppSystemProp.API_RATE_LIMIT_AUTHN_ENABLED,
@@ -20,3 +21,26 @@ export const rateLimitModule: FastifyPluginAsyncZod = FastifyPlugin(
         }
     },
 )
+
+export const authnRateLimit: RateLimitOptions = {
+    max: Number.parseInt(
+        system.getOrThrow(AppSystemProp.API_RATE_LIMIT_AUTHN_MAX),
+        10,
+    ),
+    timeWindow: system.getOrThrow(AppSystemProp.API_RATE_LIMIT_AUTHN_WINDOW),
+}
+
+export const emailCodeRateLimit: RateLimitOptions = {
+    max: Number.parseInt(
+        system.getOrThrow(AppSystemProp.API_RATE_LIMIT_EMAIL_CODE_MAX),
+        10,
+    ),
+    timeWindow: system.getOrThrow(AppSystemProp.API_RATE_LIMIT_AUTHN_WINDOW),
+}
+
+export const eventDestinationTestRateLimit: RateLimitOptions = {
+    max: 20,
+    timeWindow: '1 minute',
+    hook: 'preHandler',
+    keyGenerator: (req) => `event-destination-test:${req.principal.id}`,
+}

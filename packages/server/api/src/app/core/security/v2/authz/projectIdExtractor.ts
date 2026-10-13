@@ -1,7 +1,7 @@
-import { EntitySourceType, ProjectBodyResource, ProjectParamResource, ProjectQueryResource, ProjectTableResource } from '@activepieces/server-common'
-import { ActivepiecesError, assertNotNullOrUndefined, ErrorCode, isNil, isObject } from '@activepieces/shared'
+import { ActivepiecesError, assertNotNullOrUndefined, ErrorCode, isNil, isObject } from '@activepieces/core-utils'
 import { FastifyRequest } from 'fastify'
 import { databaseConnection } from '../../../../database/database-connection'
+import { EntitySourceType, ProjectBodyResource, ProjectParamResource, ProjectQueryResource, ProjectTableResource } from '../../authorization/common'
 
 export const projectIdExtractor = {
     async fromTable(

@@ -1,4 +1,11 @@
 import {
+  ApErrorParams,
+  isNil,
+  ErrorCode,
+  RequiredActionsMissingErrorParams,
+  SeekPage,
+} from '@activepieces/core-utils';
+import {
   ApFlagId,
   FlowOperationType,
   FlowStatus,
@@ -9,16 +16,16 @@ import {
   PopulatedFlow,
   FlowTrigger,
   FlowTriggerType,
-  WebsocketClientEvent,
-  FlowStatusUpdatedResponse,
-  isNil,
-  ErrorCode,
-  SeekPage,
   Template,
   UncategorizedFolderId,
   UpdateRunProgressRequest,
 } from '@activepieces/shared';
-import { QueryClient, useMutation, useQuery } from '@tanstack/react-query';
+import {
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { t } from 'i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -27,6 +34,7 @@ import { useApErrorDialogStore } from '@/components/custom/ap-error-dialog/ap-er
 import { useSocket } from '@/components/providers/socket-provider';
 import { internalErrorToast } from '@/components/ui/sonner';
 import { flowRunsApi } from '@/features/flow-runs/api/flow-runs-api';
+import { triggerStatusErrorUtils } from '@/features/flows/utils/trigger-status-error';
 import { foldersApi } from '@/features/folders/api/folders-api';
 import { piecesApi } from '@/features/pieces/api/pieces-api';
 import { pieceSelectorUtils } from '@/features/pieces/utils/piece-selector-utils';
@@ -41,7 +49,10 @@ import { NEW_FLOW_QUERY_PARAM } from '@/lib/route-utils';
 import { flowsApi } from '../api/flows-api';
 import { flowsUtils } from '../utils/flows-utils';
 
+import { sampleDataHooks } from './sample-data-hooks';
+
 const createFlowsQueryKey = (projectId: string) => ['flows', projectId];
+const createFlowQueryKeyPrefix = (flowId: string) => ['flow', flowId];
 export const flowHooks = {
   invalidateFlowsQuery: (queryClient: QueryClient) => {
     queryClient.invalidateQueries({
@@ -65,92 +76,135 @@ export const flowHooks = {
     change,
     onSuccess,
     setIsPublishing,
+    onRequiredActionsMissing,
   }: UseChangeFlowStatusParams) => {
     const { data: enableFlowOnPublish } = flagsHooks.useFlag<boolean>(
       ApFlagId.ENABLE_FLOW_ON_PUBLISH,
     );
-    const socket = useSocket();
+    const { data: triggerTimeout } = flagsHooks.useFlag<number>(
+      ApFlagId.TRIGGER_TIMEOUT_SECONDS,
+    );
     const { openDialog } = useApErrorDialogStore();
+    const queryClient = useQueryClient();
     return useMutation({
       mutationFn: async () => {
         if (change === 'publish') {
           setIsPublishing?.(true);
         }
-        return await new Promise<FlowStatusUpdatedResponse>(
-          (resolve, reject) => {
-            const onUpdateFinish = (response: FlowStatusUpdatedResponse) => {
-              if (response.flow.id !== flowId) {
-                return;
-              }
-              socket.off(
-                WebsocketClientEvent.FLOW_STATUS_UPDATED,
-                onUpdateFinish,
-              );
-              resolve(response);
-            };
-            socket.on(WebsocketClientEvent.FLOW_STATUS_UPDATED, onUpdateFinish);
-            flowsApi
-              .update(flowId, {
-                type:
-                  change === 'publish'
-                    ? FlowOperationType.LOCK_AND_PUBLISH
-                    : FlowOperationType.CHANGE_STATUS,
-                request: {
-                  status:
-                    change === 'publish'
-                      ? enableFlowOnPublish
-                        ? FlowStatus.ENABLED
-                        : FlowStatus.DISABLED
-                      : change,
-                },
-              })
-              .then(() => {})
-              .catch((error) => {
-                reject(error);
-              });
+        return flowsApi.update(flowId, {
+          type:
+            change === 'publish'
+              ? FlowOperationType.LOCK_AND_PUBLISH
+              : FlowOperationType.CHANGE_STATUS,
+          request: {
+            status:
+              change === 'publish'
+                ? enableFlowOnPublish
+                  ? FlowStatus.ENABLED
+                  : FlowStatus.DISABLED
+                : change,
           },
-        );
+        });
       },
-      onSuccess: (response: FlowStatusUpdatedResponse) => {
+      onSuccess: async (flow: PopulatedFlow) => {
+        if (change === 'publish') {
+          await queryClient.refetchQueries({
+            queryKey: ['flow-approval-requests'],
+          });
+          setIsPublishing?.(false);
+        }
+        onSuccess?.(flow);
+      },
+      onError: (error: unknown) => {
         if (change === 'publish') {
           setIsPublishing?.(false);
         }
-        if (!isNil(response.error)) {
+        if (!api.isError(error)) {
+          internalErrorToast();
+          return;
+        }
+        if (
+          !error.response ||
+          error.response.status === api.httpStatus.GatewayTimeout
+        ) {
+          toast.error(t('Request Timed Out'), {
+            description: t(
+              'The operation exceeded the {timeout} second timeout. Please refresh and try again.',
+              { timeout: triggerTimeout ?? 60 },
+            ),
+            duration: 5000,
+          });
+          return;
+        }
+        const apError = error.response.data as ApErrorParams;
+        if (apError.code === ErrorCode.TRIGGER_UPDATE_STATUS) {
+          const params = apError.params;
+          const reportedError = triggerStatusErrorUtils.describeStandardError(
+            params.standardError,
+          );
           openDialog({
             title:
               change === 'publish'
                 ? t('Publish failed')
                 : t('Status update failed'),
             description: (
-              <p>
-                {t(
-                  'An error occurred while changing the flow status. This may be due to an issue in the trigger piece or its settings.',
+              <div className="flex flex-col gap-2">
+                <p>
+                  {t(
+                    'An error occurred while changing the flow status. This may be due to an issue in the trigger piece or its settings.',
+                  )}
+                </p>
+                {reportedError && (
+                  <div className="flex flex-col gap-1 rounded-md bg-gray-3 p-3">
+                    <span className="text-xs font-medium text-gray-11">
+                      {t('The connected app reported')}
+                    </span>
+                    <span className="line-clamp-4 text-sm text-gray-12">
+                      {reportedError}
+                    </span>
+                  </div>
                 )}
-              </p>
+              </div>
             ),
-            error: {
-              standardError: response.error.params.standardError,
-              standardOutput: response.error.params.standardOutput || '',
+            error: triggerStatusErrorUtils.parseStandardError(
+              params.standardError,
+            ) ?? {
+              standardError: params.standardError || '',
+              standardOutput: params.standardOutput || '',
             },
+            technicalDetailsDefaultOpen: isNil(reportedError),
           });
-          return;
-        }
-        onSuccess?.(response);
-      },
-      onError: (error: unknown) => {
-        const errorCode = (error as any)?.response?.data?.code;
-        const errorMessage = (error as any)?.response?.data?.params?.message;
-
-        if (
-          errorCode === ErrorCode.FLOW_OPERATION_IN_PROGRESS &&
-          errorMessage
-        ) {
-          toast.error(t('Flow Is Busy'), {
-            description: errorMessage,
+        } else if (apError.code === ErrorCode.REQUIRED_ACTIONS_MISSING) {
+          if (onRequiredActionsMissing) {
+            onRequiredActionsMissing(apError.params);
+            return;
+          }
+          toast.error(t('Publish failed'), {
+            description: apError.params.message,
+            duration: 5000,
+          });
+        } else if (apError.code === ErrorCode.QUOTA_EXCEEDED) {
+          toast.error(t('Active flows limit reached'), {
+            description: t(
+              'You have reached the maximum number of active flows. Disable another flow or increase the limit.',
+            ),
             duration: 5000,
           });
         } else {
-          internalErrorToast();
+          const serverMessage = api.serverErrorMessage(error);
+          if (isNil(serverMessage)) {
+            internalErrorToast();
+            return;
+          }
+          toast.error(
+            change === 'publish'
+              ? t('Publish failed')
+              : t('Status update failed'),
+            {
+              description: serverMessage,
+              duration: 8000,
+            },
+          );
         }
       },
     });
@@ -183,6 +237,9 @@ export const flowHooks = {
             },
           );
         }
+      },
+      onError: () => {
+        toast.error(t('Failed to export flows'));
       },
     });
   },
@@ -261,17 +318,29 @@ export const flowHooks = {
       },
     });
   },
-  useGetFlow: (flowId: string) => {
+  useGetFlow: ({
+    flowId,
+    versionId,
+    enabled = true,
+  }: {
+    flowId: string;
+    versionId?: string;
+    enabled?: boolean;
+  }) => {
     return useQuery({
-      queryKey: ['flow', flowId],
+      queryKey: flowHooks.createFlowQueryKeys({ flowId, versionId }),
       queryFn: async () => {
         try {
-          return await flowsApi.get(flowId);
+          return await flowsApi.get(
+            flowId,
+            versionId ? { versionId } : undefined,
+          );
         } catch (err) {
           console.error(err);
           return null;
         }
       },
+      enabled: enabled && !!flowId,
       staleTime: 0,
     });
   },
@@ -421,9 +490,10 @@ export const flowHooks = {
     return await flowsApi.update(flow.id, {
       type: FlowOperationType.IMPORT_FLOW,
       request: {
-        displayName: templateFlow.displayName,
+        displayName: flow.version.displayName,
         trigger: updatedTrigger,
         schemaVersion: templateFlow.schemaVersion,
+        notes: templateFlow.notes,
       },
     });
   },
@@ -525,11 +595,41 @@ export const flowHooks = {
       onError,
     });
   },
+  createFlowQueryKeys: ({
+    flowId,
+    versionId,
+  }: {
+    flowId: string;
+    versionId: string | undefined;
+  }) => [...createFlowQueryKeyPrefix(flowId), versionId],
+  removeFlowFromCache: ({
+    flowId,
+    queryClient,
+  }: {
+    flowId: string;
+    queryClient: QueryClient;
+  }) => {
+    const flowQueryKeyPrefix = createFlowQueryKeyPrefix(flowId);
+    queryClient
+      .getQueriesData<PopulatedFlow | null>({ queryKey: flowQueryKeyPrefix })
+      .forEach(([, flow]) => {
+        if (!isNil(flow)) {
+          sampleDataHooks.removeSampleData({
+            flowVersionId: flow.version.id,
+            queryClient,
+          });
+        }
+      });
+    queryClient.removeQueries({ queryKey: flowQueryKeyPrefix });
+  },
 };
 
 type UseChangeFlowStatusParams = {
   flowId: string;
   change: 'publish' | FlowStatus;
-  onSuccess: (flow: FlowStatusUpdatedResponse) => void;
+  onSuccess: (flow: PopulatedFlow) => void;
   setIsPublishing?: (isPublishing: boolean) => void;
+  onRequiredActionsMissing?: (
+    params: RequiredActionsMissingErrorParams['params'],
+  ) => void;
 };
